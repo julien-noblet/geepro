@@ -1,0 +1,346 @@
+/* $Revision: 1.1.1.1 $ */
+/* geepro - Willem eprom programmer for linux
+ * Copyright (C) 2006 Krzysztof Komarnicki
+ * Email: krzkomar@wp.pl
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version. See the file COPYING. 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include "chip.h"
+#include "../intl/lang.h"
+
+static int __plugins__ = 0;    /* zmienna gloabalna pilnująca zainicjowania kolejek */
+
+int chip_register_chip(chip_plugins *plg, chip *new_chip)
+{
+    chip *new_tie, *tmp;
+
+    if(!__plugins__){
+	printf("chip_register_chip() called without initialisation (see chip_init_qe()) \n");
+	return CHIP_ERROR;
+    }
+
+    if(!new_chip) return CHIP_ERROR;
+    
+    if(!(new_chip->chip_name && new_chip->chip_path )){
+	printf(BAD_CHIP_NAME);
+	return CHIP_ERROR;
+    }
+
+    MSG_1DEBUG("{chip.c} CHIP: Dodawanie ukladu\n");
+
+    if(!(new_tie = (chip *)malloc(sizeof(chip)))){
+	printf("[!!] chip_register(plugin, path, widget) -> memory allocation error (1)\n"); 
+	return CHIP_ERROR;
+    }
+
+    memcpy(new_tie, new_chip, sizeof(chip)); /* skopiowanie struktury definicji układu do nowej pozycji w kolejce */
+
+    if(!(new_tie->chip_path = (char *)malloc(sizeof(char) * (strlen(new_chip->chip_path) +1)))){
+	printf("[!!] chip_register(plugin, path, widget) -> memory allocation error (2)\n"); 
+	free(new_tie);
+	return CHIP_ERROR;
+    }
+    strcpy(new_tie->chip_path, new_chip->chip_path); /* skopiowanie ścieżki menu */
+
+    if(!(new_tie->chip_name = (char *)malloc(sizeof(char) * (strlen(new_chip->chip_name) +1)))){
+	printf("[!!] chip_register(plugin, path, widget) -> memory allocation error (3)\n"); 
+	free(new_tie->chip_path);
+	free(new_tie);
+	return CHIP_ERROR;
+    }
+    strcpy(new_tie->chip_name, new_chip->chip_name); /* skopiowanie nazwy ukladu */
+
+    new_tie->next = NULL;
+
+    if(!plg->chip_qe){
+	plg->chip_qe = new_tie;
+	return 0;
+    }
+
+    for(tmp = plg->chip_qe; tmp->next; tmp = (chip*)tmp->next);
+    tmp->next = new_tie;
+    
+    return 0;
+}
+
+chip *chip_lookup_chip(chip_plugins *plg, char *name)
+{
+    if(!__plugins__){
+	printf("chip_lookup_chip() called without initialisation (see chip_init_qe()) \n");
+	return NULL;
+    }
+    
+    for(plg->chip_sel = plg->chip_qe; plg->chip_sel; plg->chip_sel = plg->chip_sel->next )
+	    if(!strcmp(plg->chip_sel->chip_name, name)) return plg->chip_sel;
+    return NULL;
+}
+
+int chip_unregister_chip(chip_plugins *plg, char *name)
+{
+    char t = 1;
+    chip *curr, *prev;
+
+    MSG_2DEBUG("{chip.c} CHIP: Usuwanie układu %s\n", name);
+    if(!__plugins__){
+	printf("chip_del_chip() called without initialisation (see chip_init_qe()) \n");
+	return CHIP_ERROR;
+    }
+
+    for(
+	curr = prev = plg->chip_qe; 
+	curr->next && (t = strcmp(curr->chip_name, name)); 
+	curr = (chip *)curr->next
+    ) prev = curr;
+
+    if(t) return 0; /* nie ma ogniwa o takiej nazwie */
+
+    prev->next = curr->next; /* przepisanie wskaźników z poprzedniego do kolejnego */
+    
+    if(curr == plg->chip_qe) plg->chip_qe = curr->next; /* jesli kasujemy pierwszy element kolejki */
+    
+    if(plg->chip_sel == curr) plg->chip_sel = NULL;
+
+    free(curr->chip_path);
+    free(curr->chip_name);
+    free(curr);
+    
+    return 1;
+}
+
+void chip_destroy(chip_plugins *plg)
+{
+    chip *tmp, *tmp1;
+    
+    if(!__plugins__){
+	printf("chip_rm_chip() called without initialisation (see chip_init_qe()) \n");
+	return;
+    }
+
+    tmp = plg->chip_qe;
+
+    while( tmp ){
+	tmp1 = tmp->next;
+	free(tmp->chip_path);
+	free(tmp->chip_name);
+	free(tmp);
+	tmp = tmp1;
+    }
+    plg->chip_qe = NULL;
+    plg->chip_sel = 0;
+}
+
+/*************************************************************************************************************************/
+/* wybór układu */
+
+int chip_invoke_action(chip_plugins *plg, int action)
+{
+
+    if(!__plugins__){
+	printf("chip_invoke_action() called without initialisation (see chip_init_qe()) \n");
+	return 0;
+    }
+
+    if(!plg->chip_sel) return 0;
+    switch(action){
+	case ACTION_READ	: plg->chip_sel->read_chip(NULL,plg); break;
+	case ACTION_READ_SIG	: plg->chip_sel->read_sig_chip(NULL,plg); break;
+	case ACTION_WRITE	: plg->chip_sel->write_chip(NULL,plg); break;
+	case ACTION_ERASE	: plg->chip_sel->erase_chip(NULL,plg); break;
+	case ACTION_LOCK	: plg->chip_sel->lock_chip(NULL,plg); break;
+	case ACTION_UNLOCK	: plg->chip_sel->unlock_chip(NULL,plg); break;
+	case ACTION_VERIFY	: plg->chip_sel->verify_chip(NULL,plg); break;
+	case ACTION_TEST	: plg->chip_sel->test_chip(NULL,plg); break;
+    }
+    return 1;
+}
+
+chip *chip_get_chip(chip_plugins *plg)
+{ 
+    if(!__plugins__){
+	printf("chip_get_chip() called without initialisation (see chip_init_qe()) \n");
+	return NULL;
+    }
+
+    return plg->chip_sel;
+}
+
+/**************************************************************************************************************************/
+/* kolejka ściezek */
+
+void chip_rm_path(chip_plugins *plg)
+{
+    chip_menu_qe *tmp,*qe = plg->menu_qe;
+
+    if(!__plugins__){
+	printf("chip_rm_path() called without initialisation (see chip_init_qe()) \n");
+	return;
+    }
+    
+    MSG_1DEBUG("{chip.c} MENU: Kasowanie kolejki...\n");
+    while(qe){
+	tmp = qe->next;	free(qe->name);	free(qe); qe = tmp;
+    }
+    MSG_1DEBUG("{chip.c} MENU: OK\n");
+    plg->menu_qe = NULL;
+}
+
+int chip_add_path(chip_plugins *plg, char *path, void *wg)
+{
+    chip_menu_qe *new_tie, *tmp;
+
+    if(!__plugins__){
+	printf("chip_add_path() called without initialisation (see chip_init_qe()) \n");
+	return CHIP_ERROR;
+    }
+    
+    if(!(path && wg)){ 
+	printf("[!!] chip_add_path(plugin, path, widget) -> (path || widget) == NULL !!!\n"); 
+	return CHIP_ERROR; 
+    }
+
+    MSG_2DEBUG("{chip.c} MENU: add queue -> %s\n", path);
+    if(!(new_tie = (chip_menu_qe *)malloc(sizeof(chip_menu_qe)))){
+	printf("[!!] chip_add_path(plugin, path, widget) -> memory allocation error (1)\n"); 
+	return CHIP_ERROR;
+    }
+
+    if(!(new_tie->name = (char *)malloc(sizeof(char) * strlen(path) + 1 ))){
+	printf("[!!] chip_add_path(plugin, path, widget) -> memory allocation error (2)\n"); 
+	free(new_tie);
+	return CHIP_ERROR;
+    }
+
+    strcpy(new_tie->name, path);
+    new_tie->wg = wg;
+    new_tie->next = NULL;
+
+    if(!plg->menu_qe){
+	plg->menu_qe = new_tie;
+	return 0;
+    }
+
+    for(tmp = plg->menu_qe; tmp->next; tmp = (chip_menu_qe *)tmp->next);
+    tmp->next = new_tie;
+
+    return 0;
+}
+
+/* zwraca wskaznik dla sciezki, lub NULL jesli sciezki nie ma */
+void *chip_find_path(chip_plugins *plg, char *path)
+{
+    chip_menu_qe *tmp;
+
+    if(!__plugins__){
+	printf("chip_find_path() called without initialisation (see chip_init_qe()) \n");
+	return NULL;
+    }
+
+    MSG_2DEBUG("{chip.c} MENU: xxx-> looking for path=%s\n", path);
+    for(tmp = plg->menu_qe; tmp; tmp = (chip_menu_qe *)tmp->next){
+	MSG_2DEBUG("--->%s\n", tmp->name);
+	if(!strcmp(path, tmp->name)) {
+	    if(!tmp->wg){
+		printf("ERROR: chip_find_path() --> widget == NULL !!!\n");
+		exit(-1);
+	    }
+	    MSG_1DEBUG("{chip.c} MENU: ------> seq present\n <-------");	
+	    return tmp->wg; 
+	    }
+    }
+    MSG_1DEBUG("{chip.c} MENU: ------> seq absent <------\n");
+    return NULL;    
+}
+
+/*************************************************************************************************************************/
+/* inicjowanie i niszczenie kolejki */
+void chip_init_qe(chip_plugins *plg)
+{
+    plg->menu_qe = NULL;
+    plg->chip_qe  = NULL;
+    plg->chip_sel = NULL;
+    plg->mdl = (modules *)malloc(sizeof(modules));
+    __plugins__=1;
+}
+
+void chip_rmv_qe(chip_plugins *plg)
+{
+    chip_rm_path(plg);
+    chip_destroy(plg);
+    if(plg->mdl) free(plg->mdl);
+    __plugins__ = 0;    
+}
+
+/*************************************************************************************************************************/
+/* operacje na lancuchach */
+
+char chip_cmp(char *name1, char *name2){
+    char *tmp1,*tmp2;
+    int  a,b;
+    
+    a = strlen(name1);
+    b = strlen(name2);
+    tmp1 = a > b ? name2 : name1;
+    tmp2 = a > b ? name1 : name2;    
+    a = a > b ? b : a;
+
+    for(;a > 0; a--){
+	if(*(tmp1 + a) > *(tmp2 + a)) return 1;
+    }
+
+    return 0;
+}
+
+char *chip_last_pth(char *pth)
+{
+    for(pth += strlen(pth); *pth!='/' ; pth--);
+    return pth + 1;
+}
+
+/*************************************************************************************************************************/
+/* tworzenie menu */
+
+void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void *, char *, void *), void (*item)(chip_plugins *, void *, void *), void *ptr)
+{
+    chip *chp;
+    char *tmp, t;
+    void *p,*op;
+
+    chip_add_path(plg, "/", wg);
+    for(chp = plg->chip_qe; chp; chp = chp->next ){
+	tmp = chp->chip_path + 1;
+	op = chip_find_path(plg, "/");
+	for(;*tmp; tmp++){
+	    for(; *tmp!='/' && *tmp; tmp++);
+	    t = *tmp;
+	    *tmp = 0;
+	    if(!(p = chip_find_path(plg, chp->chip_path))){
+		p = submenu(op, chip_last_pth(chp->chip_path), ptr);
+		chip_add_path(plg, chp->chip_path, p);
+	    }
+	    op = p;
+	    *tmp = t;
+	}
+	if((p = chip_find_path(plg, chp->chip_path))){
+	    plg->menu_sel = chp;
+	    item(plg, p, ptr);
+	}
+    }
+}
