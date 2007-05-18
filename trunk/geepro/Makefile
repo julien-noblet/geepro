@@ -1,4 +1,4 @@
-## $Revision: 1.1.1.1 $
+## $Revision: 1.2 $
 
 progname=geepro
 
@@ -12,7 +12,7 @@ objs=files.o buffer.o chip.o dummy.o iface.o timer.o parport.o main.o
 objs_lok= ./src/files.o ./src/buffer.o ./src/chip.o ./src/dummy.o ./src/iface.o ./src/timer.o ./src/parport.o ./src/main.o
 
 
-ALL: $(progname) documentation
+ALL: lang.h $(progname) documentation
 
 lang.h: pl
 
@@ -22,10 +22,10 @@ $(progname): $(plugins) $(statlibs) $(objs)
 documentation:
 	make -C ./doc
 
-eng:
+eng: 
 	make -C ./intl eng
 
-pl:
+pl: 
 	make -C ./intl pl
 
 files.o:
@@ -68,5 +68,6 @@ clean:
 	make -C ./gui clean
 	make -C ./src clean
 	make -C ./doc clean
+	make -C ./intl clean
 	rm -f ./debug/$(progname)
 
