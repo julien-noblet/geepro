@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -68,6 +68,7 @@ void gui_dynamic_widget_purge(fo_idx **fo, fo_idx **ff);
 void gui_dialog_bt(GtkWidget *wg, char *name);
 void gui_add_action(geepro *gep, char *stock_name, gchar *tip, int id);
 void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep);
+void gui_dipsw(geepro *gep, int len, long set, const char *desc);
 /***************************************************************************************************/
 
 void gui_drawable_rfsh(GtkWidget *wg)
@@ -298,7 +299,7 @@ void gui_device_sel(GtkWidget *wg, geepro *gep)
 	if(gep->chp->action[i]) gui_add_action(gep, i );
 */
 
-	GUI(gep->gui)->dpsw_state = tmp->dip_switch;
+//	GUI(gep->gui)->dpsw_state = tmp->dip_switch;
 
 	if(tmp->autostart)
 	     tmp->autostart(wg, gep);
@@ -636,8 +637,6 @@ void gui_clk_sqw(GtkWidget *wg, geepro *gep)
 void gui_willem_test(geepro *gep)
 {
     GtkWidget *hbox, *tmp_2, *tmp_0, *tmp_1, *tmp, *tmp_3;
-    GdkBitmap *mask;
-    GdkPixmap *pix;
     GtkAdjustment *adj;    
 
     GUI(gep->gui)->sqwg.period = 100;
@@ -754,119 +753,9 @@ void gui_willem_test(geepro *gep)
     gtk_entry_set_editable(GTK_ENTRY(tmp_1), FALSE);
     gtk_widget_set_usize(tmp_1,25,25);
     GUI(gep->gui)->test_serial_entry = tmp_1;
-
-    tmp_1 = gtk_frame_new(TST_LB_DIP);
-    gtk_frame_set_label_align(GTK_FRAME(tmp_1), 0.5, 0.5);
-    gtk_box_pack_start(GTK_BOX(tmp_2), tmp_1, TRUE, TRUE, 5);
-
-    pix = gdk_pixmap_create_from_xpm_d(
-	GTK_WIDGET(GUI(gep->gui)->wmain)->window, &mask, NULL,
-	GUI(gep->gui)->pcb ? (gchar **)SW_TEST_WILLEM_XPM : (gchar **)SW_TEST_PCB3_XPM
-    );
-    tmp = gtk_pixmap_new(pix, mask);
-    gtk_container_add(GTK_CONTAINER(tmp_1), tmp);
-    GUI(gep->gui)->test_dpsw = tmp;
-
-}
-
-/***************/
-
-void gui_draw_pict(geepro *gep)
-{
-    int pxx, pyy;
-
-return;
-    gdk_drawable_get_size(GUI(gep->gui)->pict_pixbuf, &pxx, &pyy);
-
-    gdk_draw_rectangle(GUI(gep->gui)->pict_pixbuf,
-	GTK_WIDGET(GUI(gep->gui)->wmain)->style->bg_gc[GTK_WIDGET_STATE(GUI(gep->gui)->wmain)], TRUE, 0, 0, pxx, pyy);
-
-    if(GUI(gep->gui)->pict_view)
-	gdk_draw_pixmap(
-		GUI(gep->gui)->pict_pixbuf,
-		GTK_WIDGET(GUI(gep->gui)->wmain)->style->fg_gc[ GTK_WIDGET_STATE(GUI(gep->gui)->wmain) ],
-		GUI(gep->gui)->pict_view,
-		0, 0, 0, 0, pxx, pyy
-	);
-
-    gui_drawable_rfsh(GTK_WIDGET(GUI(gep->gui)->pict_da));
-}
-
-void gui_draw_dip_switch(geepro *gep)
-{
-    int i, tmp, sxx, syy, dxx, dyy, allign_x, allign_y;
-    PangoLayout *pl = NULL;
-    PangoFontDescription *pfd;
-    char *sw_dsc[] = {SW_DESCRIPTION};
-return;
-    pfd = pango_font_description_from_string(SW_FONT_DSC);
-    gdk_drawable_get_size(GUI(gep->gui)->dpsw_pix_on, &sxx, &syy);
-    gdk_drawable_get_size(GUI(gep->gui)->dpsw_pixbuf, &dxx, &dyy);
-
-    allign_x = dxx - sxx * DIP_SWITCH_SIZE - 5;
-    allign_y = dyy - syy;
-    gdk_draw_rectangle(GUI(gep->gui)->dpsw_pixbuf,
-	GTK_WIDGET(GUI(gep->gui)->wmain)->style->bg_gc[GTK_WIDGET_STATE(GUI(gep->gui)->wmain)], TRUE, 0, 0, dxx, dyy);
-
-    for(i = 0; i < DIP_SWITCH_SIZE; i++){
-	if(i == 1) continue;
-	pl = gtk_widget_create_pango_layout(GUI(gep->gui)->dpsw_da,
-		sw_dsc[i ? ( GET_PCB_WILLEM ? (DIP_SWITCH_SIZE + 1 - i) : i) : 0]);
-	pango_layout_set_font_description(pl, pfd);
-	gdk_draw_layout(GUI(gep->gui)->dpsw_pixbuf,
-		 GTK_WIDGET(GUI(gep->gui)->wmain)->style->black_gc, allign_x+i*sxx - (i ? 0 : 5), 0, pl);
-	tmp=0;
-	if( i > 1 )
-	    tmp = !GUI(gep->gui)->pcb ? (GUI(gep->gui)->dpsw_state << (i-2) ) & 0x800 : 
-					    (GUI(gep->gui)->dpsw_state >> (i-2) ) & 0x001;
-	if( i == 0)
-	    tmp = GUI(gep->gui)->dpsw_state & 0x1000;
-	    
-	gdk_draw_pixmap(
-	    GUI(gep->gui)->dpsw_pixbuf,
-	    GTK_WIDGET(GUI(gep->gui)->wmain)->style->fg_gc[ GTK_WIDGET_STATE( GUI(gep->gui)->wmain ) ],
-	    ((GUI(gep->gui)->pcb && i) ? !tmp : tmp) ? GUI(gep->gui)->dpsw_pix_off : GUI(gep->gui)->dpsw_pix_on,
-	    0, 0, allign_x + i * sxx, allign_y, sxx, syy
-	);
-    }        
-    gui_drawable_rfsh(GTK_WIDGET(GUI(gep->gui)->dpsw_da));
-    pango_font_description_free(pfd);
-    g_object_unref(pl);
-}
-
-/***************/
-
-gint gui_configure_pict(GtkWidget *wg,GdkEventConfigure *event, geepro *gep)
-{
-    
-    if(GUI(gep->gui)->pict_pixbuf) return TRUE;
-    GUI(gep->gui)->pict_pixbuf = gdk_pixmap_new(wg->window, PICT_AREA_WIDTH, PICT_AREA_HEIGHT, -1);
-    return TRUE;
-}
-
-gint gui_expose_pict(GtkWidget *wg,GdkEventExpose *event, geepro *gep)
-{
-    gdk_draw_pixmap(wg->window,
-	wg->style->fg_gc[GTK_WIDGET_STATE(wg)], GUI(gep->gui)->pict_pixbuf,
-	event->area.x,event->area.y, event->area.x,event->area.y,	
-	event->area.width, event->area.height);
-    return FALSE;
-}
-
-gint gui_configure_sw(GtkWidget *wg, GdkEventConfigure *event, geepro *gep)
-{
-    if(GUI(gep->gui)->dpsw_pixbuf) return TRUE;
-    GUI(gep->gui)->dpsw_pixbuf = gdk_pixmap_new(wg->window, SW_AREA_WIDTH, SW_AREA_HEIGHT, -1);
-    return TRUE;
-}
-
-gint gui_expose_sw(GtkWidget *wg,GdkEventExpose *event, geepro *gep)
-{
-    gdk_draw_pixmap(wg->window,
-	wg->style->fg_gc[GTK_WIDGET_STATE(wg)], GUI(gep->gui)->dpsw_pixbuf,
-	event->area.x, event->area.y, event->area.x,event->area.y,	
-	event->area.width, event->area.height);
-    return FALSE;
+/* Ustawić wlasciwa pozycje */
+    gui_dipsw(gep, 12, 0x0001, "DIP Switch");
+    gtk_box_pack_start(GTK_BOX(tmp_2), GTK_WIDGET(GUI(gep->gui)->tmp_wg), FALSE, FALSE, 0);
 }
 
 /******************************************************************************************************************/
@@ -885,7 +774,8 @@ void gui_drv_field_init(geepro *gep, const char *title)
 
 void gui_drv_field_destroy(geepro *gep)
 {
-    gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->drv_vbox)->parent);
+    if(GUI(gep->gui)->drv_vbox) gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->drv_vbox)->parent);
+    GUI(gep->gui)->drv_vbox = NULL;
 }
 
 void gui_drv_field_add_image(geepro *gep, const char *file)
@@ -893,62 +783,77 @@ void gui_drv_field_add_image(geepro *gep, const char *file)
     GtkWidget *wg0;
     wg0 = gtk_image_new_from_file(file);
     gtk_container_add(GTK_CONTAINER(GUI(gep->gui)->drv_vbox), wg0);
+    gtk_widget_show_all(GTK_WIDGET(GUI(gep->gui)->drv_vbox)->parent);
 }
 
-void gui_drv_field_add_dipsw(geepro *gep, int len, long set, const char *desc)
+void gui_dipsw(geepro *gep, int len, long set, const char *desc)
 {
+    GtkWidget *wg0, *wg1, *wg2;
+    char tmp[8];
+    int i=0,mask;
 
-//    gui_drv_field_destroy(gep);
-    /* Obrazek programatora */
-//    GUI(gep->gui)->pict_pixbuf = NULL;
-//    wg0 = gtk_alignment_new(0.5, 0.5, 0, 0);
-//    gtk_container_add(GTK_CONTAINER(wg2), wg0);
-//    wg1 = gtk_drawing_area_new();
-//    gtk_drawing_area_size(GTK_DRAWING_AREA(wg1), PICT_AREA_WIDTH, PICT_AREA_HEIGHT);
-//    gtk_signal_connect(GTK_OBJECT(wg1), "expose_event", (GtkSignalFunc)gui_expose_pict, gep);
-//    gtk_signal_connect(GTK_OBJECT(wg1), "configure_event", (GtkSignalFunc)gui_configure_pict, gep);
-//    gtk_container_add(GTK_CONTAINER(wg0), wg1);
-//    GUI(gep->gui)->pict_da = wg1;
+    wg0 = gtk_table_new(i,2, FALSE);
+    memset(tmp, 0, 8);
+    
+    for(mask =0x80, i = 0; i < len; i++,mask >>= 1){
+	sprintf(tmp, "%X", i + 1);
+	wg1 = gtk_label_new(tmp);
+	wg2 = gtk_image_new_from_stock(set & mask ? GUI_DIPSW_ON : GUI_DIPSW_OFF, GUI(gep->gui)->icon_size);
+	gtk_table_attach(GTK_TABLE(wg0), wg1, i,i+1, 0,1, 0,0, 0,0);
+	gtk_table_attach(GTK_TABLE(wg0), wg2, i,i+1, 1,2, 0,0, 0,0);
+    }
 
-    /* DIP Switch */
-//    GUI(gep->gui)->dpsw_pixbuf = NULL;    
-//    wg1 = gtk_frame_new("DIP switch");
-//    gtk_frame_set_label_align(GTK_FRAME(wg1), 0.5, 0.5);
-//    gtk_container_set_border_width(GTK_CONTAINER(wg1), 5);
-//    gtk_container_add(GTK_CONTAINER(wg2), wg1);
-//    wg0 = gtk_alignment_new(0.5, 0.5, 0, 0);
-//    gtk_container_add(GTK_CONTAINER(wg1), wg0);
-//    wg1 = gtk_drawing_area_new();
-//    gtk_drawing_area_size(GTK_DRAWING_AREA(wg1), SW_AREA_WIDTH, SW_AREA_HEIGHT);
-//    gtk_signal_connect(GTK_OBJECT(wg1), "expose_event", (GtkSignalFunc)gui_expose_sw, gep);
-//    gtk_signal_connect(GTK_OBJECT(wg1), "configure_event", (GtkSignalFunc)gui_configure_sw, gep);
-//    gtk_container_add(GTK_CONTAINER(wg0), wg1);
-//    GUI(gep->gui)->dpsw_da = wg1;
-//    GUI(gep->gui)->dpsw_font = gdk_font_load("fixed");
-//    GUI(gep->gui)->dpsw_pix_on  = 
-//	gdk_pixmap_create_from_xpm_d(GTK_WIDGET(GUI(gep->gui)->wmain)->window, &mask, NULL, (gchar **)SW_ON_XPM);
-//    GUI(gep->gui)->dpsw_pix_off = 
-//	gdk_pixmap_create_from_xpm_d(GTK_WIDGET(GUI(gep->gui)->wmain)->window, &mask, NULL, (gchar **)SW_OFF_XPM);
+    if(desc){
+	wg1 = wg0;
+	wg0 = gtk_frame_new(desc);
+	gtk_frame_set_label_align(GTK_FRAME(wg0), 0.5, 0.5);
+	gtk_container_add(GTK_CONTAINER(wg0), wg1);
+    }
 
-
+    wg2 = gtk_hbox_new(FALSE,0);
+    gtk_container_set_border_width(GTK_CONTAINER(wg2), 5);
+    gtk_container_set_border_width(GTK_CONTAINER(wg0), 3);
+    gtk_box_pack_start(GTK_BOX(wg2), wg0, TRUE, FALSE, 0);
+    GUI(gep->gui)->tmp_wg = wg2;
 }
 
-void gui_willem_sets(geepro *gep)
+void gui_drv_field_add(geepro *gep)
 {
-    gui_drv_field_init(gep, "Ustawienia programatora");
-    gui_drv_field_add_image(gep, "./pixmaps/mcs48.xpm");
-    gui_drv_field_add_dipsw(gep, 12, 0, "DIP Switch");
+    gtk_box_pack_start(GTK_BOX(GUI(gep->gui)->drv_vbox), GTK_WIDGET(GUI(gep->gui)->tmp_wgx), TRUE, FALSE, 0);
+    gtk_widget_show_all(GUI(gep->gui)->drv_vbox);
 }
 
-static void gui_willem_set_defaults(geepro *gep)
+void gui_hbox_new(geepro *gep)
 {
-//    GUI(gep->gui)->dpsw_state = 0;
-//    GUI(gep->gui)->pict_view = NULL;
-//    GUI(gep->gui)->pict_willem = NULL;
-//    GUI(gep->gui)->pict_pcb = NULL;
+    GUI(gep->gui)->tmp_wgx = gtk_hbox_new(FALSE, 0);
+};
 
-//    gui_draw_dip_switch(gep);
-//    gui_draw_pict(gep);
+void gui_vbox_new(geepro *gep)
+{
+    GUI(gep->gui)->tmp_wgx = gtk_vbox_new(FALSE, 0);
+};
+
+void gui_box_add(geepro *gep)
+{
+    gtk_box_pack_start(GTK_BOX(GUI(gep->gui)->tmp_wgx), GTK_WIDGET(GUI(gep->gui)->tmp_wg), TRUE, FALSE, 0);
+}
+
+void gui_drv_field_add_jumper(geepro *gep, char state, const char *idx_up, const char *idx_dn)
+{
+    GtkWidget *wg0, *wg1;
+
+    wg0 = gtk_table_new(1,3, FALSE);
+    if(idx_up){
+	wg1 = gtk_label_new(idx_up);
+	gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 0,1, 0,0, 0,0);
+    }
+    wg1 = gtk_image_new_from_stock(state ? GUI_DIPSW_ON : GUI_DIPSW_OFF, GUI(gep->gui)->icon_size);
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 1,2, 0,0, 0,0);
+    if(idx_dn){
+	wg1 = gtk_label_new(idx_dn);
+	gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 2,3, 0,0, 0,0);
+    }
+    GUI(gep->gui)->tmp_wg = wg0;
 }
 
 /***************************************************************************************************************************/
@@ -1018,10 +923,15 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
 
 //    ifc->ifc_sel = ??? odczytac z konfiguracji dla danego programatora
     gep->ifc->ifc_sel = 0;
+    hw_destroy(gep);
     ___hardware_module___ = api;
     gep->ifc->cl = hw_get_iface();
     /* utworzenie wyboru interfaców */
     gui_add_iface_combox(gep);
+    /* usuniecie aktualnego ustawienia menu */
+    gui_drv_field_destroy(gep);
+    /* wywolanie gui dla programatora */
+    hw_gui_init(gep);
 
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
     gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->iface), "changed");    
@@ -1059,7 +969,7 @@ void gui_config(GtkWidget *wg, geepro *gep)
 
 void gui_set_default(geepro *gep)
 {
-    gui_willem_set_defaults(gep);
+//    gui_willem_set_defaults(gep);
     gtk_widget_show_all(GUI(gep->gui)->wmain);
     gui_stat_rfsh(gep);
 }
@@ -1079,12 +989,41 @@ void gui_set_statusbar(geepro *gep, char *tmp, char *str, ...)
 }
 
 /***********************************************************************************************************************/
+/* dodaje ikonki do listy ikon i obrazkow aplikacji */
+#define GUI_ICON_NEW(name, xpm)\
+    pixb = gdk_pixbuf_new_from_xpm_data((const char **)xpm);\
+    gis = gtk_icon_set_new_from_pixbuf(pixb);\
+    gtk_icon_factory_add(gifac, name, gis);\
+    gtk_icon_factory_add_default(gifac);
+
+static void gui_add_images(geepro *gep)
+{
+    GtkIconFactory *gifac = gtk_icon_factory_new();
+    GtkIconSet *gis;
+    GdkPixbuf *pixb;    
+    
+    /* pozycje przelaczników */
+    
+    GUI(gep->gui)->icon_size = gtk_icon_size_register("dupa", 10, 25);
+
+    GUI_ICON_NEW(GUI_DIPSW_ON, sw_on_xpm)
+    GUI_ICON_NEW(GUI_DIPSW_OFF, sw_off_xpm)
+    GUI_ICON_NEW(GUI_JUMPER_UP, sw_on_xpm)
+    GUI_ICON_NEW(GUI_JUMPER_DN, sw_off_xpm)
+    GUI_ICON_NEW(GUI_JUMPER_CLOSE, sw_on_xpm)
+    GUI_ICON_NEW(GUI_JUMPER_OPEN, sw_off_xpm)
+
+}
 
 void gui_menu_setup(geepro *gep)
 {
     GtkWidget *wg0, *wg1, *wg2, *wg3;
 
     gtk_init(&gep->argc, &gep->argv);
+
+    gui_add_images(gep);
+
+    GUI(gep->gui)->drv_vbox = NULL;
 
     GUI(gep->gui)->wmain = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_signal_connect(GTK_OBJECT(GUI(gep->gui)->wmain), "delete_event", GTK_SIGNAL_FUNC(gui_exit_program), gep);
@@ -1247,7 +1186,7 @@ void gui_menu_setup(geepro *gep)
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
     gui_willem_test(gep); /* ustawia strone testu programatora */
-    gui_willem_sets(gep); /* ustawia ramke ustawien programatora */
+//    gui_willem_sets(gep); /* ustawia ramke ustawien programatora */
 
     gui_set_default(gep);
 }

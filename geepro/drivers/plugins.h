@@ -1,6 +1,6 @@
 #ifndef __PLUGINS_H__
 #define __PLUGINS_H__
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -31,6 +31,8 @@
 #include "../src/iface.h"
 
 #include "../src/gepro.h"
+
+#include "../src/geepro.h"
 
 #define DRIVER_NAME(ptr)	(*(char **)ptr)
 
