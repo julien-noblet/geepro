@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -142,8 +142,8 @@ void gui_stat_rfsh(geepro *gep)
     }
 //  - dopisac odswiezenie status bar
     GUI(gep->gui)->pict_view = (GUI(gep->gui)->pcb) ? GUI(gep->gui)->pict_willem : GUI(gep->gui)->pict_pcb;
-    gui_draw_dip_switch(gep);
-    gui_draw_pict(gep);
+//    gui_draw_dip_switch(gep);
+//    gui_draw_pict(gep);
 //    gui_viewer_rfsh(gep);
 }
 
@@ -775,6 +775,7 @@ void gui_draw_pict(geepro *gep)
 {
     int pxx, pyy;
 
+return;
     gdk_drawable_get_size(GUI(gep->gui)->pict_pixbuf, &pxx, &pyy);
 
     gdk_draw_rectangle(GUI(gep->gui)->pict_pixbuf,
@@ -797,7 +798,7 @@ void gui_draw_dip_switch(geepro *gep)
     PangoLayout *pl = NULL;
     PangoFontDescription *pfd;
     char *sw_dsc[] = {SW_DESCRIPTION};
-
+return;
     pfd = pango_font_description_from_string(SW_FONT_DSC);
     gdk_drawable_get_size(GUI(gep->gui)->dpsw_pix_on, &sxx, &syy);
     gdk_drawable_get_size(GUI(gep->gui)->dpsw_pixbuf, &dxx, &dyy);
@@ -868,56 +869,86 @@ gint gui_expose_sw(GtkWidget *wg,GdkEventExpose *event, geepro *gep)
     return FALSE;
 }
 
-void gui_willem_sets(geepro *gep)
+/******************************************************************************************************************/
+/* Budowanie pola sterownika */
+void gui_drv_field_init(geepro *gep, const char *title)
 {
-    GtkWidget *wg0,*wg1, *wg2;
-    GdkBitmap *mask;
+    GtkWidget *wg0, *wg1;
 
-    wg2 = gtk_vbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(GUI(gep->gui)->prg_frame), wg2);
-
-    /* Obrazek programatora */
-    GUI(gep->gui)->pict_pixbuf = NULL;
-    wg0 = gtk_alignment_new(0.5, 0.5, 0, 0);
-    gtk_container_add(GTK_CONTAINER(wg2), wg0);
-    wg1 = gtk_drawing_area_new();
-    gtk_drawing_area_size(GTK_DRAWING_AREA(wg1), PICT_AREA_WIDTH, PICT_AREA_HEIGHT);
-    gtk_signal_connect(GTK_OBJECT(wg1), "expose_event", (GtkSignalFunc)gui_expose_pict, gep);
-    gtk_signal_connect(GTK_OBJECT(wg1), "configure_event", (GtkSignalFunc)gui_configure_pict, gep);
+    wg0 = gtk_frame_new(title);
+    gtk_container_border_width(GTK_CONTAINER(wg0), 3);
+    gtk_table_attach_defaults(GTK_TABLE(GUI(gep->gui)->main_table), wg0,  1, 2, 0, 2);
+    wg1 = gtk_vbox_new(FALSE,0);
     gtk_container_add(GTK_CONTAINER(wg0), wg1);
-    GUI(gep->gui)->pict_da = wg1;
+    GUI(gep->gui)->drv_vbox = wg1;
+}
+
+void gui_drv_field_destroy(geepro *gep)
+{
+    gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->drv_vbox)->parent);
+}
+
+void gui_drv_field_add_image(geepro *gep, const char *file)
+{
+    GtkWidget *wg0;
+    wg0 = gtk_image_new_from_file(file);
+    gtk_container_add(GTK_CONTAINER(GUI(gep->gui)->drv_vbox), wg0);
+}
+
+void gui_drv_field_add_dipsw(geepro *gep, int len, long set, const char *desc)
+{
+
+//    gui_drv_field_destroy(gep);
+    /* Obrazek programatora */
+//    GUI(gep->gui)->pict_pixbuf = NULL;
+//    wg0 = gtk_alignment_new(0.5, 0.5, 0, 0);
+//    gtk_container_add(GTK_CONTAINER(wg2), wg0);
+//    wg1 = gtk_drawing_area_new();
+//    gtk_drawing_area_size(GTK_DRAWING_AREA(wg1), PICT_AREA_WIDTH, PICT_AREA_HEIGHT);
+//    gtk_signal_connect(GTK_OBJECT(wg1), "expose_event", (GtkSignalFunc)gui_expose_pict, gep);
+//    gtk_signal_connect(GTK_OBJECT(wg1), "configure_event", (GtkSignalFunc)gui_configure_pict, gep);
+//    gtk_container_add(GTK_CONTAINER(wg0), wg1);
+//    GUI(gep->gui)->pict_da = wg1;
 
     /* DIP Switch */
-    GUI(gep->gui)->dpsw_pixbuf = NULL;    
-    wg1 = gtk_frame_new("DIP switch");
-    gtk_frame_set_label_align(GTK_FRAME(wg1), 0.5, 0.5);
-    gtk_container_set_border_width(GTK_CONTAINER(wg1), 5);
-    gtk_container_add(GTK_CONTAINER(wg2), wg1);
-    wg0 = gtk_alignment_new(0.5, 0.5, 0, 0);
-    gtk_container_add(GTK_CONTAINER(wg1), wg0);
-    wg1 = gtk_drawing_area_new();
-    gtk_drawing_area_size(GTK_DRAWING_AREA(wg1), SW_AREA_WIDTH, SW_AREA_HEIGHT);
-    gtk_signal_connect(GTK_OBJECT(wg1), "expose_event", (GtkSignalFunc)gui_expose_sw, gep);
-    gtk_signal_connect(GTK_OBJECT(wg1), "configure_event", (GtkSignalFunc)gui_configure_sw, gep);
-    gtk_container_add(GTK_CONTAINER(wg0), wg1);
-    GUI(gep->gui)->dpsw_da = wg1;
-    GUI(gep->gui)->dpsw_font = gdk_font_load("fixed");
-    GUI(gep->gui)->dpsw_pix_on  = 
-	gdk_pixmap_create_from_xpm_d(GTK_WIDGET(GUI(gep->gui)->wmain)->window, &mask, NULL, (gchar **)SW_ON_XPM);
-    GUI(gep->gui)->dpsw_pix_off = 
-	gdk_pixmap_create_from_xpm_d(GTK_WIDGET(GUI(gep->gui)->wmain)->window, &mask, NULL, (gchar **)SW_OFF_XPM);
+//    GUI(gep->gui)->dpsw_pixbuf = NULL;    
+//    wg1 = gtk_frame_new("DIP switch");
+//    gtk_frame_set_label_align(GTK_FRAME(wg1), 0.5, 0.5);
+//    gtk_container_set_border_width(GTK_CONTAINER(wg1), 5);
+//    gtk_container_add(GTK_CONTAINER(wg2), wg1);
+//    wg0 = gtk_alignment_new(0.5, 0.5, 0, 0);
+//    gtk_container_add(GTK_CONTAINER(wg1), wg0);
+//    wg1 = gtk_drawing_area_new();
+//    gtk_drawing_area_size(GTK_DRAWING_AREA(wg1), SW_AREA_WIDTH, SW_AREA_HEIGHT);
+//    gtk_signal_connect(GTK_OBJECT(wg1), "expose_event", (GtkSignalFunc)gui_expose_sw, gep);
+//    gtk_signal_connect(GTK_OBJECT(wg1), "configure_event", (GtkSignalFunc)gui_configure_sw, gep);
+//    gtk_container_add(GTK_CONTAINER(wg0), wg1);
+//    GUI(gep->gui)->dpsw_da = wg1;
+//    GUI(gep->gui)->dpsw_font = gdk_font_load("fixed");
+//    GUI(gep->gui)->dpsw_pix_on  = 
+//	gdk_pixmap_create_from_xpm_d(GTK_WIDGET(GUI(gep->gui)->wmain)->window, &mask, NULL, (gchar **)SW_ON_XPM);
+//    GUI(gep->gui)->dpsw_pix_off = 
+//	gdk_pixmap_create_from_xpm_d(GTK_WIDGET(GUI(gep->gui)->wmain)->window, &mask, NULL, (gchar **)SW_OFF_XPM);
 
+
+}
+
+void gui_willem_sets(geepro *gep)
+{
+    gui_drv_field_init(gep, "Ustawienia programatora");
+    gui_drv_field_add_image(gep, "./pixmaps/mcs48.xpm");
+    gui_drv_field_add_dipsw(gep, 12, 0, "DIP Switch");
 }
 
 static void gui_willem_set_defaults(geepro *gep)
 {
-    GUI(gep->gui)->dpsw_state = 0;
-    GUI(gep->gui)->pict_view = NULL;
-    GUI(gep->gui)->pict_willem = NULL;
-    GUI(gep->gui)->pict_pcb = NULL;
+//    GUI(gep->gui)->dpsw_state = 0;
+//    GUI(gep->gui)->pict_view = NULL;
+//    GUI(gep->gui)->pict_willem = NULL;
+//    GUI(gep->gui)->pict_pcb = NULL;
 
-    gui_draw_dip_switch(gep);
-    gui_draw_pict(gep);
+//    gui_draw_dip_switch(gep);
+//    gui_draw_pict(gep);
 }
 
 /***************************************************************************************************************************/
@@ -1130,6 +1161,7 @@ void gui_menu_setup(geepro *gep)
 /* --> notebook page 1 'strona glowna' <--- */
 /* ======================================== */
     wg2 = gtk_table_new(2, 2, FALSE); /* tabela pakujaca karty glownej */
+    GUI(gep->gui)->main_table = wg2;
     wg3 = gtk_label_new(LAB_NOTE_1);
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg2, wg3);
 /* Ramka ukladu */
@@ -1191,11 +1223,6 @@ void gui_menu_setup(geepro *gep)
     gtk_table_attach(GTK_TABLE(wg3), gui_prog_list(gep),  2, 4, 0, 1, GTK_FILL | GTK_EXPAND, 0, 5, 5);
     gui_add_iface_combox(gep);
 
-/* Ramka programatora obrazek, dip sw itp */
-    wg1 = gtk_frame_new("Ustawienia programatora");
-    gtk_container_border_width(GTK_CONTAINER(wg1), 3);
-    gtk_table_attach_defaults(GTK_TABLE(wg2), wg1,  1, 2, 0, 2);
-    GUI(gep->gui)->prg_frame = wg1;
 
 /* ======================================= */
 /* -----> notebook page 2 'bufor' <------- */

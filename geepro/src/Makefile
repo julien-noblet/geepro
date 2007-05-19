@@ -1,8 +1,10 @@
-## $Revision: 1.1.1.1 $
+## $Revision: 1.2 $
 
 #objs = buffer.o timer.o main.o chip.o parport.o iface.o dummy.o
 
 opts = -Wall -O2
+
+.PHONY:clean
 
 libskel.a: $(objs)
 	ar rcs libskel.a $(objs)

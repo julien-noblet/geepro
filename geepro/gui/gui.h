@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -50,6 +50,7 @@ typedef struct
     void *toolbox;      /* toolbox dla doczepiania kontrolek operacji na ukladzie */
     void *notebook;     /* notebook, dla dodawania kart */    
     void *table;        /* tabela pakujaca, zawierjaca przycisk wyboru urzadzenia */
+    void *main_table;	/* main pack table */
 
     void *prog_combox;  /* combox wyboru programatora */
     void *iface;        /* combox wyboru urzadzenia */
@@ -58,21 +59,10 @@ typedef struct
     void *crc_entry;    /* pole sumy CRC */
     void *chip_desc;    /* pole opisu ukladu */
     void *status_bar;   /* pasek statusu u dolu okna */
-    void *prg_frame;    /* ramka ustawien programatora na pierwszej stronie notebooka  */
+//    void *prg_frame;    /* ramka ustawien programatora na pierwszej stronie notebooka  */
+    void *drv_vbox;
     /* bufor */
     void *bineditor;
-//    void *view_data;	/* obszar rysunkowy listy bufora */
-//    void *view_adj;     /* suwak viewera */
-//    int view_cell_width;
-//    int view_cell_height;
-//    int view_grid_start;
-//    int view_grid_end;
-//    int view_grid_cols;
-//    int view_grid_rows;
-//    int view_grid_top;
-//    int view_address_mark;
-//    int view_old_addr_hint;
-
 
     void *test_page;	/* zakladka testowa */
     int  address;	/* adres */

@@ -1,4 +1,4 @@
-## $Revision: 1.2 $
+## $Revision: 1.3 $
 
 progname=geepro
 
@@ -11,6 +11,11 @@ statlibs= libgui.a
 objs=files.o buffer.o chip.o dummy.o iface.o timer.o parport.o main.o
 objs_lok= ./src/files.o ./src/buffer.o ./src/chip.o ./src/dummy.o ./src/iface.o ./src/timer.o ./src/parport.o ./src/main.o
 
+MAKE_EXT= make -C
+
+.PHONY: clean
+.PHONY: install
+.PHONY: dist
 
 ALL: lang.h $(progname) documentation
 
@@ -20,54 +25,60 @@ $(progname): $(plugins) $(statlibs) $(objs)
 	gcc -Wall -o $(progname) $(objs_lok)  $(gtk_libs) $(local_libs) -ldl -rdynamic
 
 documentation:
-	make -C ./doc
+	$(MAKE_EXT) ./doc
 
 eng: 
-	make -C ./intl eng
+	$(MAKE_EXT) ./intl eng
 
 pl: 
-	make -C ./intl pl
+	$(MAKE_EXT) ./intl pl
 
 files.o:
-	make -C ./src files.o
+	$(MAKE_EXT) ./src files.o
 
 buffer.o:
-	make -C ./src buffer.o
+	$(MAKE_EXT) ./src buffer.o
 
 chip.o:
-	make -C ./src chip.o
+	$(MAKE_EXT) ./src chip.o
 
 dummy.o:
-	make -C ./src dummy.o
+	$(MAKE_EXT) ./src dummy.o
 
 iface.o:
-	make -C ./src iface.o
+	$(MAKE_EXT) ./src iface.o
 
 timer.o:
-	make -C ./src timer.o
+	$(MAKE_EXT) ./src timer.o
 
 parport.o:
-	make -C ./src parport.o
+	$(MAKE_EXT) ./src parport.o
 
 main.o:
-	make -C ./src main.o
+	$(MAKE_EXT) ./src main.o
 
 libgui.a:
-	make -C ./gui
+	$(MAKE_EXT) ./gui
 
 make_drivers:
-	make -C ./drivers
+	$(MAKE_EXT) ./drivers
 
 make_plugins:
-	make -C ./plugins
+	$(MAKE_EXT) ./plugins
 
 clean:
-	rm -f $(progname)
-	make -C ./drivers clean
-	make -C ./plugins clean
-	make -C ./gui clean
-	make -C ./src clean
-	make -C ./doc clean
-	make -C ./intl clean
-	rm -f ./debug/$(progname)
+	$(RM) $(progname)
+	$(MAKE_EXT) ./drivers clean
+	$(MAKE_EXT) ./plugins clean
+	$(MAKE_EXT) ./gui clean
+	$(MAKE_EXT) ./src clean
+	$(MAKE_EXT) ./doc clean
+	$(MAKE_EXT) ./intl clean
+	$(RM) ./debug/$(progname)
+
+install:
+	echo "No install available yet"
+
+dist:
+	echo "No dist package build implemented yet"
 
