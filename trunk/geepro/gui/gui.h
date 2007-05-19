@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -59,20 +59,23 @@ typedef struct
     void *crc_entry;    /* pole sumy CRC */
     void *chip_desc;    /* pole opisu ukladu */
     void *status_bar;   /* pasek statusu u dolu okna */
-//    void *prg_frame;    /* ramka ustawien programatora na pierwszej stronie notebooka  */
     void *drv_vbox;
     /* bufor */
     void *bineditor;
+    int icon_size;
+    
+    void *tmp_wg;
+    void *tmp_wgx;
 
     void *test_page;	/* zakladka testowa */
     int  address;	/* adres */
 
-    void *dpsw_pixbuf;  /* ustawienie DIP switcha w willem-ie - pixmapa */
-    void *dpsw_da;      /* ustawienie DIP switcha w willem-ie - drwaing area */    
-    void *dpsw_font;	/* font opsu DIP SW */
-    void *dpsw_pix_on;
-    void *dpsw_pix_off;
-    int  dpsw_state;
+//    void *dpsw_pixbuf;  /* ustawienie DIP switcha w willem-ie - pixmapa */
+//    void *dpsw_da;      /* ustawienie DIP switcha w willem-ie - drwaing area */    
+//    void *dpsw_font;	/* font opsu DIP SW */
+//    void *dpsw_pix_on;
+//    void *dpsw_pix_off;
+//    int  dpsw_state;
     
     void *pict_pixbuf;
     void *pict_da;
@@ -90,7 +93,7 @@ typedef struct
     void *test_addr_spin_bt;
     void *test_data_spin_bt;
     void *test_serial_entry;
-    void *test_dpsw;
+//    void *test_dpsw;
 
     sqw  sqwg;    
 
@@ -98,6 +101,14 @@ typedef struct
     void *action[GUI_MAX_ACTIONS];
 
 } gui;
+
+
+#define GUI_DIPSW_ON		"dpsw-on"
+#define GUI_DIPSW_OFF		"dpsw-off"
+#define GUI_JUMPER_UP		"dpsw-on"
+#define GUI_JUMPER_DN		"dpsw-off"
+#define GUI_JUMPER_OPEN		"dpsw-on"
+#define GUI_JUMPER_CLOSE	"dpsw-off"
 
 
 /* drobny font */
@@ -220,5 +231,9 @@ extern char gui_cmp_pls(geepro*,int a,int b);
 extern int  gui_register_image(geepro*,char**);
 extern void gui_exit(geepro *gep);
 extern void gui_set_statusbar(geepro *gep, char *tmp, char *fmt, ...);
+
+
+extern void gui_dipsw(geepro *gep, int, long, const char*);
+
 
 #endif

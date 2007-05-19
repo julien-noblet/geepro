@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -256,8 +256,22 @@ static int willem_test_connection()
     return 1;
 }
 
-static int willem_gui_init()
+static void willem_set_gui_main(geepro *gep)
 {
+    gui_drv_field_destroy(gep);
+    gui_drv_field_init(gep, "Ustawienia programatora");
+    gui_drv_field_add_image(gep, "./pixmaps/mcs48.png");
+    gui_hbox_new(gep);
+    gui_drv_field_add_jumper(gep, 0, "290x", NULL);
+    gui_box_add(gep);
+    gui_dipsw(gep, 12, 0xaa, "DIP Switch");
+    gui_box_add(gep);
+    gui_drv_field_add(gep);
+}
+
+static int willem_gui_init(void *ptr)
+{
+    willem_set_gui_main((geepro*)ptr);
     return 0;
 }
 
@@ -282,6 +296,7 @@ static int willem_close(void)
     return parport_cleanup();
 }
 
+
 /**************************************************************************************************************************/
 
 int willem3_hardware_module(int funct, int val, void *ptr)
@@ -290,7 +305,7 @@ int willem3_hardware_module(int funct, int val, void *ptr)
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = "WILLEM 3.0";
 	case HW_IFACE:	  return IFACE_LPT;
-	case HW_GINIT:    return willem_gui_init();
+	case HW_GINIT:    return willem_gui_init(ptr);
 	case HW_TEST:	  return willem_test_connection();
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return willem_open(ptr,val);
@@ -337,7 +352,7 @@ int willem4_hardware_module(int funct, int val, void *ptr)
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = "PCB 3";
 	case HW_IFACE:	  return IFACE_LPT;
-	case HW_GINIT:    return willem_gui_init();
+	case HW_GINIT:    return willem_gui_init(ptr);
 	case HW_TEST:	  return willem_test_connection();
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return pcb3_open(ptr,val);
@@ -383,7 +398,7 @@ int willempro2_hardware_module(int funct, int val, void *ptr)
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = "WILLEM PRO 2";
 	case HW_IFACE:	  return IFACE_LPT;
-	case HW_GINIT:    return willem_gui_init();
+	case HW_GINIT:    return willem_gui_init(ptr);
 	case HW_TEST:	  return willem_test_connection();
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return pcb3_open(ptr,val);

@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -39,6 +39,7 @@
 #define HW_DELAY	11
 #define HW_LATENCY      12
 #define HW_NAME		13
+#define HW_DESTROY	14
 
 /* specyficzne dla programatora eprom */
 #define HW_SET_DATA	  1024
@@ -77,7 +78,7 @@ extern hw_module_type ___hardware_module___;
 /* makra pseudofunkcji */
 
 #define hw_get_iface()		___hardware_module___( HW_IFACE,  0, NULL)
-#define hw_gui_init()		___hardware_module___( HW_GINIT,  0, NULL)
+#define hw_gui_init(geepro)	___hardware_module___( HW_GINIT,  0, geepro)
 #define hw_test_conn()		___hardware_module___( HW_TEST,   0, NULL)
 #define hw_reset()		___hardware_module___( HW_RESET,  0, NULL)
 #define hw_open(dev, flags)	___hardware_module___( HW_OPEN,   flags, dev)
@@ -89,6 +90,7 @@ extern hw_module_type ___hardware_module___;
 #define hw_delay(val)		___hardware_module___( HW_DELAY,  val, NULL)	/* opoznienie w us */
 #define hw_low_latency(val)	___hardware_module___( HW_LATENCY,val, NULL)	/* jesli root to właczenie/ wyłaczenie zmiany schedulera */
 #define hw_get_name(val)	___hardware_module___( HW_NAME, 0, &(val))
+#define hw_destroy(geepro)	___hardware_module___( HW_DESTROY, 0, geepro)
 
 /* specyficzne dla programatora eprom */
 #define hw_set_data(val)	___hardware_module___( HW_SET_DATA, val, NULL)
