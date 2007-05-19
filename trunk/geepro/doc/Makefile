@@ -1,3 +1,8 @@
+## $Revision: 1.2 $
+#
+
+,PHONY:clean
+
 ALL:
 	echo "build dummy doc"
 

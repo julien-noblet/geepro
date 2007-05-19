@@ -1,4 +1,4 @@
-## $Revision: 1.1.1.1 $
+## $Revision: 1.2 $
 
 debug = -g
 
@@ -13,6 +13,8 @@ extra=-D NO_PRINTER_SUPPORT=1
 #endif
 
 OBJS = gui.o bineditor.o checksum.o
+
+.PHONY:clean
 
 ALL: libgui.a
 

@@ -1,8 +1,10 @@
-## $Revision: 1.1.1.1 $
+## $Revision: 1.2 $
 # 
 
 CC  = gcc
 OPT = -Wall -fPIC -g -c
+
+.PHONY:clean
 
 ALL:
 	for k in $$(ls *.c | sed 's/\.c/\.plug/g'); do make $$k; done
