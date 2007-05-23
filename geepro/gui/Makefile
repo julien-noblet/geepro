@@ -1,10 +1,10 @@
-## $Revision: 1.2 $
+## $Revision: 1.3 $
 
 debug = -g
 
 opts = $(debug) -Wall -O2 
 
-gtk_conf=`pkg-config --cflags gtk+-2.0 cairo`
+gtk_conf=`pkg-config --cflags gtk+-2.0 cairo libxml-2.0`
 gtk_version=$(pkg-config --modversion gtk+-2.0)
 
 #if $(gtk_version) < 2.10
@@ -12,7 +12,7 @@ extra=-D NO_PRINTER_SUPPORT=1
 #echo "No printer"
 #endif
 
-OBJS = gui.o bineditor.o checksum.o
+OBJS = gui.o bineditor.o checksum.o gui_xml.o
 
 .PHONY:clean
 
@@ -30,6 +30,8 @@ bineditor.o: bineditor.c bineditor.h checksum.h
 checksum.o: checksum.c checksum.h 
 	gcc -c $(opts) checksum.c
 
+gui_xml.o: gui_xml.c gui_xml.h 
+	gcc -c $(opts) $(gtk_conf) gui_xml.c
 
 clean:
 	rm -f *.o

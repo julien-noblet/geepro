@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -30,6 +30,7 @@
 #include "../src/buffer.h"
 #include "../src/main.h"
 #include "gui.h"
+#include "gui_xml.h"
 #include "../src/chip.h"
 #include "../pixmaps/img_idx.h"
 #include "../src/parport.h"
@@ -68,7 +69,6 @@ void gui_dynamic_widget_purge(fo_idx **fo, fo_idx **ff);
 void gui_dialog_bt(GtkWidget *wg, char *name);
 void gui_add_action(geepro *gep, char *stock_name, gchar *tip, int id);
 void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep);
-void gui_dipsw(geepro *gep, int len, long set, const char *desc);
 /***************************************************************************************************/
 
 void gui_drawable_rfsh(GtkWidget *wg)
@@ -754,106 +754,8 @@ void gui_willem_test(geepro *gep)
     gtk_widget_set_usize(tmp_1,25,25);
     GUI(gep->gui)->test_serial_entry = tmp_1;
 /* Ustawić wlasciwa pozycje */
-    gui_dipsw(gep, 12, 0x0001, "DIP Switch");
+//    gui_dipsw(gep, 12, 0x0001, "DIP Switch");
     gtk_box_pack_start(GTK_BOX(tmp_2), GTK_WIDGET(GUI(gep->gui)->tmp_wg), FALSE, FALSE, 0);
-}
-
-/******************************************************************************************************************/
-/* Budowanie pola sterownika */
-void gui_drv_field_init(geepro *gep, const char *title)
-{
-    GtkWidget *wg0, *wg1;
-
-    wg0 = gtk_frame_new(title);
-    gtk_container_border_width(GTK_CONTAINER(wg0), 3);
-    gtk_table_attach_defaults(GTK_TABLE(GUI(gep->gui)->main_table), wg0,  1, 2, 0, 2);
-    wg1 = gtk_vbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(wg0), wg1);
-    GUI(gep->gui)->drv_vbox = wg1;
-}
-
-void gui_drv_field_destroy(geepro *gep)
-{
-    if(GUI(gep->gui)->drv_vbox) gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->drv_vbox)->parent);
-    GUI(gep->gui)->drv_vbox = NULL;
-}
-
-void gui_drv_field_add_image(geepro *gep, const char *file)
-{
-    GtkWidget *wg0;
-    wg0 = gtk_image_new_from_file(file);
-    gtk_container_add(GTK_CONTAINER(GUI(gep->gui)->drv_vbox), wg0);
-    gtk_widget_show_all(GTK_WIDGET(GUI(gep->gui)->drv_vbox)->parent);
-}
-
-void gui_dipsw(geepro *gep, int len, long set, const char *desc)
-{
-    GtkWidget *wg0, *wg1, *wg2;
-    char tmp[8];
-    int i=0,mask;
-
-    wg0 = gtk_table_new(i,2, FALSE);
-    memset(tmp, 0, 8);
-    
-    for(mask =0x80, i = 0; i < len; i++,mask >>= 1){
-	sprintf(tmp, "%X", i + 1);
-	wg1 = gtk_label_new(tmp);
-	wg2 = gtk_image_new_from_stock(set & mask ? GUI_DIPSW_ON : GUI_DIPSW_OFF, GUI(gep->gui)->icon_size);
-	gtk_table_attach(GTK_TABLE(wg0), wg1, i,i+1, 0,1, 0,0, 0,0);
-	gtk_table_attach(GTK_TABLE(wg0), wg2, i,i+1, 1,2, 0,0, 0,0);
-    }
-
-    if(desc){
-	wg1 = wg0;
-	wg0 = gtk_frame_new(desc);
-	gtk_frame_set_label_align(GTK_FRAME(wg0), 0.5, 0.5);
-	gtk_container_add(GTK_CONTAINER(wg0), wg1);
-    }
-
-    wg2 = gtk_hbox_new(FALSE,0);
-    gtk_container_set_border_width(GTK_CONTAINER(wg2), 5);
-    gtk_container_set_border_width(GTK_CONTAINER(wg0), 3);
-    gtk_box_pack_start(GTK_BOX(wg2), wg0, TRUE, FALSE, 0);
-    GUI(gep->gui)->tmp_wg = wg2;
-}
-
-void gui_drv_field_add(geepro *gep)
-{
-    gtk_box_pack_start(GTK_BOX(GUI(gep->gui)->drv_vbox), GTK_WIDGET(GUI(gep->gui)->tmp_wgx), TRUE, FALSE, 0);
-    gtk_widget_show_all(GUI(gep->gui)->drv_vbox);
-}
-
-void gui_hbox_new(geepro *gep)
-{
-    GUI(gep->gui)->tmp_wgx = gtk_hbox_new(FALSE, 0);
-};
-
-void gui_vbox_new(geepro *gep)
-{
-    GUI(gep->gui)->tmp_wgx = gtk_vbox_new(FALSE, 0);
-};
-
-void gui_box_add(geepro *gep)
-{
-    gtk_box_pack_start(GTK_BOX(GUI(gep->gui)->tmp_wgx), GTK_WIDGET(GUI(gep->gui)->tmp_wg), TRUE, FALSE, 0);
-}
-
-void gui_drv_field_add_jumper(geepro *gep, char state, const char *idx_up, const char *idx_dn)
-{
-    GtkWidget *wg0, *wg1;
-
-    wg0 = gtk_table_new(1,3, FALSE);
-    if(idx_up){
-	wg1 = gtk_label_new(idx_up);
-	gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 0,1, 0,0, 0,0);
-    }
-    wg1 = gtk_image_new_from_stock(state ? GUI_DIPSW_ON : GUI_DIPSW_OFF, GUI(gep->gui)->icon_size);
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 1,2, 0,0, 0,0);
-    if(idx_dn){
-	wg1 = gtk_label_new(idx_dn);
-	gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 2,3, 0,0, 0,0);
-    }
-    GUI(gep->gui)->tmp_wg = wg0;
 }
 
 /***************************************************************************************************************************/
@@ -929,9 +831,9 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     /* utworzenie wyboru interfaców */
     gui_add_iface_combox(gep);
     /* usuniecie aktualnego ustawienia menu */
-    gui_drv_field_destroy(gep);
+//    gui_drv_field_destroy(gep);
     /* wywolanie gui dla programatora */
-    hw_gui_init(gep);
+//!    hw_gui_init(gep);
 
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
     gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->iface), "changed");    
@@ -1177,18 +1079,19 @@ void gui_menu_setup(geepro *gep)
 /* ======================================= */
 /* ------> notebook page 3 'test' <------- */
 /* ======================================= */
-    wg0 = gtk_hbox_new(FALSE, 0);
-    wg2 = gtk_label_new(LAB_NOTE_3);
-    gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg2);
-    GUI(gep->gui)->test_page = wg0;
+//    wg0 = gtk_hbox_new(FALSE, 0);
+//    wg2 = gtk_label_new(LAB_NOTE_3);
+//    gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg2);
+//    GUI(gep->gui)->test_page = wg0;
 
 
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-    gui_willem_test(gep); /* ustawia strone testu programatora */
+//    gui_willem_test(gep); /* ustawia strone testu programatora */
 //    gui_willem_sets(gep); /* ustawia ramke ustawien programatora */
-
     gui_set_default(gep);
+    
+    gui_xml_create(GUI(gep->gui), "file://./drivers/willem.xml", "info", "");
 }
 
 static char gui_progress_bar_exit = 0;
