@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -99,6 +99,7 @@ typedef struct
 
     /* tablica wskaznikow do przycisków akcji */
     void *action[GUI_MAX_ACTIONS];
+    void *xml;
 
 } gui;
 
@@ -231,9 +232,5 @@ extern char gui_cmp_pls(geepro*,int a,int b);
 extern int  gui_register_image(geepro*,char**);
 extern void gui_exit(geepro *gep);
 extern void gui_set_statusbar(geepro *gep, char *tmp, char *fmt, ...);
-
-
-extern void gui_dipsw(geepro *gep, int, long, const char*);
-
 
 #endif
