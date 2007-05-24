@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -1075,20 +1075,8 @@ void gui_menu_setup(geepro *gep)
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg3);
     GUI(gep->gui)->bineditor = wg0;
 
-/* to ma byc w przyszlosci dynamiczne */
-/* ======================================= */
-/* ------> notebook page 3 'test' <------- */
-/* ======================================= */
-//    wg0 = gtk_hbox_new(FALSE, 0);
-//    wg2 = gtk_label_new(LAB_NOTE_3);
-//    gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg2);
-//    GUI(gep->gui)->test_page = wg0;
-
-
 /*--------------------------------------------------------------------------------------------------------------------------*/
 
-//    gui_willem_test(gep); /* ustawia strone testu programatora */
-//    gui_willem_sets(gep); /* ustawia ramke ustawien programatora */
     gui_set_default(gep);
     
     gui_xml_create(GUI(gep->gui), "file://./drivers/willem.xml", "info", "");

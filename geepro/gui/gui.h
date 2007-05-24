@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -104,8 +104,8 @@ typedef struct
 } gui;
 
 
-#define GUI_DIPSW_ON		"dpsw-on"
-#define GUI_DIPSW_OFF		"dpsw-off"
+#define GUI_DIPSW_ON		"dpsw-off"
+#define GUI_DIPSW_OFF		"dpsw-on"
 #define GUI_JUMPER_UP		"dpsw-on"
 #define GUI_JUMPER_DN		"dpsw-off"
 #define GUI_JUMPER_OPEN		"dpsw-on"

@@ -1,8 +1,8 @@
-## $Revision: 1.3 $
+## $Revision: 1.4 $
 
 progname=geepro
 
-gtk_libs=`pkg-config --libs gtk+-2.0 cairo`
+gtk_libs=`pkg-config --libs gtk+-2.0 cairo libxml-2.0`
 
 plugins=make_drivers make_plugins
 local_libs = -L./gui  -lgui
