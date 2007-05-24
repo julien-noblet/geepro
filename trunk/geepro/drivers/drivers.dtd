@@ -23,6 +23,7 @@
 <!ELEMENT dipswitch EMPTY>
 <!ELEMENT jumper EMPTY>
 <!ELEMENT image EMPTY>
+<!ELEMENT label EMPTY>
 <!ELEMENT description (#PCDATA)>
 <!ELEMENT button EMPTY>
 <!ELEMENT chbutton EMPTY>
@@ -40,11 +41,16 @@
     shadow (in|out|etched_in|etched_out|none) "in"
     %position;
 >
-<!ATTLIST table dim CDATA #REQUIRED>
+<!ATTLIST table 
+    dim CDATA #REQUIRED
+    equal (false|true) "false"
+    %position;
+>
 <!ATTLIST dipswitch 
     name CDATA	#IMPLIED
     len  CDATA  #REQUIRED
     value CDATA #REQUIRED
+    reversed (false|true) "false"
     %position;
 >
 <!ATTLIST jumper 
@@ -55,13 +61,14 @@
 >
 <!ATTLIST button 
     id ID #REQUIRED
+    sensitive (false | true) "true"
     label CDATA #REQUIRED
     %position;
 >
 <!ATTLIST chbutton 
     id ID #REQUIRED
-    sensitive (0 | 1) "1"
-    lab (right|left) "left"
+    sensitive (false | true) "true"
+    place (right|left) "left"
     label CDATA #REQUIRED
     %position;
 >
@@ -69,12 +76,15 @@
     id ID #REQUIRED
     type (hex | dec) "dec"
     max CDATA #REQUIRED
-    label CDATA #REQUIRED
+    size CDATA #IMPLIED
+    sensitive (false | true) "true"
     %position;
 >
 <!ATTLIST entry 
     id ID #REQUIRED
-    editable (0 | 1) "1"
+    sensitive (false | true) "true"
+    editable (false | true) "true"
+    size CDATA #IMPLIED
     %position;
 >
 <!ATTLIST image 
@@ -93,3 +103,8 @@
     %position;
 >
 
+<!ATTLIST label
+    text CDATA #REQUIRED
+    align CDATA #IMPLIED
+    %position;
+>
