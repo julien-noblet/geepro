@@ -1,4 +1,4 @@
-/* $Revision: 1.5 $ */
+/* $Revision: 1.6 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -30,6 +30,7 @@
 
 #define GUI(x)	((gui *)x)
 
+/*
 typedef struct
 {
     void *wper;
@@ -42,6 +43,7 @@ typedef struct
     int len;
     int seq;
 } sqw;
+*/
 
 typedef struct
 {
@@ -59,47 +61,16 @@ typedef struct
     void *crc_entry;    /* pole sumy CRC */
     void *chip_desc;    /* pole opisu ukladu */
     void *status_bar;   /* pasek statusu u dolu okna */
-    void *drv_vbox;
-    /* bufor */
-    void *bineditor;
-    int icon_size;
-    
-    void *tmp_wg;
-    void *tmp_wgx;
 
-    void *test_page;	/* zakladka testowa */
-    int  address;	/* adres */
-
-//    void *dpsw_pixbuf;  /* ustawienie DIP switcha w willem-ie - pixmapa */
-//    void *dpsw_da;      /* ustawienie DIP switcha w willem-ie - drwaing area */    
-//    void *dpsw_font;	/* font opsu DIP SW */
-//    void *dpsw_pix_on;
-//    void *dpsw_pix_off;
-//    int  dpsw_state;
-    
-    void *pict_pixbuf;
-    void *pict_da;
-    
-    void *pict_view;
-    void *pict_willem;
-    void *pict_pcb;
+    void *bineditor;	/* edytor binarny bufora */
+    int icon_size;	/* zarejestrowany rozmiar suwaków jumperów i przelaczników  */
+    void *xml;		/* gui budowane dynamicznie przez sterownik programatora na podstawie xml-a */
     
     void *progress_win;    /* pasek postepu */
     void *progress_bar;    /* pasek postepu */
 
-    /* tymczasowe, w przyszlosci do likwidacji */
-    int pcb;		 /* jesli 1 PCB3, jesli 0 willem */
-    void *test_pins[32]; /* piny ZIF-a */
-    void *test_addr_spin_bt;
-    void *test_data_spin_bt;
-    void *test_serial_entry;
-//    void *test_dpsw;
-
-    sqw  sqwg;    
-
     /* tablica wskaznikow do przycisków akcji */
     void *action[GUI_MAX_ACTIONS];
-    void *xml;
 
 } gui;
 

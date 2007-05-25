@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* hex, binary viewer, editor, kontrolka GTK
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -25,9 +25,108 @@
 #include <libxml/tree.h>
 #include "gui_xml.h"
 
-static void gui_xml_parse_element(gui *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, const char *parm);
+//#define DEBUG(fmt, p...)	printf("|-- DEBUG --> " fmt "\n", ## p)
+#define DEBUG(fmt, p...)
 
-static void gui_xml_container_add(gui *g, xmlNode *cur, xmlDocPtr doc, GtkWidget *parent, GtkWidget *child, char recursive, const char *parm)
+static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, const char *parm);
+
+static void gui_xml_event_default(gui_xml_ev *ev, int val, const char *sval)
+{
+    printf("{default dummy xml event handler}: widget: %i '%s' value: %i svalue: '%s'\n", ev->type, ev->id, val, sval);
+}
+
+static void gui_xml_gtk_event_handler(GtkWidget *wg, gui_xml_ev *gx)
+{
+    int val = 0;
+    const char *sval;
+    gui_xml *p = ((gui_xml*)gx->root_parent);
+
+    if(p->suppress) return; /* stlumienie echa sygnalu */
+
+    DEBUG("Event: %i %s", gx->type, gx->id);
+
+    sval ="";
+    switch(gx->type){
+	case GUI_XML_BUTTON: val = 1; break;
+	case GUI_XML_SPIN_BUTTON: val = gtk_spin_button_get_value(GTK_SPIN_BUTTON(gx->widget)); break;
+	case GUI_XML_CHECK_BUTTON: val = GTK_TOGGLE_BUTTON(gx->widget)->active; break;
+	case GUI_XML_ENTRY: val = 0; sval = gtk_entry_get_text(GTK_ENTRY(gx->widget)); break;
+    }
+
+    p->ev(gx, val, sval);
+}
+
+static gui_xml_ev *gui_xml_event_lookup(gui_xml *g, const char *id, int type)
+{
+    gui_xml_ev *ev = g->event;
+    
+    for(; ev; ev = ev->next){
+	if(ev->id && ev->type){
+	    if(!strcmp(ev->id, id) && (ev->type == type)) return ev;
+	}
+    }
+    return NULL;
+}
+
+static void gui_xml_event_destroy(gui_xml *g)
+{
+    gui_xml_ev *ev = g->event, *tmp;
+    
+    while( ev ){
+	tmp = ev->next;
+	DEBUG("Unregister: %i, id:'%s'", ev->type, ev->id);    
+	if(ev->id) free(ev->id);
+	free(ev);
+	ev = tmp;
+    }
+    g->event = NULL;
+}
+
+static void gui_xml_signal_register(gui_xml *g, GtkWidget *wg, char *id, const char *signal, int type)
+{
+    gui_xml_ev *tmp, *i;
+
+    DEBUG("Register:%i, id:'%s', signal:'%s'", type, id, signal);    
+
+    if(gui_xml_event_lookup(g, id, type)){
+	printf("Error: Duplicate id field '%s' for %i. Register widget event skipped.\n", id, type);
+	return;
+    }
+
+    /* utworzenie nowego ogniwa */
+    if(!(tmp = (gui_xml_ev*)malloc(sizeof(gui_xml_ev)))){
+	printf("Error: out of memory!\n");
+	return;
+    }
+
+    tmp->root_parent = g;
+    tmp->widget = wg;
+    tmp->type = type;
+    tmp->id = NULL;
+    if(id){
+	if(!(tmp->id = strdup(id))){
+	    printf("Error: out of memory!\n");
+	    free(tmp);
+	    return;
+	}
+    }
+    tmp->next = NULL;
+
+    /* dolaczenie do kolejki */
+    if(!g->event)
+	g->event = tmp;
+    else {
+	for(i = g->event; i->next; i = i->next);
+	i->next = tmp;
+    }
+    /* rejestracja sygnalu */
+    if(id && signal){
+
+	gtk_signal_connect(GTK_OBJECT(wg), signal, GTK_SIGNAL_FUNC(gui_xml_gtk_event_handler), tmp);
+    }
+}
+
+static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWidget *parent, GtkWidget *child, char recursive, const char *parm)
 {
     int b0=0, b1=0, b2=0, b3=0, flagx, flagy, spx, spy;
     char *pos;
@@ -130,19 +229,12 @@ static GtkWidget *gui_xml_box_new(xmlNode *cur, char dir)
     return gtk_vbox_new(arg1, arg2);
 }
 
-static GtkWidget *gui_xml_dipsw(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_dipsw(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *wg0, *wg1, *wg2;
     char tmp[8], *arg0, *desc, rev = 0;
     int i=0, mask, len;
     long set = 0;
-//    int size_x, size_y;
-    
-//    arg0 = (char *)xmlGetProp(cur, (unsigned char *)"size");
-//    if(arg0){
-//	sscanf(arg0, "%i, %i", &size_x, &size_y);
-	
-//    }
 
     arg0 = (char *)xmlGetProp(cur, (unsigned char *)"len");
     if(arg0) len = atoi(arg0);
@@ -160,7 +252,7 @@ static GtkWidget *gui_xml_dipsw(gui *g, xmlNode *cur)
 	for(mask = 1 << (len-1), i = 0; i < len; i++,mask >>= 1){
 	    sprintf(tmp, "%X", len - i);
 	    wg1 = gtk_label_new(tmp);
-	    wg2 = gtk_image_new_from_stock(set & mask ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->icon_size);
+	    wg2 = gtk_image_new_from_stock(set & mask ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->sw_size);
 	    gtk_table_attach(GTK_TABLE(wg0), wg1, i,i+1, 0,1, 0,0, 0,0);
 	    gtk_table_attach(GTK_TABLE(wg0), wg2, i,i+1, 1,2, 0,0, 0,0);
 	}
@@ -168,7 +260,7 @@ static GtkWidget *gui_xml_dipsw(gui *g, xmlNode *cur)
 	for(mask = 1, i = 0; i < len; i++,mask <<= 1){
 	    sprintf(tmp, "%X", i + 1);
 	    wg1 = gtk_label_new(tmp);
-	    wg2 = gtk_image_new_from_stock(set & mask ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->icon_size);
+	    wg2 = gtk_image_new_from_stock(set & mask ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->sw_size);
 	    gtk_table_attach(GTK_TABLE(wg0), wg1, i,i+1, 0,1, 0,0, 0,0);
 	    gtk_table_attach(GTK_TABLE(wg0), wg2, i,i+1, 1,2, 0,0, 0,0);
 	}
@@ -187,7 +279,7 @@ static GtkWidget *gui_xml_dipsw(gui *g, xmlNode *cur)
     return wg2;
 }
 
-static GtkWidget *gui_xml_jumper(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_jumper(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *wg0, *wg1;
     char state, *idx_up, *idx_dn;
@@ -203,7 +295,7 @@ static GtkWidget *gui_xml_jumper(gui *g, xmlNode *cur)
 	wg1 = gtk_label_new(idx_up);
 	gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 0,1, 0,0, 0,0);
     }
-    wg1 = gtk_image_new_from_stock(state ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->icon_size);
+    wg1 = gtk_image_new_from_stock(state ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->sw_size);
     gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 1,2, 0,0, 0,0);
     if(idx_dn){
 	wg1 = gtk_label_new(idx_dn);
@@ -212,7 +304,7 @@ static GtkWidget *gui_xml_jumper(gui *g, xmlNode *cur)
     return wg0;
 }
 
-static GtkWidget *gui_xml_table(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_table(gui_xml *g, xmlNode *cur)
 {
     int x=0, y=0;
     char *tmp=NULL, eq=0;
@@ -228,12 +320,8 @@ static GtkWidget *gui_xml_table(gui *g, xmlNode *cur)
     return gtk_table_new(x, y, eq);
 }
 
-void gui_xml_signal_register(gui *g, GtkWidget *wg, char *id, char *signal, char *wg_name)
-{
 
-}
-
-static GtkWidget *gui_xml_chbutton(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_chbutton(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *tmp;
     GtkWidget *tmp_2, * tmp_3, *tmp_4, *tmp_1;
@@ -251,7 +339,7 @@ static GtkWidget *gui_xml_chbutton(gui *g, xmlNode *cur)
     tmp_2 = gtk_hbox_new(FALSE,0);
     gtk_container_add(GTK_CONTAINER(tmp), tmp_2);
     tmp_3 = gtk_check_button_new();
-    gui_xml_signal_register(g, tmp_3, id, "toggled", "check_button");
+    gui_xml_signal_register(g, tmp_3, id, "toggled", GUI_XML_CHECK_BUTTON);
     tmp_4 = gtk_label_new((char *)xmlGetProp(cur, (unsigned char *)"label"));
     style = gtk_widget_get_style(tmp_4);
     fs = pango_font_description_get_size(style->font_desc);
@@ -275,7 +363,7 @@ static GtkWidget *gui_xml_chbutton(gui *g, xmlNode *cur)
     return tmp; 
 }
 
-static GtkWidget *gui_xml_button(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_button(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *tmp;
     char *arg, *id;
@@ -289,11 +377,11 @@ static GtkWidget *gui_xml_button(gui *g, xmlNode *cur)
 	if(!strcmp(arg, "false"))
 	    gtk_widget_set_sensitive(GTK_WIDGET(tmp), 0);
     }
-    gui_xml_signal_register(g, tmp, id, "clicked", "button");
+    gui_xml_signal_register(g, tmp, id, "clicked", GUI_XML_BUTTON);
     return tmp;
 }
 
-static GtkWidget *gui_xml_spinbutton(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_spinbutton(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *tmp1;
     GtkAdjustment *adj;
@@ -320,11 +408,11 @@ static GtkWidget *gui_xml_spinbutton(gui *g, xmlNode *cur)
 	if(!strcmp(arg, "false"))
 	    gtk_widget_set_sensitive(GTK_WIDGET(tmp1), 0);
     }
-    gui_xml_signal_register(g, tmp1, id, "value_changed", "spin_button");
+    gui_xml_signal_register(g, tmp1, id, "value_changed", GUI_XML_SPIN_BUTTON);
     return tmp1;
 }
 
-static GtkWidget *gui_xml_entry(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_entry(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *tmp;
     char *arg, *id;
@@ -353,16 +441,16 @@ static GtkWidget *gui_xml_entry(gui *g, xmlNode *cur)
 	gtk_entry_set_width_chars(GTK_ENTRY(tmp), xx);
     }
 
-    gui_xml_signal_register(g, tmp, id, "changed", "entry");    
+    gui_xml_signal_register(g, tmp, id, "changed", GUI_XML_ENTRY);
     return tmp;
 }
 
-static GtkWidget *gui_xml_image(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_image(gui_xml *g, xmlNode *cur)
 {
     return gtk_image_new_from_file((char *)xmlGetProp(cur, (unsigned char *)"src"));
 }
 
-static GtkWidget *gui_xml_label(gui *g, xmlNode *cur)
+static GtkWidget *gui_xml_label(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *tmp;
     char *arg;
@@ -377,7 +465,7 @@ static GtkWidget *gui_xml_label(gui *g, xmlNode *cur)
     return tmp;
 }
 
-static void gui_xml_parse_element(gui *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, const char *parm)
+static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, const char *parm)
 {
     char x = 0;
     char *arg0;
@@ -398,7 +486,7 @@ static void gui_xml_parse_element(gui *g, GtkWidget *wg, xmlDocPtr doc, xmlNode 
 	} 
 	else if(!strcmp((char*)cur->name,"description")){
 	    arg0 = (char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-	    gtk_label_set_text(GTK_LABEL(g->chip_desc), arg0);
+	    gtk_label_set_text(GTK_LABEL(g->description), arg0);
 	} 
 	/**** elementy GUI ****/
 	/* kontenery */
@@ -433,35 +521,54 @@ static void gui_xml_parse_element(gui *g, GtkWidget *wg, xmlDocPtr doc, xmlNode 
 }
 
 /* parsowanie glównego poziomu */
-static void gui_xml_parser(gui *g, xmlDocPtr doc, const char *parm)
+static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, const char *parm, const char *section )
 {
     xmlNode *cur;
     GtkWidget *tmp, *lab;
 
     if(!(cur = xmlDocGetRootElement(doc))) return;
     
-    for(cur = cur->xmlChildrenNode; cur != NULL; cur=cur->next){
-	if(!strcmp((char*)cur->name,"info")){
-	    g_return_if_fail(g->main_table != NULL);
+    for(cur = cur->xmlChildrenNode; cur != NULL; cur = cur->next){
+	if(!strcmp((char*)cur->name,"info") && strstr(section, "info")){
+	    g_return_if_fail(g->info != NULL);
 	    tmp = gtk_vbox_new(FALSE, 3);
+	    gui_xml_signal_register(g, tmp, NULL, NULL, GUI_XML_INFO_ROOT);    
 	    gui_xml_parse_element(g, GTK_WIDGET(tmp), doc, cur->xmlChildrenNode, parm);
-	    gtk_table_attach_defaults(GTK_TABLE(g->main_table), tmp, 1,2, 0, 2);
-	    gtk_widget_show_all(GTK_WIDGET(g->main_table));
+	    gtk_table_attach_defaults(GTK_TABLE(g->info), tmp, 1,2, 0, 2);
+	    gtk_widget_show_all(GTK_WIDGET(g->info));
 	}
-	if(!strcmp((char*)cur->name,"notebook")){
+	if(!strcmp((char*)cur->name,"notebook") && strstr(section, "notebook")){
 	    lab = gtk_label_new((char *)xmlGetProp(cur, (unsigned char *)"name"));
 	    tmp = gtk_vbox_new(FALSE, 0);
-	     gui_xml_parse_element(g, tmp, doc, cur->xmlChildrenNode, parm);
+	    gui_xml_signal_register(g, tmp, NULL, NULL, GUI_XML_NOTEBOOK_ROOT);
+	    gui_xml_parse_element(g, tmp, doc, cur->xmlChildrenNode, parm);
 	    gtk_notebook_append_page(GTK_NOTEBOOK(g->notebook), tmp, lab);
 	    gtk_widget_show_all(GTK_WIDGET(g->notebook));
 	}
     }    
 }
 
-int gui_xml_create(gui *g, char *xml, const char *section, const char *chip_name)
+/************************************************************************************************************************/
+
+void gui_xml_destroy(gui_xml *g)
+{
+    gui_xml_ev *tmp;
+    gtk_label_set_text(GTK_LABEL(g->description), "None");
+    /* usuniecie drzewa widgetów - wywołąnie destroy dla kazdego korzenia */
+    for(tmp = g->event; tmp; tmp = tmp->next)
+				if(!tmp->id) gtk_widget_destroy(GTK_WIDGET(tmp->widget));
+    /* usuniecie kolejki zarejestrowanych zdarzen */
+    gui_xml_event_destroy(g);
+}
+
+int gui_xml_build(gui_xml *g, char *xml, const char *section, const char *chip_name)
 {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
+    
+    if(!g) return -1;
+    /* usuniecie istniejacego GUI */
+    gui_xml_destroy(g);
     
     LIBXML_TEST_VERSION
     
@@ -479,7 +586,7 @@ int gui_xml_create(gui *g, char *xml, const char *section, const char *chip_name
 	printf("Error {gui_xml.c} --> gui_xml_create(): Failed to parse xml string\n");
     } else {
 	if(ctxt->valid)
-	    gui_xml_parser(g, doc, chip_name);
+	    gui_xml_parser(g, doc, chip_name, section);
 	else 
 	    printf("Error {gui_xml.c} --> gui_xml_create(): Failed to validate xml.\n");
 	xmlFreeDoc(doc);
@@ -490,26 +597,49 @@ int gui_xml_create(gui *g, char *xml, const char *section, const char *chip_name
 //    xmlMemoryDump();
     return 0;
 }
-/*
-void gui_drv_field_init(geepro *gep, const char *title)
-{
-    GtkWidget *wg0, *wg1;
 
-    wg0 = gtk_frame_new(title);
-    gtk_container_border_width(GTK_CONTAINER(wg0), 3);
-    gtk_table_attach_defaults(GTK_TABLE(GUI(gep->gui)->main_table), wg0,  1, 2, 0, 2);
-    wg1 = gtk_vbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(wg0), wg1);
-    GUI(gep->gui)->drv_vbox = wg1;
+void *gui_xml_new(gui *g)
+{
+    gui_xml *tmp;
+
+    g->xml = NULL;
+    if(!(tmp = (gui_xml*)malloc(sizeof(gui_xml)))){
+	printf("Error {gui_xml.c} --> gui_xml_new(): out of memory.\n");
+	return NULL;
+    };
+    g->xml = tmp;
+    tmp->parent = (void *)g;
+    tmp->notebook = (void *)g->notebook;
+    tmp->info = (void *)g->main_table;
+    tmp->description = (void *)g->chip_desc;
+    tmp->sw_size = g->icon_size;
+    tmp->event = NULL;
+    tmp->ev = gui_xml_event_default;
+    tmp->suppress = 0;
+    return tmp;
 }
 
-void gui_drv_field_destroy(geepro *gep)
+void gui_xml_register_event_func(gui_xml *g, gui_xml_event ev)
 {
-    if(GUI(gep->gui)->drv_vbox) gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->drv_vbox)->parent);
-    GUI(gep->gui)->drv_vbox = NULL;
+    if(!ev){
+	printf("Error: gui_xml_register_event_func() ---> ev == NULL ");
+	return;
+    }
+    g->ev = ev;
 }
-*/
 
-
-
+void *gui_xml_set_widget(gui_xml *g, gui_xml_ev_wg wg, const char *id, int val, char *sval)
+{
+    GtkWidget *w;
+    w = gui_xml_event_lookup(g, id, wg)->widget;
+    g->suppress = 1;
+    switch(wg){
+	case (int)GUI_XML_SPIN_BUTTON: gtk_spin_button_set_value(GTK_SPIN_BUTTON(w), val); break;
+	case GUI_XML_CHECK_BUTTON: gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), val & 1); break;
+	case GUI_XML_ENTRY: val = 0; gtk_entry_set_text(GTK_ENTRY(w), sval); break;
+	default: break;
+    }
+    g->suppress = 0;
+    return w;
+}
 
