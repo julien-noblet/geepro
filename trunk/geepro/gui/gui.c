@@ -1,4 +1,4 @@
-/* $Revision: 1.6 $ */
+/* $Revision: 1.7 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -887,6 +887,7 @@ void gui_kill_me(geepro *gep)
     printf("pa pa.\n");
     /* Usuniecie biezacego GUI zbudowanego o xml */
     gui_xml_destroy(GUI(gep->gui)->xml);
+    free(GUI(gep->gui)->xml);
     gtk_main_quit();
     if(GET_BUFFER) free(GET_BUFFER);
 }

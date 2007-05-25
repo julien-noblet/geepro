@@ -1,4 +1,4 @@
-/* $Revision: 1.6 $ */
+/* $Revision: 1.7 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -87,7 +87,7 @@ typedef struct
 #define VIEW_FONT_DSC		"Luxi Mono 8"
 
 #define MAIN_WINDOW_WIDTH	520
-#define MAIN_WINDOW_HEIGHT	520
+#define MAIN_WINDOW_HEIGHT	600
 #define PICT_AREA_WIDTH		170
 #define PICT_AREA_HEIGHT	170
 #define SW_AREA_WIDTH		150

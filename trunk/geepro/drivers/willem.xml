@@ -9,7 +9,7 @@
 	<vbox>
 	    <if chip="none">
 		<description>Simple popular programmer.</description>
-		<image src="./pixmaps/mcs48.png"/>
+		<image src="./pixmaps/willem_40.png"/>
 		<vbox>
 		    <hbox border="0">
 			<jumper name_up="29x" set="0"/>

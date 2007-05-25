@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -256,9 +256,15 @@ static int willem_test_connection()
     return 1;
 }
 
+static void willem_event(gui_xml_ev *ev, int value, const char *sval)
+{
+printf("dupa\n");
+}
+
 static void willem_set_gui_main(geepro *gep)
 {
     gui_xml_build(GUI_XML(GUI(gep->gui)->xml), "file://./drivers/willem.xml", "info,notebook", "");
+    gui_xml_register_event_func(GUI(gep->gui)->xml, willem_event);
 }
 
 static int willem_gui_init(void *ptr)
