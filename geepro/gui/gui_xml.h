@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* hex, binary viewer, editor, kontrolka GTK
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -59,10 +59,32 @@ typedef enum
     GUI_XML_ENTRY
 }gui_xml_ev_wg;
 
+/* 
+  pobiera informacje z gui i alokuje pamiec na strukture gui_xml, ktora powinna byc zwolniona 
+*/
 extern void *gui_xml_new(gui *g);
+
+/* rejestruje funkcje zwrotna dla zdarzen */
 extern void gui_xml_register_event_func(gui_xml *g, gui_xml_event ev);
+
+/* 
+    buduje GUI na podstawie lancucha (lub pliku, jesli xml zaczuna sie od file://) xml
+    section - lista sekcji jakie maja byc wykorzystane
+    chip_name - parametr warunkowy dla <if chip=chip_name>
+
+     Na samym poczatku likwiduje poprzednie GUI    
+    jesli blad zwraca -1, inaczej 0
+*/
 extern int gui_xml_build(gui_xml *g, char *xml, const char *section, const char *chip_name);
+
+/*
+    ustawienie danej kontrolki
+*/
 extern void *gui_xml_set_widget(gui_xml *g, gui_xml_ev_wg wg, const char *id, int val, char *sval);
+
+/*
+    likwiduje GUI, nie zwalnia pamieci na strukture gui_xml
+*/
 extern void gui_xml_destroy(gui_xml *g);
 
 #endif
