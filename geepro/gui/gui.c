@@ -1,4 +1,4 @@
-/* $Revision: 1.5 $ */
+/* $Revision: 1.6 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -142,7 +142,7 @@ void gui_stat_rfsh(geepro *gep)
 	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->crc_entry), tmp_str);  
     }
 //  - dopisac odswiezenie status bar
-    GUI(gep->gui)->pict_view = (GUI(gep->gui)->pcb) ? GUI(gep->gui)->pict_willem : GUI(gep->gui)->pict_pcb;
+//    GUI(gep->gui)->pict_view = (GUI(gep->gui)->pcb) ? GUI(gep->gui)->pict_willem : GUI(gep->gui)->pict_pcb;
 //    gui_draw_dip_switch(gep);
 //    gui_draw_pict(gep);
 //    gui_viewer_rfsh(gep);
@@ -271,9 +271,6 @@ void gui_device_sel(GtkWidget *wg, geepro *gep)
 /* do usuniecia */
     SET_BUFFER(tmp->buffer);
 
-    GUI(gep->gui)->pict_willem = gui_get_image(tmp->img_will_idx);
-    GUI(gep->gui)->pict_pcb    = gui_get_image(tmp->img_pcb3_idx);
-
     gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, tmp->dev_size, (unsigned char*)tmp->buffer);
     
 /* do modyfikacji */
@@ -388,377 +385,6 @@ void gui_add_action(geepro *gep, char *stock_name, gchar *tip, int id)
 }
 
 /***************************************************************************************************************************/
-static void gui_chip_pin(geepro *gep, int pin)
-{
-    GtkWidget *wg;
-    static char echo = 0; /* zmienna zabezpieczajaca przed wywolaniem rekurencyjnym */
-    static const char addr_bit2pin[18] = {11,10,9,8,7,6,5,4,26,25,22,24,3,27,28,2,1,29};
-    static const char addr_pin2bit[32] = {0,16,15,12,7,6,5,4,3,2,1,0,0,0,0,0, 0,0,0,0,0,0,10,0,11,9,8,13,14,17,0,0};
-    static const char data_pin2bit[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,0, 3,4,5,6,7,0,0,0,0,0,0,0,0,0,0,0};
-    static const char data_bit2pin[8] =  {12,13,14,16,17,18,19,20};
-
-    int tmp, i, mask;
-
-    if(echo) return; /* blokada przed rekurencyjną propagacja sygnalow */
-
-    echo = 1; /* wlacz blokade */
-
-    wg = GTK_WIDGET(GUI(gep->gui)->test_pins[ pin - 1 ]);
-
-    /* jesli pin adresu */
-    if(((pin > 1) && (pin < 13)) || (pin == 23) || ((pin > 24) && (pin < 31))){
-	/* pobieera aktualny adres */
-	tmp = gtk_spin_button_get_value(GTK_SPIN_BUTTON(GUI(gep->gui)->test_addr_spin_bt));
-	mask = (int)(1 << addr_pin2bit[pin - 1]);
-	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg)))
-	    tmp |= mask;
-	else
-	    tmp &= ~mask;	
-	/* ustawia nowy */
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(GUI(gep->gui)->test_addr_spin_bt), tmp);
-	hw_set_addr(tmp);
-    }
-    /* jesli pin danej */
-    if(((pin > 12) && (pin < 16)) || ((pin > 16) && (pin < 22))){
-	/* pobieera aktualny adres */
-	tmp = gtk_spin_button_get_value(GTK_SPIN_BUTTON(GUI(gep->gui)->test_data_spin_bt));
-	mask = (int)(1 << data_pin2bit[pin - 1]);
-	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg)))
-	    tmp |= mask;
-	else
-	    tmp &= ~mask;	
-	/* ustawia nowy */
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(GUI(gep->gui)->test_data_spin_bt), tmp);
-	hw_set_data(tmp);
-    }    
-    switch(pin){
-	case 1:  hw_sw_vpp(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg))); break;
-	case 22: hw_set_ce(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg))); break;
-	case 24: hw_set_oe(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg))); break;
-	case 31: hw_set_we(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg))); break;
-	case 32: hw_sw_vcc(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg))); break;
-	case 33: /* Reczne ustawienie adresu za pomoca spin buttona */
-		    tmp = gtk_spin_button_get_value(GTK_SPIN_BUTTON(GUI(gep->gui)->test_addr_spin_bt));
-		    /* ustawienie przyciskow symb piny */
-		    for(i = 0, mask = 1; i < 18; i++, mask <<= 1){
-			gtk_toggle_button_set_active(
-			    GTK_TOGGLE_BUTTON(GUI(gep->gui)->test_pins[ (int)addr_bit2pin[i] ]),
-			    tmp & mask
-			);
-		    }
-		    hw_set_addr(tmp);
-		    break;
-	case 34: /* Reczne ustawienie danej za pomoca spin buttona */
-		    tmp = gtk_spin_button_get_value(GTK_SPIN_BUTTON(GUI(gep->gui)->test_data_spin_bt));
-		    for(i = 0, mask = 1; i < 8; i++, mask <<= 1){
-		        gtk_toggle_button_set_active(
-			    GTK_TOGGLE_BUTTON(GUI(gep->gui)->test_pins[ (int)data_bit2pin[i] ]),
-			    tmp & mask
-			);
-		    }
-		    hw_set_data(tmp);
-		    break;
-    }
-    echo = 0; /* wylacz blokade */
-}
-
-void gui_add_pin(geepro *gep, GtkWidget *tmp, char *txt, char rl, float scale, int id, void *act)
-{
-    GtkWidget *tmp_2, * tmp_3, *tmp_4, *tmp_1;
-    GtkStyle *style;    
-    long fs;
-
-    tmp_1 = gtk_alignment_new( rl ? 1:0, 0.5,0,0);
-    gtk_container_add(GTK_CONTAINER(tmp),tmp_1);
-    tmp_2 = gtk_hbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(tmp_1),tmp_2);
-    tmp_3 = gtk_check_button_new();
-    GUI(gep->gui)->test_pins[id] = tmp_3;
-    gtk_signal_connect(GTK_OBJECT(tmp_3),"toggled",GTK_SIGNAL_FUNC(act), gep);
-    tmp_4 = gtk_label_new(txt);
-    style = gtk_widget_get_style(tmp_4);
-    fs = pango_font_description_get_size(style->font_desc);
-    pango_font_description_set_size(style->font_desc, fs / scale);
-    gtk_widget_modify_font(tmp_4,style->font_desc);
-    pango_font_description_set_size(style->font_desc, fs );
-    if(!strcmp(txt,PIN_16)) 
-	gtk_widget_set_sensitive(GTK_WIDGET(tmp_3), 0);
-    if(rl){
-	tmp_1 = tmp_4;
-	tmp_4 = tmp_3;
-	tmp_3 = tmp_1;
-    }
-    gtk_box_pack_start(GTK_BOX(tmp_2), tmp_3, FALSE,FALSE, 0); 
-    gtk_box_pack_start(GTK_BOX(tmp_2), tmp_4, FALSE,FALSE, 0); 
-
-}
-
-void gui_rd_test_data(GtkWidget *wg, geepro *gep)
-{
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(GUI(gep->gui)->test_data_spin_bt), hw_get_data());
-}
-
-void gui_serial_test(geepro *gep, GtkWidget *wg, int pin)
-{
-    char tmp[2];
-
-    switch(pin){
-	case 2: /* do */
-		tmp[0] = (hw_get_do() & 1) + '0'; 
-		tmp[1] = 0;
-		gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->test_serial_entry), tmp);
-		break;
-	case 3: /* di */
-		hw_set_di(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg))); break;
-	case 4: /* clk */
-		hw_set_clk(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg))); break;
-	case 1: /* cs */
-		hw_set_cs(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg))); break;
-    }
-}
-
-#define GUI_TEST_INVOKED(pin)	static void gui_test_pin##pin(GtkWidget *wg, geepro *gep)\
-					{ gui_chip_pin(gep, pin); }
-
-#define GUI_TEST_SERIAL(pn, pin) static void gui_serial_test_##pn(GtkWidget *wg, geepro *gep)\
-					{ gui_serial_test(gep, wg, pin); }
-
-GUI_TEST_SERIAL(cs, 1)
-GUI_TEST_SERIAL(rd, 2)
-GUI_TEST_SERIAL(di, 3)
-GUI_TEST_SERIAL(clk, 4)
-//GUI_TEST_SERIAL(hold, 5)
-
-GUI_TEST_INVOKED(1)  GUI_TEST_INVOKED(32)
-GUI_TEST_INVOKED(2)  GUI_TEST_INVOKED(31)
-GUI_TEST_INVOKED(3)  GUI_TEST_INVOKED(30)
-GUI_TEST_INVOKED(4)  GUI_TEST_INVOKED(29)
-GUI_TEST_INVOKED(5)  GUI_TEST_INVOKED(28)
-GUI_TEST_INVOKED(6)  GUI_TEST_INVOKED(27)
-GUI_TEST_INVOKED(7)  GUI_TEST_INVOKED(26)
-GUI_TEST_INVOKED(8)  GUI_TEST_INVOKED(25)
-GUI_TEST_INVOKED(9)  GUI_TEST_INVOKED(24)
-GUI_TEST_INVOKED(10) GUI_TEST_INVOKED(23)
-GUI_TEST_INVOKED(11) GUI_TEST_INVOKED(22)
-GUI_TEST_INVOKED(12) GUI_TEST_INVOKED(21)
-GUI_TEST_INVOKED(13) GUI_TEST_INVOKED(20)
-GUI_TEST_INVOKED(14) GUI_TEST_INVOKED(19)
-GUI_TEST_INVOKED(15) GUI_TEST_INVOKED(18)
-GUI_TEST_INVOKED(16) GUI_TEST_INVOKED(17)
-/* przyciski spin bt dla adresu i danej */
-GUI_TEST_INVOKED(33) GUI_TEST_INVOKED(34)
-
-void gui_sqw_gen(GtkWidget *wg, geepro *gep)
-{
-    printf("SQW gen:\n");
-    printf("  period:  %i\n", GUI(gep->gui)->sqwg.period);
-    printf("  duty:    %i\n", GUI(gep->gui)->sqwg.duty);
-    printf("  length:  %i\n", GUI(gep->gui)->sqwg.len);
-    printf("  seqwence:%i\n", GUI(gep->gui)->sqwg.seq);
-}
-
-void gui_test_set_period(GtkWidget *wg, geepro *gep)
-{
-    GUI(gep->gui)->sqwg.period = gtk_spin_button_get_value(GTK_SPIN_BUTTON(GUI(gep->gui)->sqwg.wper));
-}
-
-void gui_test_set_duty(GtkWidget *wg, geepro *gep)
-{
-    GUI(gep->gui)->sqwg.duty = gtk_spin_button_get_value(GTK_SPIN_BUTTON(GUI(gep->gui)->sqwg.wdut));
-}
-
-void gui_test_set_length(GtkWidget *wg, geepro *gep)
-{
-    GUI(gep->gui)->sqwg.len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(GUI(gep->gui)->sqwg.wlen));
-}
-
-void gui_test_set_sequence(GtkWidget *wg, geepro *gep)
-{
-    GUI(gep->gui)->sqwg.seq = gtk_spin_button_get_value(GTK_SPIN_BUTTON(GUI(gep->gui)->sqwg.wseq));
-}
-
-void gui_clk_sqw(GtkWidget *wg, geepro *gep)
-{
-    GtkWidget *wgm, *wg0, *wg1;
-    GtkAdjustment *adj;    
-    
-    wgm = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_window_set_policy(GTK_WINDOW(wgm), FALSE, FALSE, FALSE);
-    gtk_window_set_title(GTK_WINDOW(wgm), "Square Wave Generator");
-    gtk_widget_set_usize(wgm, 300, 150);
-    gtk_container_border_width(GTK_CONTAINER(wgm), 10);
-    wg0 = gtk_table_new(2, 5, FALSE);    
-    gtk_container_add(GTK_CONTAINER(wgm), wg0);
-
-    wg1 = gtk_label_new("Period [us]:");    
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 0,1,  GTK_FILL,0,  0,0);
-    wg1 = gtk_label_new("Duty cycle [%]:");    
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 1,2,  GTK_FILL,0,  0,0);
-    wg1 = gtk_label_new("Length [s]:");    
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 2,3,  GTK_FILL,0,  0,0);
-    wg1 = gtk_label_new("Sequence (32bit):");    
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 3,4,  GTK_FILL,0,  0,0);
-
-    wg1 = gtk_button_new_with_label("Start");
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 4,5,  GTK_FILL,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(wg1), "clicked", GTK_SIGNAL_FUNC(gui_sqw_gen), gep);    
-
-    adj = GTK_ADJUSTMENT(gtk_adjustment_new(100, 0.0, 1000000, 100, 0, 0));
-    wg1 = gtk_spin_button_new(adj, 1, 0);
-    GUI(gep->gui)->sqwg.wper = wg1;
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 0,1,  GTK_FILL | GTK_EXPAND,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_period), gep);
-
-    adj = GTK_ADJUSTMENT(gtk_adjustment_new(50, 0.0, 100, 1, 0, 0));
-    wg1 = gtk_spin_button_new(adj, 1, 0);
-    GUI(gep->gui)->sqwg.wdut = wg1;
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 1,2,  GTK_FILL | GTK_EXPAND,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_duty), gep);
-
-    adj = GTK_ADJUSTMENT(gtk_adjustment_new(1, 0.0, 60, 1, 0, 0));
-    wg1 = gtk_spin_button_new(adj, 1, 0);
-    GUI(gep->gui)->sqwg.wlen = wg1;
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 2,3,  GTK_FILL | GTK_EXPAND,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_length), gep);
-
-    adj = GTK_ADJUSTMENT(gtk_adjustment_new(0, 0.0, 0xffffffff, 1, 0, 0));
-    wg1 = gtk_spin_button_new(adj, 1, 0);
-    GUI(gep->gui)->sqwg.wseq = wg1;
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 3,4,  GTK_FILL | GTK_EXPAND,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_sequence), gep);
-
-    gtk_widget_show_all(wgm);
-}
-
-void gui_willem_test(geepro *gep)
-{
-    GtkWidget *hbox, *tmp_2, *tmp_0, *tmp_1, *tmp, *tmp_3;
-    GtkAdjustment *adj;    
-
-    GUI(gep->gui)->sqwg.period = 100;
-    GUI(gep->gui)->sqwg.duty = 50;
-    GUI(gep->gui)->sqwg.len = 1;
-    GUI(gep->gui)->sqwg.seq = 0;
-
-    hbox = gtk_hbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(GUI(gep->gui)->test_page), hbox);
-
-/* pierwsza ramka */
-    tmp_3 = gtk_vbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(hbox), tmp_3);    
-
-    tmp_0 = gtk_frame_new(TST_LB_ZIF);
-    gtk_frame_set_shadow_type(GTK_FRAME(tmp_0), GTK_SHADOW_OUT);
-    gtk_frame_set_label_align(GTK_FRAME(tmp_0), 0.5,0);
-    gtk_container_add(GTK_CONTAINER(tmp_3), tmp_0);
-    tmp_1 = gtk_hbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(tmp_0), tmp_1);    
-    
-    tmp_2 = gtk_frame_new(NULL);    
-    gtk_container_add(GTK_CONTAINER(tmp_1), tmp_2);    
-
-    tmp = gtk_vbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(tmp_2), tmp);        
-
-    ADD_PIN_L(PIN_01,0,  1);   ADD_PIN_L(PIN_02,1,  2);  
-    ADD_PIN_L(PIN_03,2,  3);   ADD_PIN_L(PIN_04,3,  4);
-    ADD_PIN_L(PIN_05,4,  5);   ADD_PIN_L(PIN_06,5,  6);  
-    ADD_PIN_L(PIN_07,6,  7);   ADD_PIN_L(PIN_08,7,  8);
-    ADD_PIN_L(PIN_09,8,  9);   ADD_PIN_L(PIN_10,9,  10);  
-    ADD_PIN_L(PIN_11,10, 11);  ADD_PIN_L(PIN_12,11, 12);
-    ADD_PIN_L(PIN_13,12, 13);  ADD_PIN_L(PIN_14,13, 14); 
-    ADD_PIN_L(PIN_15,14, 15);  ADD_PIN_L(PIN_16,15, 16);	
-
-    tmp_2 = gtk_frame_new(NULL);    
-    gtk_container_add(GTK_CONTAINER(tmp_1), tmp_2);    
-    tmp = gtk_vbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(tmp_2), tmp);        
-
-    ADD_PIN_R(PIN_32,31, 32); ADD_PIN_R(PIN_31,30, 31); 
-    ADD_PIN_R(PIN_30,29, 30); ADD_PIN_R(PIN_29,28, 29);
-    ADD_PIN_R(PIN_28,27, 28); ADD_PIN_R(PIN_27,26, 27); 
-    ADD_PIN_R(PIN_26,25, 26); ADD_PIN_R(PIN_25,24, 25);
-    ADD_PIN_R(PIN_24,23, 24); ADD_PIN_R(PIN_23,22, 23); 
-    ADD_PIN_R(PIN_22,21, 22); ADD_PIN_R(PIN_21,20, 21);
-    ADD_PIN_R(PIN_20,19, 20); ADD_PIN_R(PIN_19,18, 19); 
-    ADD_PIN_R(PIN_18,17, 18); ADD_PIN_R(PIN_17,16, 17);
-
-/* druga ramka */
-    tmp_2 = gtk_vbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(hbox), tmp_2);
-
-    tmp_0 = gtk_frame_new(TST_LB_SET_AD);
-    gtk_frame_set_label_align(GTK_FRAME(tmp_0), 0.5, 0.5);
-    gtk_box_pack_start(GTK_BOX(tmp_2), tmp_0, FALSE, FALSE, 5);
-    tmp = gtk_vbox_new(FALSE,0);
-    gtk_container_add(GTK_CONTAINER(tmp_0), tmp);    
-
-    tmp_1 = gtk_hbox_new(FALSE,0);
-    gtk_box_pack_start(GTK_BOX(tmp), tmp_1, FALSE,FALSE,5);
-    tmp_0 = gtk_label_new(TST_LB_ADDRESS);
-    gtk_container_add(GTK_CONTAINER(tmp_1), tmp_0);
-    adj = GTK_ADJUSTMENT(gtk_adjustment_new(0, 0.0, 0x3ffff, 1, 16, 16));
-    tmp_0 = gtk_spin_button_new(adj, 1, 0);
-    gtk_widget_set_usize(tmp_0,50,25);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_pin33), gep);
-    gtk_container_add(GTK_CONTAINER(tmp_1), tmp_0);
-    GUI(gep->gui)->test_addr_spin_bt = tmp_0;
-
-    tmp_1 = gtk_hbox_new(FALSE,0);
-    gtk_box_pack_start(GTK_BOX(tmp), tmp_1, FALSE,FALSE,5);
-    tmp_0 = gtk_label_new(TST_LB_DATA);
-    gtk_container_add(GTK_CONTAINER(tmp_1), tmp_0);
-    adj = GTK_ADJUSTMENT(gtk_adjustment_new(0, 0.0, 0xff, 1, 16, 16));
-    tmp_0 = gtk_spin_button_new(adj, 1, 0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_pin34), gep);
-    gtk_widget_set_usize(tmp_0,50,25);
-    gtk_container_add(GTK_CONTAINER(tmp_1), tmp_0);
-    GUI(gep->gui)->test_data_spin_bt = tmp_0;
-
-    tmp_1 = gtk_button_new_with_label(TST_LB_RD_DATA);
-    gtk_signal_connect(GTK_OBJECT(tmp_1),"clicked",GTK_SIGNAL_FUNC(gui_rd_test_data), gep);
-    gtk_container_add(GTK_CONTAINER(tmp), tmp_1);
-
-    tmp_1 = gtk_frame_new(TST_LB_SER_FR);
-    gtk_frame_set_label_align(GTK_FRAME(tmp_1), 0.5, 0.5);
-    gtk_box_pack_start(GTK_BOX(tmp_2), tmp_1, FALSE, FALSE, 5);
-    tmp_0 = gtk_table_new(2, 4, FALSE);
-    gtk_container_add(GTK_CONTAINER(tmp_1), tmp_0);
-
-    tmp_1 = gtk_check_button_new_with_label("1-CS");
-    gtk_signal_connect(GTK_OBJECT(tmp_1),"clicked",GTK_SIGNAL_FUNC(gui_serial_test_cs), gep);
-    gtk_table_attach_defaults(GTK_TABLE(tmp_0), tmp_1, 0,2, 0,1);
-
-    tmp_1 = gtk_check_button_new_with_label("2-CLK ");
-    gtk_signal_connect(GTK_OBJECT(tmp_1),"clicked",GTK_SIGNAL_FUNC(gui_serial_test_clk), gep);
-    gtk_table_attach(GTK_TABLE(tmp_0), tmp_1, 0,1, 1,2, GTK_FILL,0, 0,0);
-    tmp_1 = gtk_button_new_with_label("CLK SQW");
-    gtk_table_attach(GTK_TABLE(tmp_0), tmp_1, 1,2, 1,2, GTK_FILL | GTK_EXPAND,0, 0,0);
-    gtk_signal_connect(GTK_OBJECT(tmp_1),"clicked",GTK_SIGNAL_FUNC(gui_clk_sqw), gep);
-
-    tmp_1 = gtk_check_button_new_with_label("3-DI");
-    gtk_signal_connect(GTK_OBJECT(tmp_1),"clicked",GTK_SIGNAL_FUNC(gui_serial_test_di), gep);
-    gtk_table_attach_defaults(GTK_TABLE(tmp_0), tmp_1, 0,2, 2,3);
-
-    tmp_1 = gtk_button_new_with_label("4-DO");
-    gtk_signal_connect(GTK_OBJECT(tmp_1),"clicked",GTK_SIGNAL_FUNC(gui_serial_test_rd), gep);
-    gtk_table_attach_defaults(GTK_TABLE(tmp_0), tmp_1, 1,2, 3,4);
-
-    tmp_1 = gtk_entry_new();
-    gtk_table_attach(GTK_TABLE(tmp_0), tmp_1, 0,1, 3,4, GTK_FILL,0, 0,0);
-    gtk_entry_set_editable(GTK_ENTRY(tmp_1), FALSE);
-    gtk_widget_set_usize(tmp_1,25,25);
-    GUI(gep->gui)->test_serial_entry = tmp_1;
-/* Ustawić wlasciwa pozycje */
-//    gui_dipsw(gep, 12, 0x0001, "DIP Switch");
-    gtk_box_pack_start(GTK_BOX(tmp_2), GTK_WIDGET(GUI(gep->gui)->tmp_wg), FALSE, FALSE, 0);
-}
-
-/***************************************************************************************************************************/
 
 static void gui_build_iface_menu(iface *ifc, int cl, char *name, char *dev, GtkWidget *wg)
 {
@@ -830,10 +456,10 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     gep->ifc->cl = hw_get_iface();
     /* utworzenie wyboru interfaców */
     gui_add_iface_combox(gep);
-    /* usuniecie aktualnego ustawienia menu */
-//    gui_drv_field_destroy(gep);
+    /* usuniecie menu */
+    gui_xml_destroy(GUI(gep->gui)->xml);    
     /* wywolanie gui dla programatora */
-//!    hw_gui_init(gep);
+    hw_gui_init(gep);
 
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
     gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->iface), "changed");    
@@ -924,8 +550,6 @@ void gui_menu_setup(geepro *gep)
     gtk_init(&gep->argc, &gep->argv);
 
     gui_add_images(gep);
-
-    GUI(gep->gui)->drv_vbox = NULL;
 
     GUI(gep->gui)->wmain = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_signal_connect(GTK_OBJECT(GUI(gep->gui)->wmain), "delete_event", GTK_SIGNAL_FUNC(gui_exit_program), gep);
@@ -1075,11 +699,9 @@ void gui_menu_setup(geepro *gep)
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg3);
     GUI(gep->gui)->bineditor = wg0;
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-
+/* Koniec inicjowania Gui */
     gui_set_default(gep);
-    
-    gui_xml_create(GUI(gep->gui), "file://./drivers/willem.xml", "info", "");
+    gui_xml_new(GUI(gep->gui)); /* zainicjowanie struktury gui_xml */
 }
 
 static char gui_progress_bar_exit = 0;
@@ -1263,6 +885,8 @@ void gui_run(geepro *gep)
 void gui_kill_me(geepro *gep)
 {
     printf("pa pa.\n");
+    /* Usuniecie biezacego GUI zbudowanego o xml */
+    gui_xml_destroy(GUI(gep->gui)->xml);
     gtk_main_quit();
     if(GET_BUFFER) free(GET_BUFFER);
 }

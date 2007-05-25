@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -258,15 +258,7 @@ static int willem_test_connection()
 
 static void willem_set_gui_main(geepro *gep)
 {
-    gui_drv_field_destroy(gep);
-    gui_drv_field_init(gep, "Ustawienia programatora");
-    gui_drv_field_add_image(gep, "./pixmaps/mcs48.png");
-    gui_hbox_new(gep);
-    gui_drv_field_add_jumper(gep, 0, "290x", NULL);
-    gui_box_add(gep);
-    gui_dipsw(gep, 12, 0xaa, "DIP Switch");
-    gui_box_add(gep);
-    gui_drv_field_add(gep);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), "file://./drivers/willem.xml", "info,notebook", "");
 }
 
 static int willem_gui_init(void *ptr)

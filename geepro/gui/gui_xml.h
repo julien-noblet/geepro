@@ -1,4 +1,4 @@
-/* $Revision: 1.1 $ */
+/* $Revision: 1.2 $ */
 /* hex, binary viewer, editor, kontrolka GTK
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -23,7 +23,46 @@
 #define __gui_xml_h__
 #include "gui.h"
 
-extern int gui_xml_create(gui *g, char *xml, const char *section, const char *chip_name);
-//extern void gui_xml_destroy(gui *g);
+#define GUI_XML(x)	((gui_xml*)x)
+
+typedef struct _gui_xml_ev gui_xml_ev;
+typedef void (*gui_xml_event)(gui_xml_ev *ev, int value, const char *sval);
+
+struct _gui_xml_ev
+{
+    void *root_parent;
+    char *id;
+    int  type;
+    void *widget;
+    gui_xml_ev *next;
+};
+
+typedef struct
+{
+    void *parent;
+    char suppress;  /* flaga stlumienia echa sygnalu */
+    void *notebook;
+    void *info;
+    void *description;
+    int  sw_size;
+    gui_xml_event ev;
+    gui_xml_ev *event;
+} gui_xml;
+
+typedef enum
+{
+    GUI_XML_INFO_ROOT = 1,
+    GUI_XML_NOTEBOOK_ROOT,
+    GUI_XML_BUTTON,
+    GUI_XML_CHECK_BUTTON,
+    GUI_XML_SPIN_BUTTON,
+    GUI_XML_ENTRY
+}gui_xml_ev_wg;
+
+extern void *gui_xml_new(gui *g);
+extern void gui_xml_register_event_func(gui_xml *g, gui_xml_event ev);
+extern int gui_xml_build(gui_xml *g, char *xml, const char *section, const char *chip_name);
+extern void *gui_xml_set_widget(gui_xml *g, gui_xml_ev_wg wg, const char *id, int val, char *sval);
+extern void gui_xml_destroy(gui_xml *g);
 
 #endif
