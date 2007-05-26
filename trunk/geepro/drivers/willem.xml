@@ -9,7 +9,12 @@
 	<vbox>
 	    <if chip="none">
 		<description>Simple popular programmer.</description>
-		<image src="./pixmaps/willem_40.png"/>
+		<if programmer="willem_40">
+		    <image src="./pixmaps/willem_40.png"/>
+		</if>
+		<if programmer="willem_pro2">
+		    <image src="./pixmaps/willem_pro2.jpg"/>
+		</if>
 		<vbox>
 		    <hbox border="0">
 			<jumper name_up="29x" set="0"/>

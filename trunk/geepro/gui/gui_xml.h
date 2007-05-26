@@ -1,5 +1,5 @@
-/* $Revision: 1.4 $ */
-/* hex, binary viewer, editor, kontrolka GTK
+/* $Revision: 1.5 $ */
+/* xml parser for gui
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
  *
@@ -27,6 +27,15 @@
 
 typedef struct _gui_xml_ev gui_xml_ev;
 typedef void (*gui_xml_event)(gui_xml_ev *ev, int value, const char *sval);
+
+/*
+    atrybut/wartosc dla: <if atrybut1=wartosc1 atrybut2=wartosc2 ... > ... </if>
+*/
+typedef struct{
+    const char *attr;
+    const char *val;
+} gui_xml_ifattr;
+
 
 /* 
   typ elementu tablicy przeszukiwania nazw dla gui_xml_trans_id()
@@ -84,7 +93,7 @@ extern void gui_xml_register_event_func(gui_xml *g, gui_xml_event ev);
      Na samym poczatku likwiduje poprzednie GUI    
     jesli blad zwraca -1, inaczej 0
 */
-extern int gui_xml_build(gui_xml *g, char *xml, const char *section, const char *chip_name);
+extern int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *ifattr);
 
 /*
     likwiduje GUI, nie zwalnia pamieci na strukture gui_xml
