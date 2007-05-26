@@ -1,4 +1,4 @@
-/* $Revision: 1.6 $ */
+/* $Revision: 1.7 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -500,7 +500,7 @@ int willem4_hardware_module(int funct, int val, void *ptr)
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = "PCB 3";
 	case HW_IFACE:	  return IFACE_LPT;
-	case HW_GINIT:    return willem_gui_init(ptr,"none","");
+	case HW_GINIT:    return willem_gui_init(ptr,"none","willem_pcb3");
 	case HW_TEST:	  return willem_test_connection();
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return pcb3_open(ptr,val);

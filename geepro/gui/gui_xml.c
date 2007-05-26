@@ -1,4 +1,4 @@
-/* $Revision: 1.5 $ */
+/* $Revision: 1.6 $ */
 /* xml parser for gui
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -463,10 +463,15 @@ static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlN
 	/* tagi kluczowe */
 	if(!strcmp((char*)cur->name,"if")){
 	    n = q = 0;
-	    for(i = 0; parm[i].attr; i++){
+	    for(i = 0; parm[i].attr && parm[i].val; i++){
     		if((arg0 = (char *)xmlGetProp(cur, (unsigned char*)parm[i].attr))){
 		    n++;
-		    if(!strcmp(arg0, parm[i].val)) q++; 
+		    if(strstr(arg0, parm[i].val)) q++; 
+		    /* jesli atrybut "", warunek nigdy nie spelniony */
+		    if(!parm[i].val[0]){
+			 q = n + 1;
+			 break;
+		    }
 		}
 	    }
 	    if(n == q) gui_xml_parse_element(g, wg, doc, cur->xmlChildrenNode, parm );

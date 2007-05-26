@@ -9,7 +9,7 @@
 	<vbox>
 	    <if chip="none">
 		<description>Simple popular programmer.</description>
-		<if programmer="willem_40">
+		<if programmer="willem_40,willem_pcb3">
 		    <image src="./pixmaps/willem_40.png"/>
 		</if>
 		<if programmer="willem_pro2">
