@@ -1,4 +1,4 @@
-/* $Revision: 1.5 $ */
+/* $Revision: 1.6 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -406,16 +406,20 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 
 /**************************************************************************************************************************/
 /* inicjowanie sterownika */
+static gui_xml_ifattr willem_if_attr[3] = {{"chip","none"},{"programmer","willem_40"}, {NULL, NULL}};
 
-static void willem_set_gui_main(geepro *gep)
+static void willem_set_gui_main(geepro *gep, const char *chip_name, const char *programmer)
 {
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), "file://./drivers/willem.xml", "info,notebook", "");
+    willem_if_attr[0].val = chip_name;
+    willem_if_attr[1].val = programmer;
+
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), "file://./drivers/willem.xml", "info,notebook", willem_if_attr);
     gui_xml_register_event_func(GUI(gep->gui)->xml, willem_event);
 }
 
-static int willem_gui_init(void *ptr)
+static int willem_gui_init(void *ptr, const char *chip_name, const char *programmer)
 {
-    willem_set_gui_main((geepro*)ptr);
+    willem_set_gui_main((geepro*)ptr, chip_name, programmer);
     return 0;
 }
 
@@ -449,7 +453,7 @@ int willem_40_hardware_module(int funct, int val, void *ptr)
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = "WILLEM 4.0";
 	case HW_IFACE:	  return IFACE_LPT;
-	case HW_GINIT:    return willem_gui_init(ptr);
+	case HW_GINIT:    return willem_gui_init(ptr, "none", "willem_40");
 	case HW_TEST:	  return willem_test_connection();
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return willem_open(ptr,val);
@@ -496,7 +500,7 @@ int willem4_hardware_module(int funct, int val, void *ptr)
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = "PCB 3";
 	case HW_IFACE:	  return IFACE_LPT;
-	case HW_GINIT:    return willem_gui_init(ptr);
+	case HW_GINIT:    return willem_gui_init(ptr,"none","");
 	case HW_TEST:	  return willem_test_connection();
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return pcb3_open(ptr,val);
@@ -542,7 +546,7 @@ int willempro2_hardware_module(int funct, int val, void *ptr)
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = "WILLEM PRO 2";
 	case HW_IFACE:	  return IFACE_LPT;
-	case HW_GINIT:    return willem_gui_init(ptr);
+	case HW_GINIT:    return willem_gui_init(ptr,"none","willem_pro2");
 	case HW_TEST:	  return willem_test_connection();
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return pcb3_open(ptr,val);

@@ -1,5 +1,5 @@
-/* $Revision: 1.4 $ */
-/* hex, binary viewer, editor, kontrolka GTK
+/* $Revision: 1.5 $ */
+/* xml parser for gui
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
  *
@@ -28,7 +28,7 @@
 //#define DEBUG(fmt, p...)	printf("|-- DEBUG --> " fmt "\n", ## p)
 #define DEBUG(fmt, p...)
 
-static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, const char *parm);
+static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, gui_xml_ifattr *parm);
 
 static void gui_xml_event_default(gui_xml_ev *ev, int val, const char *sval)
 {
@@ -115,7 +115,7 @@ static void gui_xml_signal_register(gui_xml *g, GtkWidget *wg, char *id, const c
     }
 }
 
-static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWidget *parent, GtkWidget *child, char recursive, const char *parm)
+static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWidget *parent, GtkWidget *child, char recursive, gui_xml_ifattr *parm)
 {
     int b0=0, b1=0, b2=0, b3=0, flagx, flagy, spx, spy;
     char *pos;
@@ -454,24 +454,22 @@ static GtkWidget *gui_xml_label(gui_xml *g, xmlNode *cur)
     return tmp;
 }
 
-static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, const char *parm)
+static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, gui_xml_ifattr *parm)
 {
-    char x = 0;
     char *arg0;
-
-    if(parm == NULL) 
-	x = 1;
-    else{
-	if(*parm == 0) x = 1;
-    }
+    int n, q, i;
+    
     for(; cur != NULL; cur = cur->next){
 	/* tagi kluczowe */
 	if(!strcmp((char*)cur->name,"if")){
-	    arg0 = (char *)xmlGetProp(cur, (unsigned char *)"chip");
-	    if(!strcmp(arg0, "none") && x) 
-	      gui_xml_parse_element(g, wg, doc, cur->xmlChildrenNode, parm );
-	    else
-	      if(strstr(arg0, parm) && x) gui_xml_parse_element(g, wg, doc, cur->xmlChildrenNode, NULL);
+	    n = q = 0;
+	    for(i = 0; parm[i].attr; i++){
+    		if((arg0 = (char *)xmlGetProp(cur, (unsigned char*)parm[i].attr))){
+		    n++;
+		    if(!strcmp(arg0, parm[i].val)) q++; 
+		}
+	    }
+	    if(n == q) gui_xml_parse_element(g, wg, doc, cur->xmlChildrenNode, parm );
 	} 
 	else if(!strcmp((char*)cur->name,"description")){
 	    arg0 = (char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
@@ -510,7 +508,7 @@ static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlN
 }
 
 /* parsowanie glównego poziomu */
-static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, const char *parm, const char *section )
+static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, const char *section )
 {
     xmlNode *cur;
     GtkWidget *tmp, *lab;
@@ -550,7 +548,7 @@ void gui_xml_destroy(gui_xml *g)
     gui_xml_event_destroy(g);
 }
 
-int gui_xml_build(gui_xml *g, char *xml, const char *section, const char *chip_name)
+int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *parm)
 {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
@@ -575,7 +573,7 @@ int gui_xml_build(gui_xml *g, char *xml, const char *section, const char *chip_n
 	printf("Error {gui_xml.c} --> gui_xml_create(): Failed to parse xml string\n");
     } else {
 	if(ctxt->valid)
-	    gui_xml_parser(g, doc, chip_name, section);
+	    gui_xml_parser(g, doc, parm, section);
 	else 
 	    printf("Error {gui_xml.c} --> gui_xml_create(): Failed to validate xml.\n");
 	xmlFreeDoc(doc);
