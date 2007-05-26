@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* hex, binary viewer, editor, kontrolka GTK
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -56,17 +56,6 @@ static void gui_xml_gtk_event_handler(GtkWidget *wg, gui_xml_ev *gx)
     p->ev(gx, val, sval);
 }
 
-static gui_xml_ev *gui_xml_event_lookup(gui_xml *g, const char *id, int type)
-{
-    gui_xml_ev *ev = g->event;
-    
-    for(; ev; ev = ev->next){
-	if(ev->id && ev->type){
-	    if(!strcmp(ev->id, id) && (ev->type == type)) return ev;
-	}
-    }
-    return NULL;
-}
 
 static void gui_xml_event_destroy(gui_xml *g)
 {
@@ -628,18 +617,79 @@ void gui_xml_register_event_func(gui_xml *g, gui_xml_event ev)
     g->ev = ev;
 }
 
-void *gui_xml_set_widget(gui_xml *g, gui_xml_ev_wg wg, const char *id, int val, char *sval)
+int gui_xml_trans_id(gui_xml_ev *ev, const gui_xml_lt *lt, int size_lt)
 {
-    GtkWidget *w;
-    w = gui_xml_event_lookup(g, id, wg)->widget;
+    int ret = -1, i;
+
+    if(!ev){
+	printf("Error: {gui_xml.c} gui_xml_trans_id() ---> event == NULL !\n");
+	return -1;
+    };
+
+    for(i = 0; i < size_lt; i++)
+	if(!strcmp(ev->id, lt[i].name)) return lt[i].id;
+
+    return ret;
+}
+
+gui_xml_ev *gui_xml_set_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id, int *val)
+{
+    gui_xml_ev *event;
+
+    if(!val){
+	printf("Error: {gui_xml.c} gui_xml_set_widget_value() ---> val == NULL !\n");
+	return NULL;
+    }
+
+    if(!(event = gui_xml_event_lookup(g, id, wg))){
+	printf("Error: {gui_xml.c} gui_xml_set_widget_value() ---> event == NULL !\n");
+	return NULL;
+    };
+
     g->suppress = 1;
     switch(wg){
-	case (int)GUI_XML_SPIN_BUTTON: gtk_spin_button_set_value(GTK_SPIN_BUTTON(w), val); break;
-	case GUI_XML_CHECK_BUTTON: gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), val & 1); break;
-	case GUI_XML_ENTRY: val = 0; gtk_entry_set_text(GTK_ENTRY(w), sval); break;
+	case (int)GUI_XML_SPIN_BUTTON: gtk_spin_button_set_value(GTK_SPIN_BUTTON(event->widget), *val); break;
+	case GUI_XML_CHECK_BUTTON: gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(event->widget), *val ? 1:0); break;
+	case GUI_XML_ENTRY: gtk_entry_set_text(GTK_ENTRY(event->widget), (char*)val); break;
 	default: break;
     }
     g->suppress = 0;
-    return w;
+    return event;
 }
 
+int gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id)
+{
+    int ret = -1;
+    gui_xml_ev *event;
+    
+    if(!(event = gui_xml_event_lookup(g, id, wg))){
+	printf("Error: {gui_xml.c} gui_xml_get_widget_value() ---> event == NULL !\n");
+	return ret;
+    };
+
+    switch(wg){
+	case GUI_XML_CHECK_BUTTON: ret = GTK_TOGGLE_BUTTON(event->widget)->active; break;
+	case GUI_XML_SPIN_BUTTON: ret = gtk_spin_button_get_value(GTK_SPIN_BUTTON(event->widget)); break;
+	case GUI_XML_ENTRY: ret = (int)gtk_entry_get_text(GTK_ENTRY(event->widget)); break;
+	default: break;
+    }
+
+    return ret;
+}
+
+gui_xml_ev *gui_xml_event_lookup(gui_xml *g, const char *id, gui_xml_ev_wg type)
+{
+    gui_xml_ev *ev;
+    
+    if(!g){
+	printf("Error: {gui_xml.c} gui_xml_event_lookup() ---> g == NULL !\n");
+	return NULL;
+    }
+    ev = g->event;
+    for(; ev; ev = ev->next){
+	if(ev->id && ev->type){
+	    if(!strcmp(ev->id, id) && (ev->type == type)) return ev;
+	}
+    }
+    return NULL;
+}

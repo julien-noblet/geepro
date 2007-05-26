@@ -1,4 +1,4 @@
-/* $Revision: 1.7 $ */
+/* $Revision: 1.8 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -903,3 +903,95 @@ char gui_cmp_pls(geepro *gep, int a,int b)
     if(!test ) gui_progress_bar_free(gep);
     return test;
 }
+
+/**************************************************************************************************************************/
+/* generator fali prostokatnej */
+
+
+
+void gui_test_set_period(GtkWidget *wg,  sqw_gen *sqg)
+{
+    sqg->period = gtk_spin_button_get_value(GTK_SPIN_BUTTON(sqg->wper));
+}
+
+void gui_test_set_duty(GtkWidget *wg,  sqw_gen *sqg)
+{
+    sqg->duty = gtk_spin_button_get_value(GTK_SPIN_BUTTON(sqg->wdut));
+}
+
+void gui_test_set_length(GtkWidget *wg,  sqw_gen *sqg)
+{
+    sqg->len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(sqg->wlen));
+}
+
+void gui_test_set_sequence(GtkWidget *wg,  sqw_gen *sqg)
+{
+    sqg->seq = gtk_spin_button_get_value(GTK_SPIN_BUTTON(sqg->wseq));
+}
+
+void gui_clk_sqw(gui *g, gui_sqw_generator gen)
+{
+    GtkWidget *wgm, *wg0, *wg1;
+    GtkAdjustment *adj;    
+    static sqw_gen sqg;
+
+    sqg.generator = gen;
+    sqg.parent = g;
+    
+    wgm = gtk_dialog_new_with_buttons("Square Wave Generator", 	GTK_WINDOW(g->wmain), GTK_DIALOG_MODAL, 
+	GTK_STOCK_OK, GTK_RESPONSE_ACCEPT, 
+	GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT, 
+	NULL);
+    
+    gtk_container_border_width(GTK_CONTAINER(wgm), 10);
+
+    wg0 = gtk_table_new(2, 5, FALSE);    
+    gtk_container_add(GTK_CONTAINER(GTK_DIALOG(wgm)->vbox), wg0);
+
+    wg1 = gtk_label_new("Period [us]:");    
+    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 0,1,  GTK_FILL,0,  0,0);
+    wg1 = gtk_label_new("Duty cycle [%]:");    
+    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 1,2,  GTK_FILL,0,  0,0);
+    wg1 = gtk_label_new("Length [s]:");    
+    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 2,3,  GTK_FILL,0,  0,0);
+    wg1 = gtk_label_new("Sequence (32bit):");    
+    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 3,4,  GTK_FILL,0,  0,0);
+
+    adj = GTK_ADJUSTMENT(gtk_adjustment_new(100, 0.0, 1000000, 100, 0, 0));
+    wg1 = gtk_spin_button_new(adj, 1, 0);
+    sqg.wper = wg1;
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 0,1,  GTK_FILL | GTK_EXPAND,0,  0,0);
+    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_period), &sqg);
+
+    adj = GTK_ADJUSTMENT(gtk_adjustment_new(50, 0.0, 100, 1, 0, 0));
+    wg1 = gtk_spin_button_new(adj, 1, 0);
+    sqg.wdut = wg1;
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 1,2,  GTK_FILL | GTK_EXPAND,0,  0,0);
+    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_duty), &sqg);
+
+    adj = GTK_ADJUSTMENT(gtk_adjustment_new(1, 0.0, 60, 1, 0, 0));
+    wg1 = gtk_spin_button_new(adj, 1, 0);
+    sqg.wlen = wg1;
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 2,3,  GTK_FILL | GTK_EXPAND,0,  0,0);
+    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_length), &sqg);
+
+    adj = GTK_ADJUSTMENT(gtk_adjustment_new(0, 0.0, 0xffffffff, 1, 0, 0));
+    wg1 = gtk_spin_button_new(adj, 1, 0);
+    sqg.wseq = wg1;
+    gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 3,4,  GTK_FILL | GTK_EXPAND,0,  0,0);
+    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_sequence), &sqg);
+
+    gtk_widget_show_all(wgm);
+
+    while(gtk_dialog_run(GTK_DIALOG(wgm)) == GTK_RESPONSE_ACCEPT){
+	gtk_widget_hide_all(wgm);
+	sqg.generator(&sqg);
+	gtk_widget_show_all(wgm);
+    }
+    gtk_widget_destroy(wgm);
+}
+

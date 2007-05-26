@@ -1,4 +1,4 @@
-/* $Revision: 1.7 $ */
+/* $Revision: 1.8 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -30,21 +30,6 @@
 
 #define GUI(x)	((gui *)x)
 
-/*
-typedef struct
-{
-    void *wper;
-    void *wdut;
-    void *wlen;
-    void *wseq;
-    
-    int period;
-    int duty;
-    int len;
-    int seq;
-} sqw;
-*/
-
 typedef struct
 {
     void *wmain;        /* glówne okno */
@@ -74,6 +59,23 @@ typedef struct
 
 } gui;
 
+typedef struct _sqw_gen sqw_gen;
+
+typedef void (*gui_sqw_generator)(sqw_gen *);
+
+struct _sqw_gen
+{
+    void *wper;
+    void *wdut;
+    void *wlen;
+    void *wseq;
+    gui_sqw_generator generator;
+    gui *parent;
+    int period;
+    int duty;
+    int len;
+    int seq;
+};
 
 #define GUI_DIPSW_ON		"dpsw-off"
 #define GUI_DIPSW_OFF		"dpsw-on"
@@ -156,9 +158,6 @@ typedef struct
 #define FO_H_FIRST	1
 #define FO_H_NEXT	2
 
-extern void gui_draw_pict(geepro *);
-extern void gui_draw_dip_switch(geepro *);
-extern void gui_viewer_rfsh(geepro *);
 extern void gui_set_default(geepro *gep);
 extern void gui_stat_rfsh(geepro*);
 extern void gui_menu_setup(geepro*);
@@ -204,4 +203,5 @@ extern int  gui_register_image(geepro*,char**);
 extern void gui_exit(geepro *gep);
 extern void gui_set_statusbar(geepro *gep, char *tmp, char *fmt, ...);
 
+extern void gui_clk_sqw(gui*, gui_sqw_generator);
 #endif
