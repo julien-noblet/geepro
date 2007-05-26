@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* hex, binary viewer, editor, kontrolka GTK
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -27,6 +27,15 @@
 
 typedef struct _gui_xml_ev gui_xml_ev;
 typedef void (*gui_xml_event)(gui_xml_ev *ev, int value, const char *sval);
+
+/* 
+  typ elementu tablicy przeszukiwania nazw dla gui_xml_trans_id()
+*/
+typedef struct
+{
+    char *name;
+    int  id;
+} gui_xml_lt; 
 
 struct _gui_xml_ev
 {
@@ -78,13 +87,34 @@ extern void gui_xml_register_event_func(gui_xml *g, gui_xml_event ev);
 extern int gui_xml_build(gui_xml *g, char *xml, const char *section, const char *chip_name);
 
 /*
-    ustawienie danej kontrolki
-*/
-extern void *gui_xml_set_widget(gui_xml *g, gui_xml_ev_wg wg, const char *id, int val, char *sval);
-
-/*
     likwiduje GUI, nie zwalnia pamieci na strukture gui_xml
 */
 extern void gui_xml_destroy(gui_xml *g);
 
+/*
+    zwraca id kontrolki po translacji lancucha id kontrolki na wartosc liczbowa wg tabeli lt
+    jak nie znajdzie elementu zwraca -1, 
+
+    size_lt - ilosc elementow tabeli 
+*/
+#define GUI_XML_TRANS_ID(ev, lt)	gui_xml_trans_id(ev, lt, sizeof(lt) / sizeof(lt[0]))
+extern int gui_xml_trans_id(gui_xml_ev *ev, const gui_xml_lt *lt, int size_lt);
+
+/*
+    ustawienie danej kontrolki
+*/
+extern gui_xml_ev *gui_xml_set_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id, int *val);
+
+/*
+    pobranie wartosci kontrolki
+    jesli brak widgetu lub widget nie posiada wartosci zwraca -1
+*/
+extern int gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id);
+
+/*
+    zwraca strukture zdarzenia dla kontolki typu wg i danym id
+*/
+extern gui_xml_ev *gui_xml_event_lookup(gui_xml *g, const char *id, gui_xml_ev_wg wg);
+
 #endif
+

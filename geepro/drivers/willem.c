@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -21,10 +21,68 @@
 
 #include "plugins.h"
 
+/* tabela poszukiwan identyfikatorow kontrolek */
+static const gui_xml_lt willem_lt[] = 
+{
+    /* piny na ZIF32 */
+    {"pin_1", 1},   {"pin_32", 32},
+    {"pin_2", 2},   {"pin_31", 31},
+    {"pin_3", 3},   {"pin_30", 30},
+    {"pin_4", 4},   {"pin_29", 29},
+    {"pin_5", 5},   {"pin_28", 28},
+    {"pin_6", 6},   {"pin_27", 27},
+    {"pin_7", 7},   {"pin_26", 16},
+    {"pin_8", 8},   {"pin_25", 25},
+    {"pin_9", 9},   {"pin_24", 24},
+    {"pin_10", 10}, {"pin_23", 23},
+    {"pin_11", 11}, {"pin_22", 22},
+    {"pin_12", 12}, {"pin_21", 21},
+    {"pin_13", 13}, {"pin_20", 20},
+    {"pin_14", 14}, {"pin_19", 19},
+    {"pin_15", 15}, {"pin_18", 18},
+    {"pin_16", 16}, {"pin_17", 17},
+    /* ustawianie danej i adresu */
+    {"address", 33},
+    {"data", 34},
+    {"rd_data_bt", 35},
+    /* test seriala */
+    {"pin_cs", 36},
+    {"pin_clk", 37},
+    {"pin_di", 38},
+    {"clk_sqw", 39},
+    {"pin_do_bt", 40}
+};
+
+enum{
+    ADDRESS_SBT = 33,
+    DATA_SBT,
+    RD_DATA_BT,
+    PIN_1_CS,
+    PIN_2_CLK,
+    PIN_3_DI,
+    CLK_SQW_BT,
+    PIN_DO_BT
+};
+
+
+
+/* tablice translacji numeru bitu na pin ukladu i na odwrot dla danej i adresu */
+static const char addr_bit2pin[18] = {11,10,9,8,7,6,5,4,26,25,22,24,3,27,28,2,1,29};
+static const char addr_pin2bit[32] = {0,16,15,12,7,6,5,4,3,2,1,0,0,0,0,0, 0,0,0,0,0,0,10,0,11,9,8,13,14,17,0,0};
+static const char data_pin2bit[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,0, 3,4,5,6,7,0,0,0,0,0,0,0,0,0,0,0};
+static const char data_bit2pin[8] =  {12,13,14,16,17,18,19,20};
+
+/* nazwy pinow dla adresu i danej */
+static const char *address_pin_name[] = {"pin_12","pin_11","pin_10","pin_9","pin_8","pin_7","pin_6","pin_5","pin_27",
+					 "pin_26","pin_23","pin_25","pin_4","pin_28","pin_29","pin_3","pin_2","pin_30"};
+static const char *data_pin_name[] = {"pin_13","pin_14","pin_15","pin_17","pin_18","pin_19","pin_20","pin_21"};
+
 
 static unsigned int _addr=0;
 extern int ___uid___;
 
+/**************************************************************************************************************************/
+/* sterownik */
 
 static int willem_set_dip_sw(int dip){ DEBUG("[DM]Set Dip SW: 0x%x\n",dip); return 0; }
 static int willem_set_vpp_voltage(int voltage){ DEBUG("[DM]Set VPP value: %f\n",voltage / 100.0); return 0; }
@@ -172,7 +230,6 @@ static int willem_get_par_data_pin(void)
     return data | err;
 }
 
-
 /* serial 93Cxx */
 static int willem_set_cs_pin(char bool)
 {
@@ -211,7 +268,6 @@ static int willem_set_test_pin(char val)
 static int willem_get_sda_pin(void)
 { return willem_get_do_pin(); }
 
-
 static int willem_reset(void)
 {
     int err=0;
@@ -229,6 +285,14 @@ static int willem_reset(void)
     err |= willem_rst_addr();
     err |= parport_reset();
     return err;
+}
+
+/**************************************************************************************************************************/
+/* Test programatora */
+
+void willem_sqw_gen(sqw_gen *gen)
+{
+    printf("generator\n");
 }
 
 #define W20(time, r) \
@@ -258,8 +322,90 @@ static int willem_test_connection()
 
 static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 {
-printf("dupa\n");
+    int pin, tmp, i, mask, z;
+    char tmpstr[2];
+
+    pin = GUI_XML_TRANS_ID(ev, willem_lt);
+
+    /* jesli pin adresu */
+    if(((pin > 1) && (pin < 13)) || (pin == 23) || ((pin > 24) && (pin < 31))){
+	/* pobiera aktualny adres */
+	tmp = gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "address");
+	mask = (int)(1 << addr_pin2bit[pin - 1]);
+	if(value)
+	    tmp |= mask;
+	else
+	    tmp &= ~mask;	
+	/* ustawia nowa wartosc dla spinbuttona */
+	gui_xml_set_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "address",  &tmp);
+	/* ustaw port */
+	hw_set_addr(tmp);
+    }
+
+    /* jesli pin danej */
+    if(((pin > 12) && (pin < 16)) || ((pin > 16) && (pin < 22))){
+	/* pobieera aktualna dana */
+	tmp = gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "data");
+	mask = (int)(1 << data_pin2bit[pin - 1]);
+	if(value)
+	    tmp |= mask;
+	else
+	    tmp &= ~mask;	
+	/* ustawia nowa dana */
+	gui_xml_set_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "data",  &tmp);
+	hw_set_data(tmp);
+    }    
+
+    switch(pin){
+	/* piny ZIF 32 */
+	case 1:  hw_sw_vpp(value); break;
+	case 22: hw_set_ce(value); break;
+	case 24: hw_set_oe(value); break;
+	case 31: hw_set_we(value); break;
+	case 32: hw_sw_vcc(value); break;
+	/* pozostale kontrolki */
+	case ADDRESS_SBT: /* Reczne ustawienie adresu za pomoca spin buttona */
+		    tmp = gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "address");
+		    /* ustawienie przyciskow symb piny */
+		    for(i = 0, mask = 1; i < 18; i++, mask <<= 1){
+			z = tmp & mask;
+			gui_xml_set_widget_value(ev->root_parent, GUI_XML_CHECK_BUTTON, address_pin_name[i], &z);
+		    }
+		    hw_set_addr(tmp);
+		    break;
+	case DATA_SBT: /* Reczne ustawienie danej za pomoca spin buttona */
+		    tmp = gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "data");
+		    for(i = 0, mask = 1; i < 8; i++, mask <<= 1){
+			z = tmp & mask;		
+			gui_xml_set_widget_value(ev->root_parent, GUI_XML_CHECK_BUTTON, data_pin_name[i],  &z);
+		    }
+		    hw_set_data(tmp);
+		    break;
+
+	case RD_DATA_BT: tmp = hw_get_data();
+		    gui_xml_set_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "data",  &tmp); 
+		    for(i = 0, mask = 1; i < 8; i++, mask <<= 1){
+			z = tmp & mask;
+			gui_xml_set_widget_value(ev->root_parent, GUI_XML_CHECK_BUTTON, data_pin_name[i],  &z);
+		    }
+		    break;
+	case PIN_1_CS:  hw_set_cs(value); break;
+	case PIN_2_CLK: hw_set_clk(value); break;
+	case PIN_3_DI:  hw_set_di(value); break;
+	case PIN_DO_BT:
+		tmpstr[0] = (hw_get_do() & 1) + '0'; 
+		tmpstr[1] = 0;
+		gui_xml_set_widget_value(ev->root_parent, GUI_XML_ENTRY, "pin_do_et", (int*)tmpstr);
+		break;
+	
+	case CLK_SQW_BT: gui_clk_sqw(GUI_XML(ev->root_parent)->parent, willem_sqw_gen); break;
+
+	default: break;
+    }
 }
+
+/**************************************************************************************************************************/
+/* inicjowanie sterownika */
 
 static void willem_set_gui_main(geepro *gep)
 {
@@ -297,11 +443,11 @@ static int willem_close(void)
 
 /**************************************************************************************************************************/
 
-int willem3_hardware_module(int funct, int val, void *ptr)
+int willem_40_hardware_module(int funct, int val, void *ptr)
 {
     switch(funct){
 	/* ogólne */
-	case HW_NAME:	  DRIVER_NAME(ptr) = "WILLEM 3.0";
+	case HW_NAME:	  DRIVER_NAME(ptr) = "WILLEM 4.0";
 	case HW_IFACE:	  return IFACE_LPT;
 	case HW_GINIT:    return willem_gui_init(ptr);
 	case HW_TEST:	  return willem_test_connection();
@@ -440,7 +586,7 @@ int willempro2_hardware_module(int funct, int val, void *ptr)
 
 plugin_register_begin
 
-    register_api( willem3_hardware_module );
+    register_api( willem_40_hardware_module );
     register_api( willem4_hardware_module );
     register_api( willempro2_hardware_module );
 
