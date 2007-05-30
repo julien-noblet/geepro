@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -20,7 +20,6 @@
  */
 
 #include "modules.h"
-#include "../pixmaps/93Cxx.xpms"
 
 MODULE_IMPLEMENTATION
 
@@ -197,6 +196,11 @@ if(addr_bits==16)
     gui_progress_bar_free(___geep___);
 }
 
+/**************************************************************************************************
+*
+* Bezposrednia obsluga funkcji zwrotnych, które wraz z wlasciwymi parametrami wykonaja wlasciwe akcje
+*
+*/
 
 REG_FUNC_BEGIN(erase_9346A)
     erase_9346(PARM_9346);
@@ -234,34 +238,38 @@ REG_FUNC_BEGIN(read_9366)
     read_9346(PARM_9366);
 REG_FUNC_END
 
+
+/**************************************************************************************************
+*
+* Rejestracja pluginu
+*
+*/
+
 REGISTER_MODULE_BEGIN( 93Cxx )
 
-    REGISTER_IMAGE(img1, d_93xx_willem_xpm)
-    REGISTER_IMAGE(img2, d_93xx_pcb3_xpm)
+    register_chip_begin("/Serial EEPROM/93Cxx", "93C46", "93Cxx", C46_SIZE);
+	add_action(MODULE_READ_ACTION, read_9346A);
+	add_action(MODULE_PROG_ACTION, prog_9346A);
+    	add_action(MODULE_ERASE_ACTION, erase_9346A);
+    register_chip_end;
 
-    register_chip("/Serial EEPROM/93Cxx", "93C46", C46_SIZE)
-    {
-	INIT_IMAGE_SET_IDX(img1, img2);
-	D_FUNC_INIT_SET(read_9346A, prog_9346A, erase_9346A, NULL);
-    }
+    register_chip_begin("/Serial EEPROM/93Cxx", "93LC46", "93Cxx", C46_SIZE);
+	add_action(MODULE_READ_ACTION, read_9346A);
+	add_action(MODULE_PROG_ACTION, prog_9346A);
+	add_action(MODULE_ERASE_ACTION, erase_9346A);
+    register_chip_end;
 
-    register_chip("/Serial EEPROM/93Cxx", "93LC46", C46_SIZE)
-    {
-	INIT_IMAGE_SET_IDX(img1, img2);
-	D_FUNC_INIT_SET(read_9346A, prog_9346A, erase_9346A, NULL);
-    }
+    register_chip_begin("/Serial EEPROM/93Cxx", "93C56", "93Cxx", C56_SIZE);
+	add_action(MODULE_READ_ACTION, read_9356);
+	add_action(MODULE_PROG_ACTION, prog_9356);
+	add_action(MODULE_ERASE_ACTION, erase_9356);
+    register_chip_end;
 
-    register_chip("/Serial EEPROM/93Cxx", "93C56", C56_SIZE)
-    {
-	INIT_IMAGE_SET_IDX(img1, img2);
-	D_FUNC_INIT_SET(read_9356, prog_9356, erase_9356, NULL);
-    }
-
-    register_chip("/Serial EEPROM/93Cxx", "93C66", C66_SIZE)
-    {
-	INIT_IMAGE_SET_IDX(img1, img2);
-	D_FUNC_INIT_SET(read_9366, prog_9366, erase_9366, NULL);
-    }
+    register_chip_begin("/Serial EEPROM/93Cxx", "93C66", "93Cxx", C66_SIZE);
+	add_action(MODULE_READ_ACTION, read_9366);
+	add_action(MODULE_PROG_ACTION, prog_9366);
+	add_action(MODULE_ERASE_ACTION, erase_9366);
+    register_chip_end;
 
 REGISTER_MODULE_END
 

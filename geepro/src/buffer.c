@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "gepro.h"
 #include "buffer.h"
 #include "../intl/lang.h"
 #include "main.h"

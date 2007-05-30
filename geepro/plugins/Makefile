@@ -1,4 +1,4 @@
-## $Revision: 1.2 $
+## $Revision: 1.3 $
 
 CC  = gcc
 OPT = -Wall -fPIC -g -c
@@ -11,7 +11,7 @@ ALL:
 %.module:%.o
 	gcc -g -shared -Wl,-soname,\$*.module -o \$*.module \$*.o -lc
 
-%.o: %.c
+%.o: %.c modules.h
 	\$(CC) \$(OPT) \$*.c
 
 clean:

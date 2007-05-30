@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -20,7 +20,6 @@
  */
 
 #include "modules.h"
-#include "../pixmaps/mcs51.xpm"
 
 MODULE_IMPLEMENTATION
 
@@ -193,39 +192,24 @@ void AT89Cxx_setLB(void *x, char *parm)
 printf("|->LB = %i\n",at89cXX_lb);    
 }
 
-REG_FUNC_BEGIN(AT89Cxx_autostart)
-//    gui_fast_option_add(FO_LABEL,"Lock Bits mode",0,NULL,NULL,0);
-//    gui_fast_option_add(FO_RB_FIRST,"No lock",0,AT89Cxx_setLB,"0",0);
-//    gui_fast_option_add(FO_RB_NEXT, "No further programming",0,AT89Cxx_setLB,"1",0);
-//    gui_fast_option_add(FO_RB_NEXT, "No verify, no further programming",0,AT89Cxx_setLB,"2",0);
-REG_FUNC_END
-
 REGISTER_MODULE_BEGIN( MCS-51 )
 
-    REGISTER_IMAGE(img, mcs51_xpm);
+    register_chip_begin("/uk/MCS-51/AT89Cx051","AT89C1051", "AT89Cxx51", SIZE_AT89C1051);
+	add_action(MODULE_READ_ACTION, read_AT89C1051);
+	add_action(MODULE_READ_ACTION, write_AT89C1051);
+	add_action(MODULE_READ_ACTION, verify_AT89C1051);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/uk/MCS-51/AT89Cx051","AT89C1051", 0, SIZE_AT89C1051);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_AT89C1051, write_AT89C1051, NULL, verify_AT89C1051);
-    SET_DIPSW(2);
-    SET_AUTOSTART(AT89Cxx_autostart);
-    D_REGISTER;
+    register_chip_begin("/uk/MCS-51/AT89Cx051","AT89C2051", "AT89Cxx51", SIZE_AT89C2051);
+	add_action(MODULE_READ_ACTION, read_AT89C2051);
+	add_action(MODULE_READ_ACTION, write_AT89C2051);
+	add_action(MODULE_READ_ACTION, verify_AT89C2051);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/uk/MCS-51/AT89Cx051","AT89C2051", 0, SIZE_AT89C2051);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_AT89C2051, write_AT89C2051, NULL, verify_AT89C2051);
-    SET_DIPSW(0x6d5);
-    SET_AUTOSTART(AT89Cxx_autostart);
-    D_REGISTER;
-
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/uk/MCS-51/AT89Cx051","AT89C4051", 0, SIZE_AT89C4051);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_AT89C4051, write_AT89C4051, NULL, verify_AT89C4051);
-    SET_DIPSW(0x6d5);
-    SET_AUTOSTART(AT89Cxx_autostart);
-    D_REGISTER;
+    register_chip_begin("/uk/MCS-51/AT89Cx051","AT89C4051", "AT89Cxx51", SIZE_AT89C4051);
+	add_action(MODULE_READ_ACTION, read_AT89C4051);
+	add_action(MODULE_READ_ACTION, write_AT89C4051);
+	add_action(MODULE_READ_ACTION, verify_AT89C4051);
+    register_chip_end;
 
 REGISTER_MODULE_END

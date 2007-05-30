@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -20,13 +20,18 @@
  */
 
 #include "modules.h"
-#include "../pixmaps/27xx.xpms"
 
 MODULE_IMPLEMENTATION
 
 #define SIZE_2716	2048
 #define SIZE_2732	4096
 #define SIZE_2764	8192
+#define SIZE_27128	16384
+#define SIZE_27256	32768
+#define SIZE_27512	65536
+#define SIZE_27C010	131072
+#define SIZE_27C020	262144
+#define SIZE_27C040	524288
 
 void fin_message(char error, char *title, char *ok, char *err)
 {
@@ -354,69 +359,67 @@ REG_FUNC_BEGIN(prog_27xx) REG_FUNC_END
 
 REGISTER_MODULE_BEGIN( 27xx )
 
-    REGISTER_IMAGE(img, d_2716_xpm)
+    register_chip_begin("/EPROM/24 pin", "2716", "27xx", SIZE_2716);
+	add_action(MODULE_READ_ACTION, read_2716);
+	add_action(MODULE_PROG_ACTION, prog_2716);
+	add_action(MODULE_VERIFY_ACTION, verify_2716);
+	add_action(MODULE_TEST_ACTION, test_2716);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/24 pin","2716", 0, SIZE_2716);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_2716, prog_2716, NULL, verify_2716);
-    D_TEST(test_2716);
-    SET_DIPSW(0x50);
-    D_REGISTER;
+    register_chip_begin("/EPROM/24 pin", "2732", "27xx", SIZE_2732);
+	add_action(MODULE_READ_ACTION, read_2732);
+	add_action(MODULE_PROG_ACTION, prog_27xx);
+	add_action(MODULE_VERIFY_ACTION, verify_2732);
+	add_action(MODULE_TEST_ACTION, test_2732);
+    register_chip_end;
 
-    img = gui_register_image(___geep___,d_2732_xpm);
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/24 pin","2732", 0, SIZE_2732);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_2732, prog_27xx, NULL, verify_2732);
-    D_TEST(test_2732);
-    SET_DIPSW(0x30);
-    D_REGISTER;
+    register_chip_begin("/EPROM/28 pin", "2764", "27xx", SIZE_2764);
+	add_action(MODULE_READ_ACTION, read_2764);
+	add_action(MODULE_PROG_ACTION, prog_2764);
+	add_action(MODULE_VERIFY_ACTION, verify_2764);
+	add_action(MODULE_TEST_ACTION, test_2764);
+    register_chip_end;
 
-    img = gui_register_image(___geep___,d_2764_xpm);
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/28 pin","2764", 0, 8192);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_2764, prog_2764, NULL, verify_2764);
-    D_TEST(test_2764);
-    SET_DIPSW(0x948);
-    D_REGISTER;
+    register_chip_begin("/EPROM/28 pin", "27128", "27xx", SIZE_27128);
+	add_action(MODULE_READ_ACTION, read_27xx);
+	add_action(MODULE_PROG_ACTION, prog_27xx);
+	add_action(MODULE_VERIFY_ACTION, verify_27xx);
+	add_action(MODULE_TEST_ACTION, test_27xx);
+    register_chip_end;
 
-/*
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/28 pin","27128", 0, 16384);
-    INIT_IMAGE_SET_IDX(D_2764_WILLEM_IMG,D_2764_PCB3_IMG);
-    D_FUNC_INIT_SET(read_27xx, prog_27xx, NULL, verify_27xx);
-    D_REGISTER;
+    register_chip_begin("/EPROM/28 pin", "27256", "27xx", SIZE_27256);
+	add_action(MODULE_READ_ACTION, read_27xx);
+	add_action(MODULE_PROG_ACTION, prog_27xx);
+	add_action(MODULE_VERIFY_ACTION, verify_27xx);
+	add_action(MODULE_TEST_ACTION, test_27xx);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/28 pin","27256", 0, 32768);
-    INIT_IMAGE_SET_IDX(D_2764_WILLEM_IMG,D_2764_PCB3_IMG);
-    D_FUNC_INIT_SET(read_27xx, prog_27xx, NULL, verify_27xx);
-    D_REGISTER;
+    register_chip_begin("/EPROM/28 pin", "27512", "27xx", SIZE_27512);
+	add_action(MODULE_READ_ACTION, read_27xx);
+	add_action(MODULE_PROG_ACTION, prog_27xx);
+	add_action(MODULE_VERIFY_ACTION, verify_27xx);
+	add_action(MODULE_TEST_ACTION, test_27xx);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/28 pin","27512", 0, 65536);
-    INIT_IMAGE_SET_IDX(D_2764_WILLEM_IMG,D_2764_PCB3_IMG);
-    D_FUNC_INIT_SET(read_27xx, prog_27xx, NULL, verify_27xx);
-    D_REGISTER;
+    register_chip_begin("/EPROM/32 pin", "27C010", "27C0xx", SIZE_27C010);
+	add_action(MODULE_READ_ACTION, read_27xx);
+	add_action(MODULE_PROG_ACTION, prog_27xx);
+	add_action(MODULE_VERIFY_ACTION, verify_27xx);
+	add_action(MODULE_TEST_ACTION, test_27xx);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/32 pin","27C010", 0, 131072);
-    INIT_IMAGE_SET_IDX(D_27010_WILLEM_IMG,D_27010_PCB3_IMG);
-    D_FUNC_INIT_SET(read_27xx, prog_27xx, NULL, verify_27xx);
-    D_REGISTER;
+    register_chip_begin("/EPROM/32 pin", "27C020", "27C0xx", SIZE_27C020);
+	add_action(MODULE_READ_ACTION, read_27xx);
+	add_action(MODULE_PROG_ACTION, prog_27xx);
+	add_action(MODULE_VERIFY_ACTION, verify_27xx);
+	add_action(MODULE_TEST_ACTION, test_27xx);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/32 pin","27C020", 0, 262144);
-    INIT_IMAGE_SET_IDX(D_27010_WILLEM_IMG,D_27010_PCB3_IMG);
-    D_FUNC_INIT_SET(read_27xx, prog_27xx, NULL, verify_27xx);
-    D_REGISTER;
+    register_chip_begin("/EPROM/32 pin", "27C040", "27C0xx", SIZE_27C040);
+	add_action(MODULE_READ_ACTION, read_27xx);
+	add_action(MODULE_PROG_ACTION, prog_27xx);
+	add_action(MODULE_VERIFY_ACTION, verify_27xx);
+	add_action(MODULE_TEST_ACTION, test_27xx);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/EPROM/32 pin","27C040", 0, 524288);
-    INIT_IMAGE_SET_IDX(D_27010_WILLEM_IMG,D_27010_PCB3_IMG);
-    D_FUNC_INIT_SET(read_27xx, prog_27xx, NULL, verify_27xx);
-    D_REGISTER;
-*/
 REGISTER_MODULE_END

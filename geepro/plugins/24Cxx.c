@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2007 Bartłomiej Zimoń
  * Email: uzi18 (at) o2 (dot) pl
@@ -310,32 +310,34 @@ REG_FUNC_END
 
 REGISTER_MODULE_BEGIN(24Cxx)
 
-//    REGISTER_IMAGE(img1, d_93xx_willem_xpm)
-//    REGISTER_IMAGE(img2, d_93xx_pcb3_xpm)
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C01A", "24Cxx", C01_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C01);
+	add_action(MODULE_PROG_ACTION, prog_24C01);
+	add_action(MODULE_ERASE_ACTION, erase_24C01);
+    register_chip_end;
+    
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C02", "24Cxx", C02_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C02);
+	add_action(MODULE_PROG_ACTION, prog_24C02);
+	add_action(MODULE_ERASE_ACTION, erase_24C02);
+    register_chip_end;
+    
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C04", "24Cxx", C04_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C04);
+	add_action(MODULE_PROG_ACTION, prog_24C04);
+	add_action(MODULE_ERASE_ACTION, erase_24C04);
+    register_chip_end;
 
-    register_chip("/Serial EEPROM/24Cxx","24C01A", C01_SIZE){
-//    INIT_IMAGE_SET_IDX(img1,img2);
-    D_FUNC_INIT_SET(read_24C01, prog_24C01, erase_24C01, NULL);
-    }
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C08A", "24Cxx", C08_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C08);
+	add_action(MODULE_PROG_ACTION, prog_24C08);
+	add_action(MODULE_ERASE_ACTION, erase_24C08);
+    register_chip_end;
     
-    register_chip("/Serial EEPROM/24Cxx","24C02", C02_SIZE){
-//    INIT_IMAGE_SET_IDX(img1,img2);
-    D_FUNC_INIT_SET(read_24C02, prog_24C02, erase_24C02, NULL);
-    }
-    
-    register_chip("/Serial EEPROM/24Cxx","24C04", C04_SIZE){
-//    INIT_IMAGE_SET_IDX(img1,img2);
-    D_FUNC_INIT_SET(read_24C04, prog_24C04, erase_24C04, NULL);
-    }
-
-    register_chip("/Serial EEPROM/24Cxx","24C08A", C08_SIZE){
-//    INIT_IMAGE_SET_IDX(img1,img2);
-    D_FUNC_INIT_SET(read_24C08, prog_24C08, erase_24C08, NULL);
-    }
-    
-    register_chip("/Serial EEPROM/24Cxx","24C16A", C16_SIZE){
-//    INIT_IMAGE_SET_IDX(img1,img2);
-    D_FUNC_INIT_SET(read_24C16, prog_24C16, erase_24C16, NULL);
-    }
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C16A", "24Cxx", C16_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C16);
+	add_action(MODULE_PROG_ACTION, prog_24C16);
+	add_action(MODULE_ERASE_ACTION, erase_24C16);
+    register_chip_end;
 
 REGISTER_MODULE_END

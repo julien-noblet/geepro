@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -77,39 +77,26 @@ REG_FUNC_BEGIN(verify_474)
     finish_action();
 REG_FUNC_END
 
-REG_FUNC_BEGIN(autostart_474) 
-/* autostart dla 474 */
-REG_FUNC_END
-
-REG_FUNC_BEGIN(autostart_475)
-//    gui_fast_option_add(FO_LABEL,"Warning:\nOpen Collector output", 0, NULL, NULL, 0);
-REG_FUNC_END
-
 REGISTER_MODULE_BEGIN( PROM )
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/PROM","74S474", 0, SIZE_PROM_474);
-    INIT_IMAGE_SET_IDX(0,0);
-    D_FUNC_INIT_SET(read_474, NULL, NULL, verify_474);
-    SET_DIPSW(0x30); /* 7 i 8 za³±czone */
-    SET_AUTOSTART(autostart_474);
-    D_REGISTER;
+    register_chip_begin("/PROM","74S474", "74S47x", SIZE_PROM_474);
+	add_action(MODULE_READ_ACTION, read_474);
+	add_action(MODULE_VERIFY_ACTION, verify_474);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/PROM","74S475", 0, SIZE_PROM_474);
-    INIT_IMAGE_SET_IDX(0,0);
-    D_FUNC_INIT_SET(read_474, NULL, NULL, verify_474);
-    SET_DIPSW(0x30); /* 7 i 8 za³±czone */
-    SET_AUTOSTART(autostart_475);
-    D_REGISTER;
+    register_chip_begin("/PROM","74S475", "74S47x", SIZE_PROM_474);
+	add_action(MODULE_READ_ACTION, read_474);
+	add_action(MODULE_VERIFY_ACTION, verify_474);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/PROM","KR556RT5", 0, SIZE_PROM_474);
-    INIT_IMAGE_SET_IDX(0,0);
-    D_FUNC_INIT_SET(read_474, NULL, NULL, verify_474);
-    SET_DIPSW(0x30); /* 7 i 8 za³±czone */
-    SET_AUTOSTART(autostart_475);
-    D_REGISTER;
+    register_chip_begin("/PROM","74S475", "74S47x", SIZE_PROM_474);
+	add_action(MODULE_READ_ACTION, read_474);
+	add_action(MODULE_VERIFY_ACTION, verify_474);
+    register_chip_end;
+
+    register_chip_begin("/PROM","KR556RT5", "74S47x", SIZE_PROM_474);
+	add_action(MODULE_READ_ACTION, read_474);
+	add_action(MODULE_VERIFY_ACTION, verify_474);
+    register_chip_end;
 
 REGISTER_MODULE_END
-
