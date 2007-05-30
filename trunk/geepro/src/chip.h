@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -78,7 +78,8 @@ struct chip_plugins
 struct __chip__{
     char *chip_path;		/* chip path format (eg "/27xx"), visible later in menu */
     char *chip_name;		/* chip name eg 2716 */
-    int  sub_id;		/* ID chip in family */
+    char *chip_family;
+    int  chip_id;		/* ID chip in family */
     int	 dip_switch;		/* dip switch settings for PCB3 - 29xx bit + 12bit dip switch       */
     void *image_willem;		/* pointer to xpm image for willem - the picture at the right 	     */
     void *image_pcb;    	/* as above, but for PCB3 					     */

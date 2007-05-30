@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -32,8 +32,6 @@
 #include "../drivers/hwplugin.h"
 #include "dummy.h"
 #include "geepro.h"
-
-#include "gepro.h"
 
 /* uchwyt api do wybranego sterownika, global na cały program */
 hw_module_type ___hardware_module___ = dummy_hardware_module; 
@@ -88,16 +86,12 @@ int main(int argc, char **argv)
     iface_load_config(geep.ifc, NULL);
     iface_make_plugin_list(geep.ifc, "./drivers", ".plug");
 
-    memset(&PROGRAM_STATE,0,sizeof(PROGRAM_STATE));
-    SET_BUFFER(NULL);
-
     gui_menu_setup(&geep);
 /* moduły chipów inicjują menu gui, dlatego gui musi być zainicjowane */
 /* parametry z configa w przyszłości */
     iface_make_modules_list( geep.ifc, "./plugins", ".module"); 
 
 //    signal(SIGINT, kill_me);
-    
     
     gui_run(&geep);
 

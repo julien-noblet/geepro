@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -20,7 +20,6 @@
  */
 
 #include "modules.h"
-#include "../pixmaps/mcs48.xpm"
 
 MODULE_IMPLEMENTATION
 
@@ -64,7 +63,7 @@ void verify_8048(int size)
 
     ok_status = 1;
     progress_loop(addr, 0, size, "Weryfikacja"){
-	oe(0,3000)
+	oe(0,3000);
 	set_address((addr >> 8) & 0x0f);
 	set_data(addr);
 	oe(1,3000);
@@ -119,41 +118,27 @@ REG_FUNC_END
 
 REGISTER_MODULE_BEGIN( MCS-48 )
 
-    REGISTER_IMAGE(img, mcs48_xpm);
+    register_chip_begin("/uk/MCS-48", "8048AH", "MCS-48", SIZE_8048AH);
+	add_action(MODULE_READ_ACTION, read_8048AH);
+	add_action(MODULE_VERIFY_ACTION, verify_8048AH);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/uk/MCS-48","8048AH", 0, SIZE_8048AH);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_8048AH, NULL, NULL, verify_8048AH);
-    SET_DIPSW(0x6d5);
-    D_REGISTER;
+    register_chip_begin("/uk/MCS-48", "8049AH", "MCS-48", SIZE_8049AH);
+	add_action(MODULE_READ_ACTION, read_8049AH);
+	add_action(MODULE_VERIFY_ACTION, verify_8049AH);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/uk/MCS-48","8049AH", 0, SIZE_8049AH);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_8049AH, NULL, NULL, verify_8049AH);
-    SET_DIPSW(0x6d5);
-    D_REGISTER;
+    register_chip_begin("/uk/MCS-48", "8050AH", "MCS-48", SIZE_8050AH);
+	add_action(MODULE_READ_ACTION, read_8050AH);
+	add_action(MODULE_VERIFY_ACTION, verify_8050AH);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/uk/MCS-48","8050AH", 0, SIZE_8050AH);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_8050AH, NULL, NULL, verify_8050AH);
-    SET_DIPSW(0x6d5);
-    D_REGISTER;
+    register_chip_begin("/uk/MCS-48", "8748AH", "MCS-48", SIZE_8748H);
+	add_action(MODULE_READ_ACTION, read_8748H);
+    register_chip_end;
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/uk/MCS-48","8748H", 0, SIZE_8748H);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_8748H, NULL, NULL, NULL);
-    SET_DIPSW(0x6d5);
-    D_REGISTER;
-
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/uk/MCS-48","8749H", 0, SIZE_8749H);
-    INIT_IMAGE_SET_IDX(img,img);
-    D_FUNC_INIT_SET(read_8749H, NULL, NULL, NULL);
-    SET_DIPSW(0x6d5);
-    D_REGISTER;
+    register_chip_begin("/uk/MCS-48", "8749AH", "MCS-48", SIZE_8749H);
+	add_action(MODULE_READ_ACTION, read_8749H);
+    register_chip_end;
 
 REGISTER_MODULE_END

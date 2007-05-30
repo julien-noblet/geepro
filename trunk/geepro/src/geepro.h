@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 #ifndef __GEEPRO_H_
 #define __GEEPRO_H_
 /* geepro - Willem eprom programmer for linux
@@ -24,7 +24,14 @@
 #include "iface.h"
 #include "chip.h"
 
-/* główna struktura programu */
+/* Informacje o wersji */
+#define EPROGRAM_NAME "Geepro"
+#define ERELDATE "1 Feb 2020"
+#define EVERSION "0.0.2 pre"
+#define EAUTHORS "Krzysztof Komarnicki krzkomar@wp.pl"
+#define ELICENSE "GPL version 2"
+
+/* glówna struktura programu */
 typedef struct
 {
     int   argc;		
@@ -34,5 +41,5 @@ typedef struct
     chip  *chp;
 } geepro;
 
-
 #endif
+

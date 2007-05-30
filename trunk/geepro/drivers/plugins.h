@@ -1,6 +1,6 @@
 #ifndef __PLUGINS_H__
 #define __PLUGINS_H__
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -30,7 +30,6 @@
 #include "hwplugin.h"
 #include "../src/iface.h"
 
-#include "../src/gepro.h"
 #include "../src/geepro.h"
 
 #include "../gui/gui_xml.h"

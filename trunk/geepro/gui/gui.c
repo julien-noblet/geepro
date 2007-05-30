@@ -1,4 +1,4 @@
-/* $Revision: 1.8 $ */
+/* $Revision: 1.9 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -25,7 +25,6 @@
 #include <gtk/gtk.h>
 
 #include "../intl/lang.h"
-#include "../src/gepro.h"
 #include "../src/files.h"
 #include "../src/buffer.h"
 #include "../src/main.h"
@@ -39,91 +38,6 @@
 #include "../src/iface.h"
 
 #include "bineditor.h"
-
-typedef struct{
-    int		idx;
-    GtkWidget 	*wg;
-    void	*next;
-} fo_idx;
-
-char		dialog_exit, dialog_code;
-void		*p_wgts[256];	/* przechowuje wska�niki do widget�w */
-conf_state	program_state;
-fo_idx		*fo_mg = NULL, *fo_mg_first = NULL;
-char		fo_cpage = 3; /* bo 3 zakladki maja zostac */
-fo_idx		*ao_mg = NULL, *ao_mg_first = NULL;
-char		progress_bar_exit;
-
-
-typedef struct
-{
-    int 	id;
-    GdkPixmap	*image;
-    void	*next;
-} rimg;
-
-rimg  *r_img_root = NULL;
-
-void gui_dynamic_widget_add(fo_idx **fo, fo_idx **ff ,int idx ,int type, char *name, int value, void *fnc, void *parm, char pos);
-void gui_dynamic_widget_purge(fo_idx **fo, fo_idx **ff);
-void gui_dialog_bt(GtkWidget *wg, char *name);
-void gui_add_action(geepro *gep, char *stock_name, gchar *tip, int id);
-void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep);
-/***************************************************************************************************/
-
-void gui_drawable_rfsh(GtkWidget *wg)
-{
-    GdkRectangle temp;
-    temp.x = temp.y = 0;
-    temp.width = wg->allocation.width;
-    temp.height = wg->allocation.height;
-    gtk_widget_draw(wg, &temp);
-}
-
-void gui_free_images()
-{
-    void *tmp;
-    rimg *r_img;
-    for(r_img = r_img_root; r_img;){
-	 tmp = ((rimg *)r_img)->next;
-	 free(r_img);
-	 r_img = tmp; 
-    }
-}
-
-int gui_register_image(geepro *gep, char **img)
-{
-    GdkBitmap *mask;
-    rimg *r_img;
-    rimg *new_image;
-    int  idx;
-
-    new_image = (rimg *)malloc(sizeof(rimg));
-    new_image->next = NULL;
-    new_image->image = gdk_pixmap_create_from_xpm_d(GTK_WIDGET(GUI(gep->gui)->wmain)->window, &mask, NULL, (gchar **)img);
-
-    if(!r_img_root)
-    {
-	new_image->id = 1;
-	r_img_root = new_image;
-	atexit(gui_free_images);
-	return 1;
-    }
-
-    for(idx = 1, r_img = r_img_root; ((rimg *)r_img)->next; idx++ ) r_img = ((rimg *)r_img)->next;
-    idx++;
-    new_image->id = idx;
-    ((rimg *)r_img)->next = new_image;
-    return idx;
-}
-
-GdkPixmap *gui_get_image(int id)
-{
-    rimg *r_img;
-    for(r_img = r_img_root; r_img; r_img = ((rimg *)r_img)->next )
-	if( ((rimg *)r_img)->id == id) return ((rimg *)r_img)->image;
-    return NULL;
-}
 
 /***************************************************************************************************/
 void gui_stat_rfsh(geepro *gep)
@@ -235,22 +149,22 @@ void gui_device_sel(GtkWidget *wg, geepro *gep)
     if(gep->chp){
 //	    gui_adv_option_purge(gep);
 /* ten sposob do modyfikacji */
-	    if(gep->chp->read_chip)
-		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_READ]));
-	    if(gep->chp->verify_chip)	    
-		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_VERIFY]));
-	    if(gep->chp->read_sig_chip)	
-		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_SIGNATURE]));
-	    if(gep->chp->test_chip)	
-		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_TESTBLANK]));
-	    if(gep->chp->write_chip)
-	    	gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_WRITE]));
-	    if(gep->chp->erase_chip)	
-		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_ERASE]));
-	    if(gep->chp->lock_chip)	
-		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_LOCK]));
-	    if(gep->chp->unlock_chip)	
-		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_UNLOCK]));
+//	    if(gep->chp->read_chip)
+//		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_READ]));
+//	    if(gep->chp->verify_chip)	    
+//		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_VERIFY]));
+//	    if(gep->chp->read_sig_chip)	
+//		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_SIGNATURE]));
+//	    if(gep->chp->test_chip)	
+//		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_TESTBLANK]));
+//	    if(gep->chp->write_chip)
+//	    	gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_WRITE]));
+//	    if(gep->chp->erase_chip)	
+//		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_ERASE]));
+//	    if(gep->chp->lock_chip)	
+//		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_LOCK]));
+//	    if(gep->chp->unlock_chip)	
+//		gtk_widget_destroy(GTK_WIDGET(GUI(gep->gui)->action[CHIP_UNLOCK]));
 /*
     Wersja na przyszłą wersję:
     for(i = 0; i < GUI_MAX_ACTIONS; i++)
@@ -268,28 +182,25 @@ void gui_device_sel(GtkWidget *wg, geepro *gep)
     }
     memset(tmp->buffer, 0, tmp->dev_size);
 
-/* do usuniecia */
-    SET_BUFFER(tmp->buffer);
-
     gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, tmp->dev_size, (unsigned char*)tmp->buffer);
     
 /* do modyfikacji */
-	if(tmp->read_chip)
-	    gui_add_action(gep, GTK_STOCK_CONVERT, READ_CHIP_TIP, CHIP_READ );
-	if(tmp->verify_chip)	    
-	    gui_add_action(gep, GTK_STOCK_COPY, VERIFY_CHIP_TIP, CHIP_VERIFY );
-	if(tmp->read_sig_chip)	
-	    gui_add_action(gep, GTK_STOCK_COLOR_PICKER, ID_CHIP_TIP, CHIP_SIGNATURE );
-	if(tmp->test_chip)	
-	    gui_add_action(gep, GTK_STOCK_DIALOG_QUESTION, BLANK_CHIP_TIP, CHIP_TESTBLANK );
-	if(tmp->write_chip)	
-	    gui_add_action(gep, GTK_STOCK_EDIT, PROGRAM_CHIP_TIP, CHIP_WRITE );
-	if(tmp->erase_chip)	
-	    gui_add_action(gep, GTK_STOCK_DELETE, ERASE_CHIP_TIP, CHIP_ERASE );
-	if(tmp->lock_chip)	
-	    gui_add_action(gep, GTK_STOCK_DIALOG_AUTHENTICATION, LB_CHIP_TIP, CHIP_LOCK );
-	if(tmp->unlock_chip)	
-	    gui_add_action(gep, GTK_STOCK_CUT, ULB_CHIP_TIP, CHIP_UNLOCK );
+//	if(tmp->read_chip)
+//	    gui_add_action(gep, GTK_STOCK_CONVERT, READ_CHIP_TIP, CHIP_READ );
+//	if(tmp->verify_chip)	    
+//	    gui_add_action(gep, GTK_STOCK_COPY, VERIFY_CHIP_TIP, CHIP_VERIFY );
+//	if(tmp->read_sig_chip)	
+//	    gui_add_action(gep, GTK_STOCK_COLOR_PICKER, ID_CHIP_TIP, CHIP_SIGNATURE );
+//	if(tmp->test_chip)	
+//	    gui_add_action(gep, GTK_STOCK_DIALOG_QUESTION, BLANK_CHIP_TIP, CHIP_TESTBLANK );
+//	if(tmp->write_chip)	
+//	    gui_add_action(gep, GTK_STOCK_EDIT, PROGRAM_CHIP_TIP, CHIP_WRITE );
+//	if(tmp->erase_chip)	
+//	    gui_add_action(gep, GTK_STOCK_DELETE, ERASE_CHIP_TIP, CHIP_ERASE );
+//	if(tmp->lock_chip)	
+//	    gui_add_action(gep, GTK_STOCK_DIALOG_AUTHENTICATION, LB_CHIP_TIP, CHIP_LOCK );
+//	if(tmp->unlock_chip)	
+//	    gui_add_action(gep, GTK_STOCK_CUT, ULB_CHIP_TIP, CHIP_UNLOCK );
 /*
     Wersja na przyszłą wersję:
     for(i = 0; i < GUI_MAX_ACTIONS; i++)
@@ -362,22 +273,23 @@ void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep)
     chip_menu_create(plg, wg, gui_submenu_add, gui_menu_chip_add, gep);
 }
 
-void gui_add_action(geepro *gep, char *stock_name, gchar *tip, int id)
-{
-    GtkWidget *tmp;
 
-    tmp = gtk_image_new_from_stock(stock_name, gtk_toolbar_get_icon_size(GTK_TOOLBAR(GUI(gep->gui)->toolbox)));    
+void gui_add_action(geepro *gep, void *chip_str, const char *stock_name, const char *tip, void *cb)
+{
+//    GtkWidget *tmp;
+
+//    tmp = gtk_image_new_from_stock(stock_name, gtk_toolbar_get_icon_size(GTK_TOOLBAR(GUI(gep->gui)->toolbox)));    
 /* do usuniecia w przyszlosci */
-    switch(id){
-	case 0: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->read_chip), gep); break;
-	case 1: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->verify_chip), gep); break;
-	case 2: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->read_sig_chip), gep); break;
-	case 3: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->test_chip), gep); break;
-	case 4: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->write_chip), gep); break;
-	case 5: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->erase_chip), gep); break;
-        case 6: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->lock_chip), gep); break;	
-	case 7: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->unlock_chip), gep); break;
-    }
+//    switch(id){
+//	case 0: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->read_chip), gep); break;
+//	case 1: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->verify_chip), gep); break;
+//	case 2: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->read_sig_chip), gep); break;
+//	case 3: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->test_chip), gep); break;
+//	case 4: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->write_chip), gep); break;
+//	case 5: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->erase_chip), gep); break;
+//        case 6: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->lock_chip), gep); break;	
+//	case 7: GUI(gep->gui)->action[id] = gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp, GTK_SIGNAL_FUNC(gep->chp->unlock_chip), gep); break;
+//    }
 
 /* przyszla wersja */
 //    gtk_toolbar_append_item(GTK_TOOLBAR(GUI(gep->gui)->toolbox), NULL, tip, NULL, tmp,  GTK_SIGNAL_FUNC(gep->chp->action[id]), gep);
@@ -889,7 +801,7 @@ void gui_kill_me(geepro *gep)
     gui_xml_destroy(GUI(gep->gui)->xml);
     free(GUI(gep->gui)->xml);
     gtk_main_quit();
-    if(GET_BUFFER) free(GET_BUFFER);
+/*dodać zwalnianie bufora */
 }
 
 void gui_dont_kill_me(GtkWidget *k, gpointer gd)
