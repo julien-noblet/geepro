@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -87,7 +87,7 @@
     {\
 	int __id__=0, __i__ ;\
 	___geep___ = gep___;\
-	chip __init_struct__; \
+	chip_desc __init_struct__; \
 	printf("Init " #name " module.\n");\
 	{
 
@@ -101,7 +101,7 @@
     static geepro *___geep___ = ((void*)0);
 
 #define REG_FUNC_BEGIN(name)	\
-    static int name (void *____wg, void *gep___)\
+    static int name (void *gep___)\
     {\
 	___geep___ = (geepro*)gep___;
 
@@ -114,7 +114,7 @@
     return -1
 
 #define register_chip_begin(path, name, family, size)	\
-    memset(&__init_struct__, 0, sizeof(chip));\
+    memset(&__init_struct__, 0, sizeof(chip_desc));\
     __init_struct__.chip_path = path;\
     __init_struct__.chip_name = name;\
     __init_struct__.chip_family = family;\
@@ -125,22 +125,22 @@
     chip_register_chip(___geep___->ifc->plugins, &__init_struct__)
 
 #define add_action(bt_name, callback)	\
-    gui_add_action(gep___, &__init_struct__, bt_name, callback)
+    chip_add_action(&__init_struct__, bt_name, callback)
 
 #define MODULE_READ_ACTION	\
-    "chip-read", "Read data from chip"
+    "gtk-color-picker", "Read data from chip"
 
 #define MODULE_PROG_ACTION	\
-    "chip-prog", "Write data to chip"
+    "gtk-edit", "Write data to chip"
 
 #define MODULE_ERASE_ACTION	\
-    "chip-erase", "Erase memory"
+    "gtk-clear", "Erase memory"
 
 #define MODULE_TEST_ACTION	\
-    "chip-test-blank", "Test blank memory"
+    "gtk-find", "Test blank memory"
 
 #define MODULE_VERIFY_ACTION	\
-    "chip-verify", "Verify chip memory with buffer"
+    "gtk-index", "Verify chip memory with buffer"
 
 #endif
 

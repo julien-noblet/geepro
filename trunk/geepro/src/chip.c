@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -28,9 +28,61 @@
 
 static int __plugins__ = 0;    /* zmienna gloabalna pilnująca zainicjowania kolejek */
 
-int chip_register_chip(chip_plugins *plg, chip *new_chip)
+/**************************************************************************************************************************/
+/* rejestracja akcji na ukladzie */
+
+void chip_add_action(chip_desc *chip, const char *bt_name, const char *bt_tip, chip_act_func action)
 {
-    chip *new_tie, *tmp;
+    chip_action *new_tie, *tmp; 
+    
+    if(!(new_tie = malloc(sizeof(chip_action)))){
+	printf("{chip.c} chip_add_action() ---> out of memory.\n");
+	return;
+    }
+    
+    new_tie->name = (char *)bt_name;
+    new_tie->tip  = (char *)bt_tip;
+    new_tie->action  = action;
+    new_tie->next = NULL;
+    
+    if(!chip->actions){
+	chip->actions = new_tie;
+	return;
+    }
+    
+    for(tmp = chip->actions; tmp->next; tmp = tmp->next);
+    tmp->next = new_tie;
+
+}
+
+static void chip_rem_actions(chip_desc *chip)
+{
+    chip_action *tmp, *x; 
+    
+    tmp = chip->actions;
+    while( tmp ){
+	x = tmp->next;
+	free(tmp);
+	tmp = x;
+    }
+    chip->actions = NULL;
+}
+
+int chip_list_action(chip_desc *chip, int (*cb)(chip_desc *, chip_action *, void *), void *ptr)
+{
+    int x;
+    chip_action *tmp;
+    
+    for(tmp = chip->actions; tmp; tmp = tmp->next)
+	if((x = cb(chip, tmp, ptr))) return x;
+
+    return 0;
+}
+
+/********************************************************************************************************************/
+int chip_register_chip(chip_plugins *plg, chip_desc *new_chip)
+{
+    chip_desc *new_tie, *tmp;
 
     if(!__plugins__){
 	printf("chip_register_chip() called without initialisation (see chip_init_qe()) \n");
@@ -46,12 +98,12 @@ int chip_register_chip(chip_plugins *plg, chip *new_chip)
 
     MSG_1DEBUG("{chip.c} CHIP: Dodawanie ukladu\n");
 
-    if(!(new_tie = (chip *)malloc(sizeof(chip)))){
+    if(!(new_tie = (chip_desc *)malloc(sizeof(chip_desc)))){
 	printf("[!!] chip_register(plugin, path, widget) -> memory allocation error (1)\n"); 
 	return CHIP_ERROR;
     }
 
-    memcpy(new_tie, new_chip, sizeof(chip)); /* skopiowanie struktury definicji układu do nowej pozycji w kolejce */
+    memcpy(new_tie, new_chip, sizeof(chip_desc)); /* skopiowanie struktury definicji układu do nowej pozycji w kolejce */
 
     if(!(new_tie->chip_path = (char *)malloc(sizeof(char) * (strlen(new_chip->chip_path) +1)))){
 	printf("[!!] chip_register(plugin, path, widget) -> memory allocation error (2)\n"); 
@@ -59,7 +111,6 @@ int chip_register_chip(chip_plugins *plg, chip *new_chip)
 	return CHIP_ERROR;
     }
     strcpy(new_tie->chip_path, new_chip->chip_path); /* skopiowanie ścieżki menu */
-
     if(!(new_tie->chip_name = (char *)malloc(sizeof(char) * (strlen(new_chip->chip_name) +1)))){
 	printf("[!!] chip_register(plugin, path, widget) -> memory allocation error (3)\n"); 
 	free(new_tie->chip_path);
@@ -75,13 +126,13 @@ int chip_register_chip(chip_plugins *plg, chip *new_chip)
 	return 0;
     }
 
-    for(tmp = plg->chip_qe; tmp->next; tmp = (chip*)tmp->next);
+    for(tmp = plg->chip_qe; tmp->next; tmp = (chip_desc*)tmp->next);
     tmp->next = new_tie;
     
     return 0;
 }
 
-chip *chip_lookup_chip(chip_plugins *plg, char *name)
+chip_desc *chip_lookup_chip(chip_plugins *plg, char *name)
 {
     if(!__plugins__){
 	printf("chip_lookup_chip() called without initialisation (see chip_init_qe()) \n");
@@ -96,7 +147,7 @@ chip *chip_lookup_chip(chip_plugins *plg, char *name)
 int chip_unregister_chip(chip_plugins *plg, char *name)
 {
     char t = 1;
-    chip *curr, *prev;
+    chip_desc *curr, *prev;
 
     MSG_2DEBUG("{chip.c} CHIP: Usuwanie układu %s\n", name);
     if(!__plugins__){
@@ -107,7 +158,7 @@ int chip_unregister_chip(chip_plugins *plg, char *name)
     for(
 	curr = prev = plg->chip_qe; 
 	curr->next && (t = strcmp(curr->chip_name, name)); 
-	curr = (chip *)curr->next
+	curr = (chip_desc *)curr->next
     ) prev = curr;
 
     if(t) return 0; /* nie ma ogniwa o takiej nazwie */
@@ -120,6 +171,7 @@ int chip_unregister_chip(chip_plugins *plg, char *name)
 
     free(curr->chip_path);
     free(curr->chip_name);
+    chip_rem_actions(curr);
     free(curr);
     
     return 1;
@@ -127,7 +179,7 @@ int chip_unregister_chip(chip_plugins *plg, char *name)
 
 void chip_destroy(chip_plugins *plg)
 {
-    chip *tmp, *tmp1;
+    chip_desc *tmp, *tmp1;
     
     if(!__plugins__){
 	printf("chip_rm_chip() called without initialisation (see chip_init_qe()) \n");
@@ -140,6 +192,7 @@ void chip_destroy(chip_plugins *plg)
 	tmp1 = tmp->next;
 	free(tmp->chip_path);
 	free(tmp->chip_name);
+	chip_rem_actions(tmp);
 	free(tmp);
 	tmp = tmp1;
     }
@@ -159,20 +212,20 @@ int chip_invoke_action(chip_plugins *plg, int action)
     }
 
     if(!plg->chip_sel) return 0;
-    switch(action){
-	case ACTION_READ	: plg->chip_sel->read_chip(NULL,plg); break;
-	case ACTION_READ_SIG	: plg->chip_sel->read_sig_chip(NULL,plg); break;
-	case ACTION_WRITE	: plg->chip_sel->write_chip(NULL,plg); break;
-	case ACTION_ERASE	: plg->chip_sel->erase_chip(NULL,plg); break;
-	case ACTION_LOCK	: plg->chip_sel->lock_chip(NULL,plg); break;
-	case ACTION_UNLOCK	: plg->chip_sel->unlock_chip(NULL,plg); break;
-	case ACTION_VERIFY	: plg->chip_sel->verify_chip(NULL,plg); break;
-	case ACTION_TEST	: plg->chip_sel->test_chip(NULL,plg); break;
-    }
+//    switch(action){
+//	case ACTION_READ	: plg->chip_sel->read_chip(NULL,plg); break;
+//	case ACTION_READ_SIG	: plg->chip_sel->read_sig_chip(NULL,plg); break;
+//	case ACTION_WRITE	: plg->chip_sel->write_chip(NULL,plg); break;
+//	case ACTION_ERASE	: plg->chip_sel->erase_chip(NULL,plg); break;
+//	case ACTION_LOCK	: plg->chip_sel->lock_chip(NULL,plg); break;
+//	case ACTION_UNLOCK	: plg->chip_sel->unlock_chip(NULL,plg); break;
+//	case ACTION_VERIFY	: plg->chip_sel->verify_chip(NULL,plg); break;
+//	case ACTION_TEST	: plg->chip_sel->test_chip(NULL,plg); break;
+//    }
     return 1;
 }
 
-chip *chip_get_chip(chip_plugins *plg)
+chip_desc *chip_get_chip(chip_plugins *plg)
 { 
     if(!__plugins__){
 	printf("chip_get_chip() called without initialisation (see chip_init_qe()) \n");
@@ -319,7 +372,7 @@ char *chip_last_pth(char *pth)
 
 void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void *, char *, void *), void (*item)(chip_plugins *, void *, void *), void *ptr)
 {
-    chip *chp;
+    chip_desc *chp;
     char *tmp, t;
     void *p,*op;
 

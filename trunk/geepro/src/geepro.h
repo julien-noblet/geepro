@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 #ifndef __GEEPRO_H_
 #define __GEEPRO_H_
 /* geepro - Willem eprom programmer for linux
@@ -38,7 +38,7 @@ typedef struct
     char  **argv;
     iface *ifc;	/* struktura zawierająca kolejki pluginów */
     void  *gui;
-    chip  *chp;
+    chip_desc  *chp;
 } geepro;
 
 #endif
