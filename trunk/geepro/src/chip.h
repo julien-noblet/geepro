@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -85,6 +85,7 @@ struct _chip_desc
     char *buffer;		/* buffer data */
 
     chip_action *actions;	/* action functions */
+    chip_act_func autostart;	/* autostart funkcji zdefiniowanej w pluginie dla danego ukladu po jego wyborze */
     
     chip_desc  *next;		/* pointer to next chip structure */
 };
