@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -380,6 +380,7 @@ REGISTER_MODULE_BEGIN( 27xx )
 	add_action(MODULE_TEST_ACTION, test_2764);
     register_chip_end;
 
+/*
     register_chip_begin("/EPROM/28 pin", "27128", "27xx", SIZE_27128);
 	add_action(MODULE_READ_ACTION, read_27xx);
 	add_action(MODULE_PROG_ACTION, prog_27xx);
@@ -421,5 +422,5 @@ REGISTER_MODULE_BEGIN( 27xx )
 	add_action(MODULE_VERIFY_ACTION, verify_27xx);
 	add_action(MODULE_TEST_ACTION, test_27xx);
     register_chip_end;
-
+*/
 REGISTER_MODULE_END

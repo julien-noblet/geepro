@@ -1,4 +1,4 @@
-/* $Revision: 1.9 $ */
+/* $Revision: 1.10 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -30,6 +30,16 @@
 
 #define GUI(x)	((gui *)x)
 
+typedef struct _gui_action gui_action;
+
+struct _gui_action
+{
+    void *root;
+    void *action;
+    void *widget;
+    gui_action *next;
+};
+
 typedef struct
 {
     void *wmain;        /* glówne okno */
@@ -54,8 +64,8 @@ typedef struct
     void *progress_win;    /* pasek postepu */
     void *progress_bar;    /* pasek postepu */
 
-    /* tablica wskaznikow do przycisków akcji */
-    void *action[GUI_MAX_ACTIONS];
+    /* lista wskaznikow do przycisków akcji */
+    gui_action *action;
 
 } gui;
 
@@ -158,7 +168,7 @@ struct _sqw_gen
 #define FO_H_FIRST	1
 #define FO_H_NEXT	2
 
-extern void gui_set_default(geepro *gep);
+//extern void gui_set_default(geepro *gep);
 extern void gui_stat_rfsh(geepro*);
 extern void gui_menu_setup(geepro*);
 /*
@@ -204,6 +214,6 @@ extern void gui_set_statusbar(geepro *gep, char *tmp, char *fmt, ...);
 
 /* uzywnae przez drivery */
 extern void gui_clk_sqw(gui*, gui_sqw_generator);
-/* uzywane przez pluginy ukladow */
-extern void gui_add_action(geepro *g, void *, const char *bt_name, const char *tip, void *cb);
+///* uzywane przez pluginy ukladow */
+//extern void gui_add_action(geepro *g, void *, const char *bt_name, const char *tip, void *cb);
 #endif
