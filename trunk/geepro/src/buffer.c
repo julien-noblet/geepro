@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -27,35 +27,55 @@
 #include "main.h"
 #include "../gui/gui.h"
 
-/*
-void buffer_alloc(geepro *gep, unsigned int size)
-{
-    if(gep->chp->buffer) free(gep->chp->buffer);
-    if(!(SET_BUFFER((char *)malloc(sizeof(char)*size)))){
-	printf(ALLOCATION_ERROR);
-	gui_kill_me(gep);
+int buffer_alloc(chip_desc *chip)
+{	
+    if(!chip){
+	printf("{buffer.c} buffer_alloc() --> Error: chip == NULL\n");
+	return -4;
     }
-    memset( GET_BUFFER, 0, GET_DEV_SIZE );
-    SET_BF_SH(0);
-    SET_CHECKSUM(0);
-//    gui_set_viewer_size(GET_DEV_SIZE);
+    if(chip->buffer){
+	printf("{buffer.c} buffer_alloc() --> Error: chip->buffer != NULL\n");
+	return -3;
+    }
+    if(!chip->dev_size){
+	printf("{buffer.c} buffer_alloc() --> Error: chip->dev_size == 0\n");
+	return -2;
+    }
+    
+    chip->buffer = (char *)malloc(sizeof(char) * chip->dev_size);
+
+    if(!chip->buffer){
+	printf("{buffer.c} buffer_alloc() --> Error: Out of memory\n");
+	return -1;
+    }
+    
+    memset(chip->buffer, 0, sizeof(char) * chip->dev_size);
+    return 0;
 }
-*/
+
+void buffer_free(chip_desc *chip)
+{
+    if(!chip){
+	printf("{buffer.c} buffer_alloc() --> Error: chip == NULL\n");
+	return;
+    }
+    if(!chip->buffer) return;
+    free(chip->buffer);
+    chip->buffer = NULL;
+}
 
 void buffer_clear(geepro *gep)
 {
     if(!gep->chp) return;
     memset( gep->chp->buffer, 0, gep->chp->dev_size );
-//    SET_STATUS(STS_EMPTY);
-//    gui_stat_rfsh(plg);
 }
 
-long buffer_checksum(geepro *gep){
+long buffer_checksum(geepro *gep)
+{
     int i;
     long tmp = 0;
     
     for( i = 0; i < gep->chp->dev_size; i++ ) tmp += gep->chp->buffer[i];
-//    SET_CHECKSUM(tmp);
     return tmp;
 }
 
@@ -75,6 +95,6 @@ int buffer_read(geepro *gep, unsigned int addr)
 
 char *buffer_get_buffer_ptr(geepro *gep)
 {
-	return gep->chp->buffer;
+    return gep->chp->buffer;
 }
 
