@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -25,7 +25,8 @@
 #include "chip.h"
 #include "geepro.h"
 
-extern void buffer_alloc(geepro *gep, unsigned int size);
+extern int  buffer_alloc(chip_desc *chip);
+extern void buffer_free(chip_desc *chip);
 extern void buffer_clear(geepro *gep);
 extern long buffer_checksum(geepro *gep);
 extern char buffer_write(geepro *gep, unsigned int addr, unsigned char byte);

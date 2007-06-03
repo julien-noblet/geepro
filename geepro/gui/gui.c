@@ -1,4 +1,4 @@
-/* $Revision: 1.11 $ */
+/* $Revision: 1.12 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -241,11 +241,11 @@ static int gui_add_action(geepro *gep, void *chip_str)
     return x;
 }
 
-void gui_chip_free(geepro *gep)
+static void gui_chip_free(geepro *gep)
 {
     if(gep->chp){
 	gui_rem_bt_action(GUI(gep->gui));
-	if(gep->chp->buffer) free(gep->chp->buffer);
+	buffer_free(gep->chp);
     }
     gep->chp = NULL;
 }
@@ -255,7 +255,7 @@ void gui_chip_free(geepro *gep)
 static void gui_device_sel(GtkWidget *wg, geepro *gep) 
 { 
     char *name = NULL;
-    chip_desc *tmp;
+    chip_desc *tmp, *old_chp;
     chip_plugins *plg = gep->ifc->plugins;
     
     /* jesli nie mozna pobrac nazwy ukladu to wyjdz */
@@ -264,25 +264,41 @@ static void gui_device_sel(GtkWidget *wg, geepro *gep)
     /* pobierz nazwe wybranego ukladu */
     gtk_label_get(GTK_LABEL(GTK_BIN(wg)->child), &name);
 
+    /* Ustawienie nowego biezacego ukladu */
     if(!(tmp = chip_lookup_chip(plg, name))){
-	gui_error_box(gep, NO_CHIP_PLUGIN);
+	gui_dialog_box( gep,
+	    "[ER][TEXT]Missing chip description in queue.[/TEXT][BR] OK "
+	);
+	return;
+    }
+    old_chp = gep->chp;
+    gep->chp = tmp; 
+
+    /* ustawienie programatora pod wybrany uklad, test czy programator go obsluguje */
+    if(hw_set_chip(gep) < 0){
+	gui_dialog_box( gep,
+	    "[ER][TEXT]Chip %s not supported by current programmer.[/TEXT][BR] OK ",
+	    tmp->chip_name
+	);
+	gep->chp = old_chp;
 	return;
     }
 
     /* wykasowanie menu, zwolnienie pamieci przez bufor */
     gui_chip_free(gep);
 
-    /* Ustawienie nowego bieżacego ukladu */
-    gep->chp = tmp; 
-
-    if(!(tmp->buffer = (char *)malloc(tmp->dev_size))){
-	printf("{gui.c} gui_device_sel() ---> memory alocation for buffer error.\n" );
+    /* alokacja pamieci na bufor */
+    if(buffer_alloc(gep->chp)){
+	gui_dialog_box( gep,
+	    "[ER][TEXT]Out of memory.[/TEXT][BR] OK "
+	);
 	gep->chp = NULL;
 	return;
     }
-    memset(tmp->buffer, 0, tmp->dev_size);
 
+    /* aktualizacja edycji bufora */
     gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, tmp->dev_size, (unsigned char*)tmp->buffer);
+
     /* ustawienie przyciskow akcji na menu */    
     gui_add_action(gep, gep->chp );
 
@@ -442,7 +458,6 @@ static void gui_config(GtkWidget *wg, geepro *gep)
 
 static void gui_set_default(geepro *gep)
 {
-//    gui_willem_set_defaults(gep);
     gtk_widget_show_all(GUI(gep->gui)->wmain);
     gui_stat_rfsh(gep);
 }
@@ -650,6 +665,31 @@ void gui_menu_setup(geepro *gep)
     gui_xml_new(GUI(gep->gui)); /* zainicjowanie struktury gui_xml */
 }
 
+void gui_run(geepro *gep)
+{
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(GUI(gep->gui)->notebook), 0);
+    gui_device_menu_create(gep->ifc->plugins, GUI(gep->gui)->mb_dev, gep);
+    gtk_widget_show_all(GUI(gep->gui)->wmain);
+    test_uid(gep);
+    /* inicjowanie domyślnego plugina strownika programatora */
+    gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->prog_combox), "changed");
+    gtk_main(); /* jesli programator ok to startuj program inaczej wyjdź */
+}
+
+void gui_kill_me(geepro *gep)
+{
+    printf("pa pa.\n");
+    /* Usuniecie biezacego GUI zbudowanego o xml */
+    gui_xml_destroy(GUI(gep->gui)->xml);
+    free(GUI(gep->gui)->xml);
+    gui_chip_free(gep);
+    gtk_main_quit();
+    if(gep->chp)
+	buffer_free(gep->chp);
+}
+
+/**************************************************************************************************************************/
+
 static char gui_progress_bar_exit = 0;
 
 void gui_progress_break(geepro *gep)
@@ -693,6 +733,15 @@ void gui_progress_bar_free(geepro *gep)
     gtk_widget_destroy(GUI(gep->gui)->progress_win);
 }
 
+char gui_cmp_pls(geepro *gep, int a,int b)
+{
+    char test = a < b;
+    if(!test ) gui_progress_bar_free(gep);
+    return test;
+}
+
+/**************************************************************************************************************************/
+
 static int gui_dialog_exit = 0;
 
 static void gui_dialog_box_close(GtkWidget *wg, int i)
@@ -709,7 +758,7 @@ static void gui_dialog_box_close(GtkWidget *wg, int i)
     gtk_widget_destroy(wg->parent->parent->parent);
 }
 
-
+/* do poprawy na gtk_dialog */
 int gui_dialog_box(geepro *gp, const char *en, ...)
 {
     GtkWidget *wg0, *wg1, *wgtab, *wdialog;
@@ -815,40 +864,6 @@ int gui_dialog_box(geepro *gp, const char *en, ...)
     for(;!gui_dialog_exit;) gtk_main_iteration();
 
     return gui_dialog_exit - 1;
-}
-
-void gui_run(geepro *gep)
-{
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(GUI(gep->gui)->notebook), 0);
-    gui_device_menu_create(gep->ifc->plugins, GUI(gep->gui)->mb_dev, gep);
-    gtk_widget_show_all(GUI(gep->gui)->wmain);
-    test_uid(gep);
-    /* inicjowanie domyślnego plugina strownika programatora */
-    gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->prog_combox), "changed");
-    gtk_main(); /* jesli programator ok to startuj program inaczej wyjdź */
-}
-
-void gui_kill_me(geepro *gep)
-{
-    printf("pa pa.\n");
-    /* Usuniecie biezacego GUI zbudowanego o xml */
-    gui_xml_destroy(GUI(gep->gui)->xml);
-    free(GUI(gep->gui)->xml);
-    gui_chip_free(gep);
-    gtk_main_quit();
-/*dodać zwalnianie bufora */
-}
-
-void gui_dont_kill_me(GtkWidget *k, gpointer gd)
-{
-    gtk_widget_destroy(GTK_WIDGET(gd));
-}
-
-char gui_cmp_pls(geepro *gep, int a,int b)
-{
-    char test = a < b;
-    if(!test ) gui_progress_bar_free(gep);
-    return test;
 }
 
 /**************************************************************************************************************************/

@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -40,6 +40,7 @@
 #define HW_LATENCY      12
 #define HW_NAME		13
 #define HW_DESTROY	14
+#define HW_SET_CHIP	15
 
 /* specyficzne dla programatora eprom */
 #define HW_SET_DATA	  1024
@@ -91,6 +92,7 @@ extern hw_module_type ___hardware_module___;
 #define hw_low_latency(val)	___hardware_module___( HW_LATENCY,val, NULL)	/* jesli root to właczenie/ wyłaczenie zmiany schedulera */
 #define hw_get_name(val)	___hardware_module___( HW_NAME, 0, &(val))
 #define hw_destroy(geepro)	___hardware_module___( HW_DESTROY, 0, geepro)
+#define hw_set_chip(geepro)	___hardware_module___( HW_SET_CHIP, 0, geepro)  /* ustawia programator pod wybrany uklad, jesli go nie obsluguje zwraca HW_ERROR */
 
 /* specyficzne dla programatora eprom */
 #define hw_set_data(val)	___hardware_module___( HW_SET_DATA, val, NULL)

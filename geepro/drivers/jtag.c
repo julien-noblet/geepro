@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -32,7 +32,7 @@ int jtag_byteblaster_api(int func, int val, void *ptr)
 	case HW_NAME : DRIVER_NAME(ptr) = "JTAG byteblaster - dummy";
     }
 
-    return 0;
+    return -2;
 }
 
 
