@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -126,6 +126,9 @@
 
 #define add_action(bt_name, callback)	\
     chip_add_action(&__init_struct__, bt_name, callback)
+
+#define add_autostart(callback)	\
+    __init_struct__.autostart = callback
 
 #define MODULE_READ_ACTION	\
     "gtk-color-picker", "Read data from chip"

@@ -1,4 +1,4 @@
-/* $Revision: 1.10 $ */
+/* $Revision: 1.11 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -286,12 +286,11 @@ static void gui_device_sel(GtkWidget *wg, geepro *gep)
     /* ustawienie przyciskow akcji na menu */    
     gui_add_action(gep, gep->chp );
 
-//	GUI(gep->gui)->dpsw_state = tmp->dip_switch;
+    /* wykonanie autostaru dla danego ukladu, jesli zdefiniowano */
+    if(gep->chp->autostart)
+	     gep->chp->autostart(gep);
 
-//	if(tmp->autostart)
-//	     tmp->autostart(wg, gep);
-
-	gui_stat_rfsh(gep);
+    gui_stat_rfsh(gep);
 }
 
 static void gui_rfsh_gtk(void)
