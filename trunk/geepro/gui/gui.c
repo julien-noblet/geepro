@@ -1,4 +1,4 @@
-/* $Revision: 1.12 $ */
+/* $Revision: 1.13 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -286,6 +286,7 @@ static void gui_device_sel(GtkWidget *wg, geepro *gep)
 
     /* wykasowanie menu, zwolnienie pamieci przez bufor */
     gui_chip_free(gep);
+    gep->chp = tmp; 
 
     /* alokacja pamieci na bufor */
     if(buffer_alloc(gep->chp)){
