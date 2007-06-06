@@ -22,6 +22,16 @@
 		    </hbox>
 		</vbox>
 	    </if>
+	    <if family="93Cxx">
+		<description>Jakis opis do poprawy.</description>
+		<image src="./pixmaps/willem_93Cxx.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x0a0a0a"/>
+		    </hbox>
+		</vbox>
+	    </if>
 	</vbox>
     </frame>
 </info>
