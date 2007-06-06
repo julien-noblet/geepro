@@ -39,6 +39,7 @@
 
 <!ATTLIST if 
     chip CDATA #IMPLIED
+    family CDATA #IMPLIED
     programmer CDATA #IMPLIED
 >
 
