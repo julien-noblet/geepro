@@ -1,4 +1,4 @@
-/* $Revision: 1.13 $ */
+/* $Revision: 1.14 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -93,13 +93,17 @@ static void gui_load_file(GtkWidget *w, geepro *gep)
 
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
 	char *fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
-	if(file_load(gep, fname)){
-	    gui_error_box(gep, "Error loading file");
-	}
+	char *err;
+	gtk_widget_destroy(wg);    
+	err = file_load(gep, fname);
+//printf("|---->%s\n", err);	
+	err = fname;
+	
+	if(err) 
+	    gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
 	g_free(fname);
-    }
-
-    gtk_widget_destroy(wg);    
+    } else
+	gtk_widget_destroy(wg);    
 }
 
 static void gui_save_file(GtkWidget *w, geepro *gep)

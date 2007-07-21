@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -43,8 +43,15 @@ int file_write_bin(FILE *f, int size, char *buffer)
     return 0;
 }
 
+const char *file_err_msg(int err)
+{
+    if(!err) return NULL;
+    const char *x="jakis blad";
+    
+    return x;
+}
 
-int file_save(geepro *gep, char *fname)
+const char *file_save(geepro *gep, char *fname)
 {
     FILE *f;
     int err;
@@ -55,20 +62,20 @@ int file_save(geepro *gep, char *fname)
     err = file_write_bin(f, gep->chp->dev_size, gep->chp->buffer);
 
     fclose(f);    
-    return err;
+    return file_err_msg(err);
 }
 
-int file_load(geepro *gep, char *fname)
+const char *file_load(geepro *gep, char *fname)
 {
     FILE *f;
     int err;
-    
     if(!gep->chp) return -1;    
     if(!(f = fopen(fname , "r-"))) return -1;
 
     err = file_load_bin(f, gep->chp->dev_size, gep->chp->buffer);
 
     fclose(f);    
-    return err;
+
+    return file_err_msg(err);
 }
 
