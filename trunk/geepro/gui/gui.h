@@ -1,4 +1,4 @@
-/* $Revision: 1.10 $ */
+/* $Revision: 1.11 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -155,7 +155,7 @@ struct _sqw_gen
 #define ADD_PIN_L(nm,id, act)	gui_add_pin(gep, tmp, nm, 0, 1.3, id, gui_test_pin##act)    
 #define SET_HW_ADDR(adr)	g_print("Set addr: %i\n",adr);
 #define SET_HW_DATA(data)	g_print("Set data: %i\n",data);
-#define gui_error_box(wg, msg)	gui_dialog_box(wg,"Error",msg,"OK",NULL)
+#define gui_error_box(wg, msg, opt...)	gui_dialog_box(wg,"[ER][TEXT]"msg"[/TEXT][BR] OK ", ##opt)
 
 #define FO_RB_FIRST	1
 #define FO_RB_NEXT	2

@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -23,7 +23,7 @@
 #define __files_h__
 #include "geepro.h"
 
-extern int file_load(geepro *gep, char *fname);
-extern int file_save(geepro *gep, char *fname);
+extern const char *file_load(geepro *gep, char *fname);
+extern const char *file_save(geepro *gep, char *fname);
 
 #endif
