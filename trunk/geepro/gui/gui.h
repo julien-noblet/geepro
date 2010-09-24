@@ -1,4 +1,4 @@
-/* $Revision: 1.11 $ */
+/* $Revision: 1.12 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -42,6 +42,7 @@ struct _gui_action
 
 typedef struct
 {
+    char gui_run;	/* true if in gui event loop */
     void *wmain;        /* glówne okno */
     void *mb_dev;       /* lista ukladów do wyboru */
     void *toolbox;      /* toolbox dla doczepiania kontrolek operacji na ukladzie */
@@ -54,6 +55,7 @@ typedef struct
     void *dev_entry;    /* pole nazwy ukladu    */
     void *buffer_entry; /* pole rozmiaru bufora */
     void *crc_entry;    /* pole sumy CRC */
+    void *file_entry;    /* pole sumy CRC */
     void *chip_desc;    /* pole opisu ukladu */
     void *status_bar;   /* pasek statusu u dolu okna */
 

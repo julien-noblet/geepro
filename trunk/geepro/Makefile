@@ -1,4 +1,4 @@
-## $Revision: 1.4 $
+## $Revision: 1.5 $
 
 progname=geepro
 
@@ -8,8 +8,8 @@ plugins=make_drivers make_plugins
 local_libs = -L./gui  -lgui
 statlibs= libgui.a 
 
-objs=files.o buffer.o chip.o dummy.o iface.o timer.o parport.o main.o
-objs_lok= ./src/files.o ./src/buffer.o ./src/chip.o ./src/dummy.o ./src/iface.o ./src/timer.o ./src/parport.o ./src/main.o
+objs=files.o buffer.o chip.o dummy.o iface.o timer.o parport.o main.o storings.o
+objs_lok= ./src/files.o ./src/buffer.o ./src/chip.o ./src/dummy.o ./src/iface.o ./src/timer.o ./src/parport.o ./src/main.o ./src/storings.o
 
 MAKE_EXT= make -C
 
@@ -19,7 +19,7 @@ MAKE_EXT= make -C
 
 ALL: lang.h $(progname) documentation
 
-lang.h: pl
+lang.h: eng
 
 $(progname): $(plugins) $(statlibs) $(objs)
 	gcc -Wall -o $(progname) $(objs_lok)  $(gtk_libs) $(local_libs) -ldl -rdynamic
@@ -56,6 +56,10 @@ parport.o:
 
 main.o:
 	$(MAKE_EXT) ./src main.o
+
+storings.o:
+	$(MAKE_EXT) ./src storings.o
+
 
 libgui.a:
 	$(MAKE_EXT) ./gui

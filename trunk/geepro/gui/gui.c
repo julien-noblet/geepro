@@ -1,4 +1,4 @@
-/* $Revision: 1.14 $ */
+/* $Revision: 1.15 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -36,10 +36,28 @@
 #include "../pixmaps/xpms.c"
 #include "../drivers/hwplugin.h"
 #include "../src/iface.h"
-
 #include "bineditor.h"
 
+#include "icons_xpm.c"
+
 /***************************************************************************************************/
+void gui_action_icon_set()
+{
+    GtkIconFactory *ifact = gtk_icon_factory_new();
+
+    gtk_icon_factory_add(ifact, "geepro-logo", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( LOGO_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-read-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( READ_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-sign-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( SIGN_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-write-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( WRITE_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-erase-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( ERASE_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-testblank-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( TESTBLANK_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-verify-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( VERIFY_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-lockbit-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( LOCKBIT_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-lockbreak-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( LOCKBREAK_ACTION_ICON )));
+
+    gtk_icon_factory_add_default(ifact);
+}
+
 void gui_stat_rfsh(geepro *gep)
 {
     char tmp_str[40];
@@ -82,7 +100,9 @@ void gui_exit(geepro *gep)
 
 static void gui_load_file(GtkWidget *w, geepro *gep)
 { 
+    char *tmp;
     GtkWidget *wg;    
+    GtkFileFilter *filter;
 
     wg = gtk_file_chooser_dialog_new(
 	    "Open file", GUI(gep->gui)->wmain, 
@@ -90,15 +110,51 @@ static void gui_load_file(GtkWidget *w, geepro *gep)
 	    GTK_RESPONSE_CANCEL, GTK_STOCK_OPEN, 
 	    GTK_RESPONSE_ACCEPT, NULL
 	);
+    // file filters
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "hex");
+    gtk_file_filter_add_pattern(filter, "*.hex");
+    gtk_file_filter_add_pattern(filter, "*.HEX");
+    gtk_file_filter_add_pattern(filter, "*.Hex");    
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "bin");
+    gtk_file_filter_add_pattern(filter, "*.bin");
+    gtk_file_filter_add_pattern(filter, "*.BIN");
+    gtk_file_filter_add_pattern(filter, "*.Bin");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "srec");
+    gtk_file_filter_add_pattern(filter, "*.srec");
+    gtk_file_filter_add_pattern(filter, "*.SREC");
+    gtk_file_filter_add_pattern(filter, "*.Srec");
+    gtk_file_filter_add_pattern(filter, "*.s19");
+    gtk_file_filter_add_pattern(filter, "*.S19");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "ALL");
+    gtk_file_filter_add_pattern(filter, "*.*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+
+    tmp = NULL;
+    if(store_get(&store, "LAST_OPENED_PATH", &tmp) == 0){
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
+	free(tmp);
+    }
+
+    tmp = NULL;
+    if(store_get(&store, "LAST_OPENED_FILE", &tmp) == 0){
+	gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(wg), tmp);
+	free(tmp);
+    }
 
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
 	char *fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
-	char *err;
+	const char *err;
+	store_set(&store, "LAST_OPENED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
+        store_set(&store, "LAST_OPENED_FILE", gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg)));
 	gtk_widget_destroy(wg);    
 	err = file_load(gep, fname);
-//printf("|---->%s\n", err);	
-	err = fname;
-	
 	if(err) 
 	    gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
 	g_free(fname);
@@ -108,7 +164,9 @@ static void gui_load_file(GtkWidget *w, geepro *gep)
 
 static void gui_save_file(GtkWidget *w, geepro *gep)
 { 
+    char *tmp;
     GtkWidget *wg;    
+    GtkFileFilter *filter;
 
     wg = gtk_file_chooser_dialog_new(
 	    "Save file", GUI(gep->gui)->wmain, 
@@ -119,9 +177,41 @@ static void gui_save_file(GtkWidget *w, geepro *gep)
 
     gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(wg), TRUE);
 
+    // file filters
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "hex");
+    gtk_file_filter_add_pattern(filter, "*.hex");
+    gtk_file_filter_add_pattern(filter, "*.HEX");
+    gtk_file_filter_add_pattern(filter, "*.Hex");    
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "bin");
+    gtk_file_filter_add_pattern(filter, "*.bin");
+    gtk_file_filter_add_pattern(filter, "*.BIN");
+    gtk_file_filter_add_pattern(filter, "*.Bin");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "srec");
+    gtk_file_filter_add_pattern(filter, "*.srec");
+    gtk_file_filter_add_pattern(filter, "*.SREC");
+    gtk_file_filter_add_pattern(filter, "*.Srec");
+    gtk_file_filter_add_pattern(filter, "*.s19");
+    gtk_file_filter_add_pattern(filter, "*.S19");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "ALL");
+    gtk_file_filter_add_pattern(filter, "*.*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+
+    tmp = NULL;
+    if(store_get(&store, "LAST_SAVED_PATH", &tmp) == 0){
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
+	free(tmp);
+    }
 
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
 	char *fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
+	store_set(&store, "LAST_SAVED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
 	if(file_save(gep, fname)){
 	    gui_error_box(gep, "Error saving file");
 	}
@@ -161,7 +251,7 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 	gui_dialog_box(
 	    (geepro*)(ga->root), 
 	    "[IF][TEXT]"
-	    "Succesful performed action."
+	    "Succesfully performed action."
 	    "[/TEXT][BR] OK "
 	);
 }
@@ -256,17 +346,10 @@ static void gui_chip_free(geepro *gep)
 
 /***************************************************************************************************************************/
 
-static void gui_device_sel(GtkWidget *wg, geepro *gep) 
-{ 
-    char *name = NULL;
+static void gui_chip_select(geepro *gep, char *name)
+{
     chip_desc *tmp, *old_chp;
     chip_plugins *plg = gep->ifc->plugins;
-    
-    /* jesli nie mozna pobrac nazwy ukladu to wyjdz */
-    if(!GTK_BIN(wg)->child) return;
-    if(!GTK_IS_LABEL(GTK_BIN(wg)->child)) return;
-    /* pobierz nazwe wybranego ukladu */
-    gtk_label_get(GTK_LABEL(GTK_BIN(wg)->child), &name);
 
     /* Ustawienie nowego biezacego ukladu */
     if(!(tmp = chip_lookup_chip(plg, name))){
@@ -307,11 +390,26 @@ static void gui_device_sel(GtkWidget *wg, geepro *gep)
     /* ustawienie przyciskow akcji na menu */    
     gui_add_action(gep, gep->chp );
 
-    /* wykonanie autostaru dla danego ukladu, jesli zdefiniowano */
+    /* wykonanie autostartu dla danego ukladu, jesli zdefiniowano */
     if(gep->chp->autostart)
 	     gep->chp->autostart(gep);
 
     gui_stat_rfsh(gep);
+}
+
+
+static void gui_device_sel(GtkWidget *wg, geepro *gep) 
+{ 
+    char *name = NULL;
+    
+    /* jesli nie mozna pobrac nazwy ukladu to wyjdz */
+    if(!GTK_BIN(wg)->child) return;
+    if(!GTK_IS_LABEL(GTK_BIN(wg)->child)) return;
+    /* pobierz nazwe wybranego ukladu */
+    gtk_label_get(GTK_LABEL(GTK_BIN(wg)->child), &name);
+
+    store_set(&store, "LAST_CHIP_SELECTED", name);
+    gui_chip_select(gep, name);
 }
 
 static void gui_rfsh_gtk(void)
@@ -357,25 +455,24 @@ static void gui_build_iface_menu(iface *ifc, int cl, char *name, char *dev, GtkW
     gtk_combo_box_append_text(GTK_COMBO_BOX(wg), name);
 }
 
-static void gui_iface_sel(GtkWidget *wg, geepro *gep)
+static int gui_iface_sel(GtkWidget *wg, geepro *gep)
 {
     char *name = gtk_combo_box_get_active_text(GTK_COMBO_BOX(wg));
 
-    if(!name) return;
+    if(!name) return 0;
+    gep->forbid = 0;
     if(iface_select_iface(gep->ifc, name)){
-	gui_error_box(NULL,"Open device error !!!\n No such device.\n");
+	gep->forbid = 1;
+	gui_error_box(gep,"Open device error !!!\n Device inaccesible.\n");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(wg), gep->ifc->ifc_sel);
-	return;
+	return -1;
     }
-
     gep->ifc->ifc_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
-
     gui_stat_rfsh(gep);
-
     test_hw(NULL, gep);
 
 /*!! dopisac zapis do pliku konfiguracyjnego nowego ustawienia */
-
+    return 0;
 }
 
 static GtkWidget *gui_iface_list(geepro *gep)
@@ -393,21 +490,23 @@ static GtkWidget *gui_iface_list(geepro *gep)
 static void gui_add_iface_combox(geepro *gep)
 {    
     GtkWidget *tmp = gui_iface_list(gep);
-    
     gtk_table_attach(GTK_TABLE(GUI(gep->gui)->table), tmp, 2, 4, 1, 2, GTK_FILL | GTK_EXPAND, 0, 5, 5);
     GUI(gep->gui)->iface = tmp;
+
+
     gtk_widget_show(tmp);
 }
 
 static void gui_prog_sel(GtkWidget *wg, geepro *gep)
 {
+    char tmp[256];
     char *name = gtk_combo_box_get_active_text(GTK_COMBO_BOX(wg));
     iface_prg_api api;    
 
-    if(!name) return;
 
+    if(!name) return;
     if(!(api = iface_get_func(gep->ifc, name))){
-	gui_error_box(NULL,"Brak pluginu do programatora.\n");
+	gui_error_box(NULL,MISSING_PROG_PLUGIN);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(wg), gep->ifc->prog_sel);
 	return;
     }
@@ -415,7 +514,7 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     /* usuniecie listy interfejsów*/
     gtk_widget_destroy(GUI(gep->gui)->iface);
 
-//    ifc->ifc_sel = ??? odczytac z konfiguracji dla danego programatora
+
     gep->ifc->ifc_sel = 0;
     hw_destroy(gep);
     ___hardware_module___ = api;
@@ -429,8 +528,8 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
 
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
     gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->iface), "changed");    
-//    printf("|-->programator %s\n", name);
-/*!! dopisac zapis do pliku konfiguracyjnego nowego ustawienia */
+    sprintf(tmp,"%i", gtk_combo_box_get_active(GTK_COMBO_BOX(wg)));
+    if(GUI(gep->gui)->gui_run) store_set(&store, "LAST_SELECTED_PROGRAMMER", tmp);
 }
 
 
@@ -508,12 +607,24 @@ static void gui_add_images(geepro *gep)
 
 }
 
+void gui_refresh_button(GtkWidget *wg, geepro *gep)
+{
+    char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));
+    char *err;
+    err = file_load(gep, fname);
+    if(err) 
+        gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
+    else {
+	gui_dialog_box(gep, "[IF][TEXT]File reloaded[/TEXT][BR]OK");
+    }
+}
+
 void gui_menu_setup(geepro *gep)
 {
-    GtkWidget *wg0, *wg1, *wg2, *wg3;
+    char *tmp;
+    GtkWidget *wg0, *wg1, *wg2, *wg3, *wg4;
 
     gtk_init(&gep->argc, &gep->argv);
-
     gui_add_images(gep);
 
     GUI(gep->gui)->action = NULL;
@@ -596,11 +707,11 @@ void gui_menu_setup(geepro *gep)
     wg3 = gtk_label_new(LAB_NOTE_1);
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg2, wg3);
 /* Ramka ukladu */
-    wg1 = gtk_frame_new("Uklad");
+    wg1 = gtk_frame_new(MB_DEVICE);
     gtk_container_border_width(GTK_CONTAINER(wg1), 3);
     gtk_table_attach_defaults(GTK_TABLE(wg2), wg1,  0, 1, 0, 1);
     /* tabela pakujaca opis ukladu i bufor */
-    wg3 = gtk_table_new( 2, 4, FALSE);
+    wg3 = gtk_table_new( 2, 6, FALSE);
     gtk_container_border_width(GTK_CONTAINER(wg3), 3);
     gtk_container_add(GTK_CONTAINER(wg1), wg3);
     /* Nazwa wybranego ukladu */    
@@ -609,7 +720,7 @@ void gui_menu_setup(geepro *gep)
     gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,0,1, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
     gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,0,1, GTK_FILL, 0, 0,0);
+    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,0,1, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->dev_entry = wg1;
     /* Rozmiar bufora/pamieci */    
     wg1 = gtk_label_new(SIZE_HEX_LB);
@@ -617,7 +728,7 @@ void gui_menu_setup(geepro *gep)
     gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,1,2, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
     gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,1,2, GTK_FILL, 0, 0,0);
+    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,1,2, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->buffer_entry = wg1;
     /* Suma CRC */    
     wg1 = gtk_label_new(CHECKSUM_LB);
@@ -625,12 +736,35 @@ void gui_menu_setup(geepro *gep)
     gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,2,3, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
     gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,2,3, GTK_FILL, 0, 0,0);
+    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,2,3, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->crc_entry = wg1;
+
+    /* Nazwa pliku */    
+    wg1 = gtk_label_new(FILE_LB);
+    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
+    gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,3,4, GTK_FILL, 0, 0,0);
+    wg1 = gtk_entry_new();
+    gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
+    GUI(gep->gui)->file_entry = wg1;
+    tmp = NULL;
+    if(!store_get(&store, "LAST_OPENED_FILE", &tmp)){
+	gtk_entry_set_text(wg1, tmp);
+	gtk_editable_set_position(GTK_EDITABLE(wg1), -1);
+    }
+    wg4 = gtk_hbox_new(FALSE, 0);
+    gtk_container_add(GTK_CONTAINER(wg4), wg1);
+    wg1 = gtk_button_new();
+    gtk_box_pack_end(GTK_CONTAINER(wg4), wg1, 0 ,0, 0);    
+    gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
+    wg4 = gtk_image_new_from_stock("gtk-refresh", GTK_ICON_SIZE_BUTTON);    
+    gtk_container_add(GTK_CONTAINER(wg1), wg4);
+    gtk_widget_set_tooltip_text(wg1, "Reload");
+    gtk_signal_connect(GTK_OBJECT(wg1), "pressed", GTK_SIGNAL_FUNC(gui_refresh_button), gep);
+
     /* opis ukladu */
-    wg1 = gtk_frame_new("Opis ukladu");
-    gtk_table_attach_defaults(GTK_TABLE(wg3), wg1,  0, 2, 3, 4);
-    wg3 = gtk_label_new("brak");
+    wg1 = gtk_frame_new(CHIP_DESCRIPTION);
+    gtk_table_attach_defaults(GTK_TABLE(wg3), wg1,  0, 3, 4, 5);
+    wg3 = gtk_label_new(TXT_MISSING);
     gtk_container_add(GTK_CONTAINER(wg1), wg3);
     GUI(gep->gui)->chip_desc = wg3;
 
@@ -642,18 +776,17 @@ void gui_menu_setup(geepro *gep)
     wg3 = gtk_table_new(3, 4, FALSE);
     GUI(gep->gui)->table = wg3;
     gtk_container_add(GTK_CONTAINER(wg1), wg3);    
-    wg1 = gtk_label_new("Programator:");
+    wg1 = gtk_label_new(TXT_PROGRAMMER);
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach( GTK_TABLE(wg3), wg1, 0, 2, 0, 1,  GTK_FILL, 0, 5, 5);
-    wg1 = gtk_label_new("Interface:");
+    wg1 = gtk_label_new(TXT_INTERFACE);
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach( GTK_TABLE(wg3), wg1, 0, 2, 1, 2,  GTK_FILL, 0, 5, 5);
     wg1 = gtk_button_new_with_label("Test Connection");
     gtk_signal_connect(GTK_OBJECT(wg1), "clicked", GTK_SIGNAL_FUNC(test_hw), gep);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  3, 4, 2, 3,  GTK_FILL, 0 , 5, 5);
-    gtk_table_attach(GTK_TABLE(wg3), gui_prog_list(gep),  2, 4, 0, 1, GTK_FILL | GTK_EXPAND, 0, 5, 5);
+    gtk_table_attach(GTK_TABLE(wg3), wg1 = gui_prog_list(gep),  2, 4, 0, 1, GTK_FILL | GTK_EXPAND, 0, 5, 5);
     gui_add_iface_combox(gep);
-
 
 /* ======================================= */
 /* -----> notebook page 2 'bufor' <------- */
@@ -661,7 +794,7 @@ void gui_menu_setup(geepro *gep)
     wg1 = GUI(gep->gui)->notebook;
     wg0 = gui_bineditor_new(GUI(gep->gui)->wmain);
     gui_bineditor_connect_statusbar(GUI_BINEDITOR(wg0), GUI(gep->gui)->status_bar);
-    wg3 = gtk_label_new("Bufor");
+    wg3 = gtk_label_new(TXT_BUFFER);
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg3);
     GUI(gep->gui)->bineditor = wg0;
 
@@ -672,18 +805,35 @@ void gui_menu_setup(geepro *gep)
 
 void gui_run(geepro *gep)
 {
+    char *tmp;
+    GUI(gep->gui)->gui_run = 0;
+    gui_action_icon_set();
     gtk_notebook_set_current_page(GTK_NOTEBOOK(GUI(gep->gui)->notebook), 0);
     gui_device_menu_create(gep->ifc->plugins, GUI(gep->gui)->mb_dev, gep);
+    gtk_window_set_icon_name(GTK_WINDOW(GUI(gep->gui)->wmain),"geepro-logo");
     gtk_widget_show_all(GUI(gep->gui)->wmain);
     test_uid(gep);
-    /* inicjowanie domyślnego plugina strownika programatora */
+    /* inicjowanie domyślnego plugina sterownika programatora */
     gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->prog_combox), "changed");
+    // default combox setting
+    tmp = NULL;
+    if(!store_get(&store, "LAST_SELECTED_PROGRAMMER", &tmp)){ // 0 - OK
+	gtk_combo_box_set_active(GTK_COMBO_BOX(GUI(gep->gui)->prog_combox), strtol(tmp, NULL, 0));
+	free(tmp);
+    }
+
+    tmp = NULL;
+    if(!store_get(&store, "LAST_CHIP_SELECTED", &tmp)){
+	gui_chip_select(gep, tmp);
+    }
+
+    GUI(gep->gui)->gui_run = 1;
     gtk_main(); /* jesli programator ok to startuj program inaczej wyjdź */
 }
 
 void gui_kill_me(geepro *gep)
 {
-    printf("pa pa.\n");
+    printf(TXT_EXIT);
     /* Usuniecie biezacego GUI zbudowanego o xml */
     gui_xml_destroy(GUI(gep->gui)->xml);
     free(GUI(gep->gui)->xml);
@@ -959,4 +1109,11 @@ void gui_clk_sqw(gui *g, gui_sqw_generator gen)
     }
     gtk_widget_destroy(wgm);
 }
+
+void gui_checkbox(geepro *gep, const char *title, const char *fmt, ...)
+{
+    printf("gui_checkbox unimplemented yet.\n");
+}
+
+
 

@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 #ifndef __GEEPRO_H_
 #define __GEEPRO_H_
 /* geepro - Willem eprom programmer for linux
@@ -35,6 +35,7 @@
 typedef struct
 {
     int   argc;		
+    char  forbid; // blokuje akcje 
     char  **argv;
     iface *ifc;	/* struktura zawierająca kolejki pluginów */
     void  *gui;

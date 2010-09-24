@@ -1,4 +1,4 @@
-## $Revision: 1.3 $
+## $Revision: 1.4 $
 
 debug = -g
 
@@ -21,7 +21,7 @@ ALL: libgui.a
 libgui.a: $(OBJS)
 	ar rcs libgui.a $(OBJS)
 
-gui.o: gui.c gui.h 
+gui.o: gui.c gui.h icons_xpm.c
 	gcc -c $(opts) $(gtk_conf) gui.c
 
 bineditor.o: bineditor.c bineditor.h checksum.h

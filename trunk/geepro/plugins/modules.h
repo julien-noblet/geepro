@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -52,9 +52,9 @@
 	    gui_cmp_pls(___geep___,cn, rounds); cn++, gui_progress_bar_set(___geep___,cn))
 
 #define finish_action()	\
+    hw_sw_vpp(0);\
     hw_set_oe(0);\
     hw_set_ce(0);\
-    hw_sw_vpp(0);\
     hw_sw_vcc(0);\
     buffer_checksum(___geep___);\
     gui_stat_rfsh(___geep___)
@@ -69,8 +69,11 @@
 #define copy_data_to_buffer(addr)	\
     buffer_write(___geep___,addr, hw_get_data())
 
-#define copy_data_from_buffer(addr)	\
-    set_data(buffer_read(___geep___,addr))
+#define get_buffer(addr) buffer_read(___geep___,addr)
+
+#define copy_data_from_buffer(addr)  set_data( get_buffer(addr) )
+
+#define progressbar_free() gui_progress_bar_free(___geep___)
 
 #define cmp_data_and_buffer_ploop(addr, error) \
 	if(hw_get_data() != buffer_read(___geep___,addr)){\
@@ -81,6 +84,9 @@
 
 #define  show_message(sw,title,msg_1,msg_2)	\
     gui_dialog_box(___geep___, title, sw ? msg_2 : msg_1, "OK", NULL)
+
+#define show_dialog(title, msg)	\
+    gui_dialog_box(___geep___, title, msg, "OK", NULL)
 
 #define REGISTER_MODULE_BEGIN(name)	\
     int init_module(geepro *gep___)\
@@ -98,17 +104,36 @@
     }
 
 #define MODULE_IMPLEMENTATION	\
-    static geepro *___geep___ = ((void*)0);
+    static geepro *___geep___ = ((void*)0);\
+    static int ___error___ = 0;\
+    char test_connection()\
+    {                      \
+	if(hw_test_conn()) return 0;\
+	gui_dialog_box(___geep___, "[ER][TEXT]Programmer unplugged.[/TEXT][BR]OK",NULL, NULL);\
+	return -1;\
+    }
+
+#define VOID
+#define TEST_CONNECTION( ret ) \
+    if(test_connection()){\
+     SET_ERROR;\
+     return ret;\
+    }
 
 #define REG_FUNC_BEGIN(name)	\
     static int name (void *gep___)\
     {\
-	___geep___ = (geepro*)gep___;
+	___geep___ = (geepro*)gep___;\
+	___error___ = 0;
+
+#define SET_ERROR	___error___ = -1;	
 
 #define REG_FUNC_END	\
 	___geep___ = ((void*)0);\
-	return 0;\
+	return ___error___;\
     }
+
+#define to_hex(value, digit)	((value >> (digit * 4)) & 0x0f)
 
 #define ERROR	\
     return -1
@@ -130,20 +155,35 @@
 #define add_autostart(callback)	\
     __init_struct__.autostart = callback
 
+#define MODULE_WRITE_ACTION MODULE_PROG_ACTION
+#define MODULE_TEST_BLANK_ACTION MODULE_TEST_ACTION
+
+#define checkbox(title, fmt, m...)	gui_checkbox(___geep___, fmt, m )
+
 #define MODULE_READ_ACTION	\
-    "gtk-color-picker", "Read data from chip"
+    "geepro-read-action", "Read data from chip"
+
+#define MODULE_SIGN_ACTION	\
+    "geepro-sign-action", "Read signature from chip"
 
 #define MODULE_PROG_ACTION	\
-    "gtk-edit", "Write data to chip"
+    "geepro-write-action", "Write data to chip"
 
 #define MODULE_ERASE_ACTION	\
-    "gtk-clear", "Erase memory"
+    "geepro-erase-action", "Erase memory"
 
 #define MODULE_TEST_ACTION	\
-    "gtk-find", "Test blank memory"
+    "geepro-testblank-action", "Test blank memory"
 
 #define MODULE_VERIFY_ACTION	\
-    "gtk-index", "Verify chip memory with buffer"
+    "geepro-verify-action", "Verify chip memory with buffer"
+
+#define MODULE_LOCKBIT_ACTION	\
+    "geepro-lockbit-action", "Set lock-bits"
 
 #endif
+
+
+
+
 

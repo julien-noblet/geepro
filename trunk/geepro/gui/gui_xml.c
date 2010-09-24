@@ -1,4 +1,4 @@
-/* $Revision: 1.6 $ */
+/* $Revision: 1.7 $ */
 /* xml parser for gui
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -376,14 +376,14 @@ static GtkWidget *gui_xml_spinbutton(gui_xml *g, xmlNode *cur)
     GtkAdjustment *adj;
     char *arg, *id;
     int max=0;    
-    
+
     if(!(id = (char *)xmlGetProp(cur, (unsigned char *)"id"))){
 	return NULL;
     };
 
     arg = (char *)xmlGetProp(cur, (unsigned char *)"max");
     if(arg) max = strtol(arg, NULL, 0);
-    adj = GTK_ADJUSTMENT(gtk_adjustment_new(0, 0.0, max, 1, 16, 16));    
+    adj = GTK_ADJUSTMENT(gtk_adjustment_new(0, 0.0, max, 1, 16, 0));    
     tmp1 = gtk_spin_button_new(adj, 1, 0);
     arg = (char *)xmlGetProp(cur, (unsigned char *)"size");
     if(arg){ 
