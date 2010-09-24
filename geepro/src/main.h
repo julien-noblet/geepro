@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -23,7 +23,9 @@
 #define __main_h__
 #include "chip.h"
 #include "geepro.h"
+#include "storings.h"
 
+extern store_str store;
 extern void error(void);
 extern char test_hw(void *, geepro*);
 extern int  test_uid(geepro *gep);

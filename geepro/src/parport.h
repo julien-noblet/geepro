@@ -1,5 +1,5 @@
-/* $Revision: 1.1.1.1 $ */
-/* parport - user space wrapper for LPT port using ppdev  v 0.0.2
+/* $Revision: 1.2 $ */
+/* parport - user space wrapper for LPT port using ppdev  v 0.0.3
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
  *

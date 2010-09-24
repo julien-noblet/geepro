@@ -1,6 +1,6 @@
-## $Revision: 1.2 $
+## $Revision: 1.3 $
 
-#objs = buffer.o timer.o main.o chip.o parport.o iface.o dummy.o
+objs = buffer.o timer.o main.o chip.o parport.o iface.o dummy.o files.o storings.o
 
 opts = -Wall -O2
 
@@ -29,6 +29,9 @@ files.o: files.c files.h
 
 iface.o: iface.c iface.h 
 	gcc -c $(opts) iface.c
+
+storings.o: storings.c storings.h 
+	gcc -c $(opts) storings.c
 
 dummy.o: dummy.c dummy.h 
 	gcc -c $(opts) dummy.c

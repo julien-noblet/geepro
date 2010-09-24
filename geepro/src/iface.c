@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* 
  * Copyright (C) Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -132,13 +132,16 @@ char *iface_get_dev(iface *ifc, char *name)
 int iface_select_iface(iface *ifc, char *name)
 {
     char *dev;
-    
+    iface *ifct = ifc;    
+
     dev = iface_get_dev(ifc, name);
     
     printf("Opening interface %s (device: %s)\n", name, dev);
 
-    if(hw_open(dev, 0) == HW_ERROR) return -1;
-
+    if(hw_open(dev, 0) == HW_ERROR){
+	ifc = ifct;
+	return -1;
+    }
     return 0;
 }
 

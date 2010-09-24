@@ -1,4 +1,4 @@
-/* $Revision: 1.10 $ */
+/* $Revision: 1.11 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -220,7 +220,7 @@ static int willem_get_par_data_pin(void)
 
     for(i = 0x80; i && !err; i >>= 1){
 	timer_us_delay(TD_04);
-	if((x = parport_get_bit(PB, PP_10))) data |= i; 
+	if(!(x = parport_get_bit(PB, PP_10))) data |= i; 
 	if(x == PP_ERROR) err = HW_ERROR;	
 	err |= parport_clr_bit(PA,PP_04);
 	timer_us_delay(TD_05);
@@ -426,7 +426,7 @@ static int willem_gui_init(void *ptr, const char *chip_name, const char *family,
 
 static int willem_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags) == PP_ERROR) return HW_ERROR;
+    if(parport_init(ptr, flags) ) return HW_ERROR;
     return willem_reset();
 }
 

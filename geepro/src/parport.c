@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* parport - user space wrapper for LPT port using ppdev v 0.0.2
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -31,7 +31,7 @@
 #include <stdarg.h>
 #include "parport.h"
 
-#define PARPORT_VERSION	"lib parport version 0.0.2\n"
+#define PARPORT_VERSION	"lib parport version 0.0.3\n"
 
 #ifndef __PARPORT_CPP_CLASS__
 void parport_message(int, void *, const char *, ...);
@@ -39,6 +39,7 @@ void parport_message(int, void *, const char *, ...);
 /* zmienne globalne */
 unsigned char parport_mirror[3];
 static int parport_ppdev_fd=0;
+static char allow=0;
 message_type parport_message_handler = parport_message;
 void *parport_msgh_ptr = NULL;
 static int parport_init_lvl=0;
@@ -82,7 +83,7 @@ int PARPORT(cleanup)(void)
 int PARPORT(init)(const char *dev_path, int dev_flags)
 {
     static char first_run=1;
-
+    allow = 1;
     if(first_run){
 	PARPORT_M(message)(0, PARPORT_EM, PARPORT_VERSION);
 	first_run=0;
@@ -105,11 +106,13 @@ int PARPORT(init)(const char *dev_path, int dev_flags)
     PARPORT_M(mirror)[0] = PARPORT_M(mirror)[1] = PARPORT_M(mirror)[2] = 0;      
 
     PARPORT_M(reset)();
+    allow = 0;
     return 0;
 }
 
 int PARPORT(w_data)(unsigned char data)
 {
+    if(allow) return 0;
     if(ioctl(PARPORT_M(ppdev_fd), PPWDATA, &data)){
 	PARPORT_M(message)(7, PARPORT_EM, "ioctl(%d, PPWDATA, %d): %s\n", PARPORT_M(ppdev_fd), data, strerror(errno));	
 	PARPORT_M(cleanup)();
@@ -120,6 +123,7 @@ int PARPORT(w_data)(unsigned char data)
 
 int PARPORT(w_ctrl)(unsigned char data)
 {
+    if(allow) return 0;
     data ^= 0x0b; /* negacja bitów sprzetowo negowanych */
     if(ioctl(PARPORT_M(ppdev_fd), PPWCONTROL, &data)){
 	PARPORT_M(message)(7, PARPORT_EM, "ioctl(%d, PPWCONTROL, %d): %s\n", PARPORT_M(ppdev_fd), data, strerror(errno));	
@@ -131,6 +135,7 @@ int PARPORT(w_ctrl)(unsigned char data)
 
 int PARPORT(r_stat)(void)
 { 
+    if(allow) return 0;
     unsigned char data;
     data = 0;
     if(ioctl(PARPORT_M(ppdev_fd), PPRSTATUS, &data)){
@@ -147,6 +152,7 @@ int PARPORT(r_stat)(void)
 
 int PARPORT(set)(unsigned char port_idx, unsigned char data)
 {
+    if(allow) return 0;
     if(port_idx > 2) return PP_ERROR;
     PARPORT_M(mirror)[port_idx] = data;
     if(port_idx == PA)
@@ -158,6 +164,7 @@ int PARPORT(set)(unsigned char port_idx, unsigned char data)
 
 int PARPORT(get)(unsigned char port_idx)
 {
+    if(allow) return 0;
     if(port_idx > 2) return 0;
     if(port_idx == PB) PARPORT_M(mirror)[port_idx] = PARPORT_M(r_stat)();
     return PARPORT_M(mirror)[port_idx];
@@ -165,6 +172,7 @@ int PARPORT(get)(unsigned char port_idx)
 
 int PARPORT(reset)(void)
 {
+    if(allow) return 0;
     if(PARPORT_M(set)(PA, 0) == PP_ERROR) return PP_ERROR;
     if(PARPORT_M(set)(PB, 0) == PP_ERROR) return PP_ERROR;
     if(PARPORT_M(set)(PC, 0) == PP_ERROR) return PP_ERROR;

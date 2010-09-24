@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -32,9 +32,13 @@
 #include "../drivers/hwplugin.h"
 #include "dummy.h"
 #include "geepro.h"
+#include "storings.h"
 
 /* uchwyt api do wybranego sterownika, global na cały program */
 hw_module_type ___hardware_module___ = dummy_hardware_module; 
+
+/*global do zmiennych przechowywanych w pliku */
+store_str store;
 
 /* globalna zmienna zawierająca uzytkownika */
 int ___uid___= -1;
@@ -73,13 +77,13 @@ int main(int argc, char **argv)
     gui g;
 
     geep.gui = &g;
-
     geep.ifc = iface_init();
     geep.ifc->gep = &geep;
     geep.argc = argc;
     geep.argv = argv;
     geep.chp = NULL;
 
+    store_constr(&store, "~/.geepro","geepro.st");
 // do poprawki jak będzie config - te wszystkie stałe mają być pobierane z pliku configuracyjnego 
     iface_plugin_allow(geep.ifc, "willem:dummy:jtag");
     iface_module_allow(geep.ifc, "prom:mcs51:mcs48:exampl:93Cxx:27xx:24Cxx");
@@ -96,6 +100,7 @@ int main(int argc, char **argv)
     gui_run(&geep);
 
     iface_destroy(geep.ifc);
+    store_destr(&store);
     return 0;
 }
 
