@@ -1,4 +1,4 @@
-/* $Revision: 1.7 $ */
+/* $Revision: 1.8 $ */
 /* xml parser for gui
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -458,7 +458,7 @@ static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlN
 {
     char *arg0;
     int n, q, i;
-    
+
     for(; cur != NULL; cur = cur->next){
 	/* tagi kluczowe */
 	if(!strcmp((char*)cur->name,"if")){
@@ -557,7 +557,7 @@ int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *pa
 {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
-    
+
     if(!g) return -1;
     /* usuniecie istniejacego GUI */
     gui_xml_destroy(g);

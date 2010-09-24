@@ -32,6 +32,16 @@
 		    </hbox>
 		</vbox>
 	    </if>
+	    <if family="AT89Cxx51">
+		<description>Jakis opis do poprawy.</description>
+		<image src="./pixmaps/mcs51.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0xa94"/>
+		    </hbox>
+		</vbox>
+	    </if>
 	</vbox>
     </frame>
 </info>
