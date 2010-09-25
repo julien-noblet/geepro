@@ -1,4 +1,4 @@
-/* $Revision: 1.12 $ */
+/* $Revision: 1.13 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -429,7 +429,6 @@ static int willem_open(const char *ptr, int flags)
     if(parport_init(ptr, flags) ) return HW_ERROR;
     return willem_reset();
 }
-
 
 static int pcb3_open(const char *ptr, int flags)
 {
