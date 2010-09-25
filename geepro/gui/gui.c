@@ -1,4 +1,4 @@
-/* $Revision: 1.15 $ */
+/* $Revision: 1.16 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -609,9 +609,9 @@ static void gui_add_images(geepro *gep)
 
 void gui_refresh_button(GtkWidget *wg, geepro *gep)
 {
-    char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));
-    char *err;
-    err = file_load(gep, fname);
+    const char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));
+    const char *err;
+    err = file_load(gep, (char *)fname);
     if(err) 
         gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
     else {
@@ -748,13 +748,13 @@ void gui_menu_setup(geepro *gep)
     GUI(gep->gui)->file_entry = wg1;
     tmp = NULL;
     if(!store_get(&store, "LAST_OPENED_FILE", &tmp)){
-	gtk_entry_set_text(wg1, tmp);
+	gtk_entry_set_text(GTK_ENTRY(wg1), tmp);
 	gtk_editable_set_position(GTK_EDITABLE(wg1), -1);
     }
     wg4 = gtk_hbox_new(FALSE, 0);
     gtk_container_add(GTK_CONTAINER(wg4), wg1);
     wg1 = gtk_button_new();
-    gtk_box_pack_end(GTK_CONTAINER(wg4), wg1, 0 ,0, 0);    
+    gtk_box_pack_end(GTK_BOX(wg4), wg1, 0 ,0, 0);    
     gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
     wg4 = gtk_image_new_from_stock("gtk-refresh", GTK_ICON_SIZE_BUTTON);    
     gtk_container_add(GTK_CONTAINER(wg1), wg4);
@@ -1110,9 +1110,27 @@ void gui_clk_sqw(gui *g, gui_sqw_generator gen)
     gtk_widget_destroy(wgm);
 }
 
-void gui_checkbox(geepro *gep, const char *title, const char *fmt, ...)
+void gui_checkbox(geepro *gep, const char *fmt, ...)
 {
-    printf("gui_checkbox unimplemented yet.\n");
+    GtkDialog *wd;
+    int result;
+    char title[256];
+
+    title[0] = 0;
+    
+    
+    wd = gtk_dialog_new_with_buttons((const char *)title, GUI(gep->gui)->wmain, 
+	GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, 
+	GTK_STOCK_OK, 
+	GTK_STOCK_CANCEL,
+	NULL
+    );
+//--->
+
+    result = gtk_dialog_run(wd);    
+    if(result != GTK_RESPONSE_ACCEPT);
+    
+    gtk_widget_destroy(GTK_WIDGET(wd));
 }
 
 

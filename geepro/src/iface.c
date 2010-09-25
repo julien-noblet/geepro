@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* 
  * Copyright (C) Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -69,9 +69,6 @@ void iface_rmv_prg(iface *ifc)
     }
 }
 
-
-
-
 int iface_add(iface *ifc, int cl, char *name, char *dev)
 {
     iface_qe *new_tie, *tmp;
@@ -133,15 +130,17 @@ int iface_select_iface(iface *ifc, char *name)
 {
     char *dev;
     iface *ifct = ifc;    
-
+printf("iface.c A\n");
     dev = iface_get_dev(ifc, name);
-    
+printf("iface.c B\n");    
     printf("Opening interface %s (device: %s)\n", name, dev);
-
+printf("iface.c C\n");
     if(hw_open(dev, 0) == HW_ERROR){
+printf("iface.c D\n");
 	ifc = ifct;
 	return -1;
     }
+printf("iface.c E\n");
     return 0;
 }
 
