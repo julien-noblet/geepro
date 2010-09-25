@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -294,13 +294,18 @@ void write_AT89Cx051(int size)
 
 void lock_bit_AT89Cx051(int size)
 {
-    char lb1=0, lb2=0;
-    checkbox("LOCKBITS","[QS][CHECK][%] - LB1 (Further programing of the flash is disabled)[%] - LB2 (same as LB1, also verify is disabled)", &lb1, &lb2);
+    char lb = 0;
+    lb = checkbox(
+	"[TITLE]LOCKBITS[/TITLE][TYPE:QS]"
+	"[CB:1:0:LB1 (further programing of the flash is disabled)]"
+	"[CB:2:0:LB2 (same as LB1, also verify is disabled)]"
+    );
+printf("LB %i\n", lb);
     TEST_CONNECTION(VOID)
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
-    if(lb1){
+    if(lb & 1){
 	AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
 	AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
 	hw_delay(1000); // 1ms
@@ -315,7 +320,7 @@ void lock_bit_AT89Cx051(int size)
 	hw_delay(1000);
 	hw_sw_vpp(0);
     }
-    if(lb2){
+    if(lb & 2){
 	AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
 	AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
 	hw_delay(1000); // 1ms

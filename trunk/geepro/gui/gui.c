@@ -1,4 +1,4 @@
-/* $Revision: 1.16 $ */
+/* $Revision: 1.17 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -1110,27 +1110,78 @@ void gui_clk_sqw(gui *g, gui_sqw_generator gen)
     gtk_widget_destroy(wgm);
 }
 
-void gui_checkbox(geepro *gep, const char *fmt, ...)
+char *gui_lookup_tag(const char *fmt, char *tmp, int size, const char *key_begin, const char *key_end)
 {
-    GtkDialog *wd;
+    char *str, *x;
+    tmp[0] = 0;
+    if((str = strstr(fmt, key_begin))){
+	str += strlen(key_begin);
+	if(!(x = strstr(str, key_end))){
+	    printf("[WARN] gui_checkbox(): missing %s in sequence %s ... %s\n", key_end, key_begin, key_end);
+	    return NULL;
+	};
+	memset(tmp, 0, size);
+	strncpy(tmp, str, x - str);
+	return x + 1;
+    }
+    return NULL;
+}
+
+// global
+static unsigned int gui_checkbox_result;
+
+void gui_checkbox_action(GtkWidget *wg, void *value)
+{
+    if( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg)) )
+	gui_checkbox_result |= (unsigned int)value;
+    else
+	gui_checkbox_result &= ~((unsigned int)value);
+}
+
+int gui_checkbox(geepro *gep, const char *fmt)
+{
+    GtkWidget *wd, *hbox, *vbox, *r;
     int result;
-    char title[256];
-
-    title[0] = 0;
+    char *x = NULL, *str, t;
+    char tmp[256];
+    if(strlen(fmt) > 255){
+	printf("[WARN] gui_checkbox(): format exceed 255 characters.\n");
+	return 0;
+    }
+    gui_checkbox_result = 0;
+    gui_lookup_tag(fmt, tmp, 256, "[TITLE]", "[/TITLE]");
+    wd = gtk_dialog_new_with_buttons(tmp, 
+	GTK_WINDOW(GUI(gep->gui)->wmain), 
+	GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+	GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
+	GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
+	NULL 
+    );    
+    gui_lookup_tag(fmt, tmp, 256, "[TYPE:", "]");
+    if(!strcmp(tmp, "QS")) x = GTK_STOCK_DIALOG_QUESTION;
+    hbox = gtk_hbox_new(FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(wd)->vbox), hbox, TRUE, TRUE, 0);
+    if( x ) 
+	gtk_box_pack_start(GTK_BOX(hbox), gtk_image_new_from_stock( x, GTK_ICON_SIZE_DIALOG), FALSE, FALSE, 10 );
+    vbox = gtk_vbox_new(FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(hbox), vbox, FALSE, 0, 0);    
+    str = (char *)fmt; 
+    while( (str = gui_lookup_tag(str, tmp, 256, "[CB:", "]")) ){
+	sscanf(tmp, " %i ", &result);
+	if((x = strchr(tmp, ':'))) x++;
+	t = *x;
+	if((x = strchr(tmp, ':'))) x++;
+	r = gtk_check_button_new_with_label( x );
+	gtk_box_pack_start( GTK_BOX(vbox), r, TRUE, TRUE, 2 );
+	gtk_signal_connect(GTK_OBJECT(r), "toggled", GTK_SIGNAL_FUNC(gui_checkbox_action), (void *)result); // ptr as integer
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(r), t == '1');
+    }
     
-    
-    wd = gtk_dialog_new_with_buttons((const char *)title, GUI(gep->gui)->wmain, 
-	GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, 
-	GTK_STOCK_OK, 
-	GTK_STOCK_CANCEL,
-	NULL
-    );
-//--->
-
-    result = gtk_dialog_run(wd);    
-    if(result != GTK_RESPONSE_ACCEPT);
-    
+    gtk_widget_show_all(GTK_DIALOG(wd)->vbox);
+    result = gtk_dialog_run(GTK_DIALOG(wd));    
+    if(result != GTK_RESPONSE_ACCEPT) gui_checkbox_result = 0;
     gtk_widget_destroy(GTK_WIDGET(wd));
+    return gui_checkbox_result;
 }
 
 
