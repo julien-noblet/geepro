@@ -1,4 +1,4 @@
-/* $Revision: 1.5 $ */
+/* $Revision: 1.6 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -158,7 +158,7 @@
 #define MODULE_WRITE_ACTION MODULE_PROG_ACTION
 #define MODULE_TEST_BLANK_ACTION MODULE_TEST_ACTION
 
-#define checkbox(title, fmt, m...)	gui_checkbox(___geep___, fmt, m )
+#define checkbox(fmt)	gui_checkbox(___geep___, fmt)
 
 #define MODULE_READ_ACTION	\
     "geepro-read-action", "Read data from chip"
