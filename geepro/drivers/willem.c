@@ -1,4 +1,4 @@
-/* $Revision: 1.13 $ */
+/* $Revision: 1.14 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -125,11 +125,11 @@ static int willem_set_par_addr_pin(int addr)
     mask = 0x800000;    
     err |= parport_clr_bit(PA, PP_03 | PP_02); /* wyzerowanie D0 i D1 -> D i CLK przesuwnika */
     while(mask && !err){
-	timer_us_delay(TA_01);
+//	timer_us_delay(TA_01);
 	if(addr & mask) err |= parport_set_bit(PA, PP_03); else err |= parport_clr_bit(PA, PP_03);
-	timer_us_delay(TA_02);
+//	timer_us_delay(TA_02);
 	err |= parport_set_bit(PA, PP_02);
-	timer_us_delay(TA_03);
+//	timer_us_delay(TA_03);
 	err |= parport_clr_bit(PA, PP_02);
 	mask = mask >> 1;
     }

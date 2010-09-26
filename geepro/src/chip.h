@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -118,5 +118,10 @@ extern void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void 
 /* Akcje */
 extern void chip_add_action(chip_desc *chip, const char *bt_name, const char *bt_tip, chip_act_func action);
 extern int  chip_list_action(chip_desc *chip, int (*cb)(chip_desc *, chip_action *, void *ptr), void *ptr);
+
+/* Info */
+
+extern const char *take_signature_name(int signature);
+
 #endif
 

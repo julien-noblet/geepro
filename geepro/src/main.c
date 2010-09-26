@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -89,7 +89,6 @@ int main(int argc, char **argv)
     iface_module_allow(geep.ifc, "prom:mcs51:mcs48:exampl:93Cxx:27xx:24Cxx");
     iface_load_config(geep.ifc, NULL);
     iface_make_plugin_list(geep.ifc, "./drivers", ".plug");
-
     gui_menu_setup(&geep);
 /* moduły chipów inicjują menu gui, dlatego gui musi być zainicjowane */
 /* parametry z configa w przyszłości */

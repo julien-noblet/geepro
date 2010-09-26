@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -134,11 +134,18 @@ int chip_register_chip(chip_plugins *plg, chip_desc *new_chip)
 
 chip_desc *chip_lookup_chip(chip_plugins *plg, char *name)
 {
+    if(!name){
+	printf("[ERR] chip_lookup_chip() ---> name == NULL !\n");
+	return NULL;
+    }
+    if(!plg){
+	printf("[ERR] chip_lookup_chip() ---> plg == NULL !\n");
+	return NULL;
+    }
     if(!__plugins__){
 	printf("chip_lookup_chip() called without initialisation (see chip_init_qe()) \n");
 	return NULL;
     }
-    
     for(plg->chip_sel = plg->chip_qe; plg->chip_sel; plg->chip_sel = plg->chip_sel->next )
 	    if(!strcmp(plg->chip_sel->chip_name, name)) return plg->chip_sel;
     return NULL;
@@ -397,3 +404,26 @@ void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void *, char
 	}
     }
 }
+
+/**********************************************************************/
+/* Identyfikacja sygnatur - do poprawy */
+
+const char *take_signature_name(int data)
+{
+    char b0 = (data >>  0) & 0xff;
+    char b1 = (data >>  8) & 0xff;
+    char b2 = (data >> 16) & 0xff;
+    char *text = "Unknown signature";
+    switch(data & 0xff){
+	case 0x1e : switch(b1){
+                      case 0x51: text = (b2 == 5) ? "Vendor: ATMEL\nCHIP: AT89C51\nVPP = 5V" : "Vendor: ATMEL\nCHIP: AT89C51\nVPP=12.5V"; break;
+                      case 0x52: text = (b2 == 5) ? "Vendor: ATMEL\nCHIP: AT89C52\nVPP = 5V" : "Vendor: ATMEL\nCHIP: AT89C52\nVPP=12.5V"; break;
+                      case 0x21: text = (b2 == 5) ? "Vendor: ATMEL\nCHIP: AT89C2051\nVPP = 5V" : "Vendor: ATMEL\nCHIP: AT89C2051\nVPP=12.5V"; break;
+                      default:   text = "Vendor: ATMEL"; break;
+    		    }
+		    break;
+    }
+    return text;
+}
+
+

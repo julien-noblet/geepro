@@ -1,4 +1,4 @@
-/* $Revision: 1.17 $ */
+/* $Revision: 1.18 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -138,14 +138,18 @@ static void gui_load_file(GtkWidget *w, geepro *gep)
 
     tmp = NULL;
     if(store_get(&store, "LAST_OPENED_PATH", &tmp) == 0){
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
-	free(tmp);
+	if( tmp ){
+	    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
+	    free(tmp);
+	}
     }
 
     tmp = NULL;
     if(store_get(&store, "LAST_OPENED_FILE", &tmp) == 0){
-	gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(wg), tmp);
-	free(tmp);
+	if( tmp ){
+	    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(wg), tmp);
+	    free(tmp);
+	}
     }
 
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
@@ -153,6 +157,8 @@ static void gui_load_file(GtkWidget *w, geepro *gep)
 	const char *err;
 	store_set(&store, "LAST_OPENED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
         store_set(&store, "LAST_OPENED_FILE", gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg)));
+	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->file_entry), fname);
+	gtk_editable_set_position(GTK_EDITABLE(GUI(gep->gui)->file_entry), -1);
 	gtk_widget_destroy(wg);    
 	err = file_load(gep, fname);
 	if(err) 
@@ -205,8 +211,10 @@ static void gui_save_file(GtkWidget *w, geepro *gep)
 
     tmp = NULL;
     if(store_get(&store, "LAST_SAVED_PATH", &tmp) == 0){
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
-	free(tmp);
+	if( tmp ){
+	    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
+	    free(tmp);
+	}
     }
 
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
@@ -470,8 +478,6 @@ static int gui_iface_sel(GtkWidget *wg, geepro *gep)
     gep->ifc->ifc_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
     gui_stat_rfsh(gep);
     test_hw(NULL, gep);
-
-/*!! dopisac zapis do pliku konfiguracyjnego nowego ustawienia */
     return 0;
 }
 
@@ -483,7 +489,6 @@ static GtkWidget *gui_iface_list(geepro *gep)
     iface_search(gep->ifc, gep->ifc->cl, (iface_cb)gui_build_iface_menu, GTK_COMBO_BOX(combox));
     gtk_combo_box_set_active(GTK_COMBO_BOX(combox), gep->ifc->ifc_sel);
     gtk_signal_connect(GTK_OBJECT(combox), "changed", GTK_SIGNAL_FUNC(gui_iface_sel), gep);
-
     return combox;
 }
 
@@ -502,7 +507,6 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     char tmp[256];
     char *name = gtk_combo_box_get_active_text(GTK_COMBO_BOX(wg));
     iface_prg_api api;    
-
 
     if(!name) return;
     if(!(api = iface_get_func(gep->ifc, name))){
@@ -748,8 +752,10 @@ void gui_menu_setup(geepro *gep)
     GUI(gep->gui)->file_entry = wg1;
     tmp = NULL;
     if(!store_get(&store, "LAST_OPENED_FILE", &tmp)){
-	gtk_entry_set_text(GTK_ENTRY(wg1), tmp);
-	gtk_editable_set_position(GTK_EDITABLE(wg1), -1);
+	if(tmp){
+	    gtk_entry_set_text(GTK_ENTRY(wg1), tmp);
+	    gtk_editable_set_position(GTK_EDITABLE(wg1), -1);
+	}
     }
     wg4 = gtk_hbox_new(FALSE, 0);
     gtk_container_add(GTK_CONTAINER(wg4), wg1);
@@ -818,15 +824,13 @@ void gui_run(geepro *gep)
     // default combox setting
     tmp = NULL;
     if(!store_get(&store, "LAST_SELECTED_PROGRAMMER", &tmp)){ // 0 - OK
-	gtk_combo_box_set_active(GTK_COMBO_BOX(GUI(gep->gui)->prog_combox), strtol(tmp, NULL, 0));
+	if( tmp ) gtk_combo_box_set_active(GTK_COMBO_BOX(GUI(gep->gui)->prog_combox), strtol(tmp, NULL, 0));
 	free(tmp);
     }
-
     tmp = NULL;
     if(!store_get(&store, "LAST_CHIP_SELECTED", &tmp)){
-	gui_chip_select(gep, tmp);
+	if( tmp ) gui_chip_select(gep, tmp);
     }
-
     GUI(gep->gui)->gui_run = 1;
     gtk_main(); /* jesli programator ok to startuj program inaczej wyjdź */
 }
@@ -874,9 +878,15 @@ void gui_progress_bar_init(geepro *gep, char *title, long range)
     gtk_widget_show_all(wg0);
 }
 
-char gui_progress_bar_set(geepro *gep, long value)
+char gui_progress_bar_set(geepro *gep, long value, long max)
 {
+    long delta;
     if(gui_progress_bar_exit) return 1;
+    if((value != 0) || (value != max)){
+	delta = max / 100;
+	if(delta < 1) delta = 1;
+        if( value % delta ) return 0;
+    }
     gtk_progress_set_value(GTK_PROGRESS(GUI(gep->gui)->progress_bar), value);
     gui_rfsh_gtk();
     return 0;
@@ -888,9 +898,9 @@ void gui_progress_bar_free(geepro *gep)
     gtk_widget_destroy(GUI(gep->gui)->progress_win);
 }
 
-char gui_cmp_pls(geepro *gep, int a,int b)
+char gui_cmp_pls(geepro *gep, int a, int b)
 {
-    char test = a < b;
+    char test = (a < b) & !gui_progress_bar_exit;
     if(!test ) gui_progress_bar_free(gep);
     return test;
 }

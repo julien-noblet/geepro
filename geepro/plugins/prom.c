@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -45,7 +45,7 @@ REG_FUNC_BEGIN(read_474)
     hw_set_addr(0);
     hw_set_data(0);
     hw_delay(1000);
-    progress_loop(addr, 0, SIZE_PROM_474, "Odczyt PROM"){
+    progress_loop(addr, SIZE_PROM_474, "Odczyt PROM"){
 	hw_set_oe(1);
 	hw_set_ce(1);
 	hw_set_addr(addr | ADDR_MASK_474);	
@@ -64,7 +64,7 @@ REG_FUNC_BEGIN(verify_474)
     hw_set_addr(0);
     hw_set_data(0);
     hw_delay(1000);
-    progress_loop(addr, 0, SIZE_PROM_474, "Weryfikacja PROM"){
+    progress_loop(addr, SIZE_PROM_474, "Weryfikacja PROM"){
 	hw_set_oe(1);
 	hw_set_ce(1);
 	hw_set_addr(addr | ADDR_MASK_474);	

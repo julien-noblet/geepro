@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -40,7 +40,7 @@ void read_8048(int size)
     start_action(0,0);
     hw_sw_vpp(1);    
     hw_delay(100000);
-    progress_loop(addr, 0, size, "Odczyt"){
+    progress_loop(addr, size, "Odczyt"){
 	oe(0,3000);
 	set_address((addr >> 8) & 0x0f);
 	set_data(addr);
@@ -62,7 +62,7 @@ void verify_8048(int size)
     hw_delay(100000);
 
     ok_status = 1;
-    progress_loop(addr, 0, size, "Weryfikacja"){
+    progress_loop(addr, size, "Weryfikacja"){
 	oe(0,3000);
 	set_address((addr >> 8) & 0x0f);
 	set_data(addr);
