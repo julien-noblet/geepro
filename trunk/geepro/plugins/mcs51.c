@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -26,6 +26,20 @@ MODULE_IMPLEMENTATION
 #define SIZE_AT89C1051	1024
 #define SIZE_AT89C2051	2048
 #define SIZE_AT89C4051	4096
+
+#define SIZE_AT89C51	4096
+#define SIZE_AT89C52	8192
+
+//AT89C5x Mode
+#define AT89C5x_READ_MODE	(0x0c << 15)
+#define AT89C5x_WRITE_MODE	(0x0e << 15)
+#define AT89C5x_LB1_MODE	(0x0f << 15)
+#define AT89C5x_LB2_MODE	(0x03 << 15)
+#define AT89C5x_LB3_MODE	(0x05 << 15)
+#define AT89C5x_ERASE_MODE	(0x01 << 15)
+#define AT89C5x_SIGN_MODE	(0x00 << 15)
+#define AT89C5x_P27_H_MODE	(0x02 << 15)
+#define AT89C5x_MODE_MASK	0x78000
 
 // AT89Cx051 modes
 #define AT89Cx051_WR_MODE	(0x0e << 6)
@@ -101,7 +115,7 @@ int test_blank_AT89Cx051(int size, char mode)
     set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode
     hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
-    progress_loop(addr, 1, size, "Checking blank"){
+    progress_loop(addr, size, "Checking blank"){
 	hw_delay(100);
 	tmp = hw_get_data();
 	if( tmp != 0xff){
@@ -131,7 +145,7 @@ void read_AT89Cx051(int size)
     set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode
     hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
-    progress_loop(addr, 1, size, "Reading"){
+    progress_loop(addr, size, "Reading"){
 	hw_delay(100);
 	copy_data_to_buffer(addr);	
 	AT89Cx051_pulse( 150 );
@@ -143,7 +157,7 @@ void read_AT89Cx051(int size)
 void sign_AT89Cx051(int size)
 {
     int addr = 0;
-    char signature[3];
+    int signature = 0;
     char text[256];
     TEST_CONNECTION(VOID)    
     hw_sw_vpp(0);   // VPP OFF
@@ -157,18 +171,19 @@ void sign_AT89Cx051(int size)
     set_AT89Cx051_mode(AT89Cx051_SIGN_MODE); // set mode
     hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
-    progress_loop(addr, 1, 3, "Reading"){
+    progress_loop(addr, 3, "Reading"){
 	hw_delay(100);
-	signature[addr]	= hw_get_data();
+	signature[addr]	|= hw_get_data() << (addr * 8);
 	AT89Cx051_pulse( 150 );
     }
     set_address(0);
     finish_action();
     sprintf(
-	text, "[IF][TEXT]Chip signature: 0x%X%X, 0x%X%X, 0x%X%X [/TEXT]", 
-	(signature[0] >> 4) & 0x0f, signature[0] & 0x0f, 
-	(signature[1] >> 4) & 0x0f, signature[1] & 0x0f, 
-	(signature[2] >> 4) & 0x0f, signature[2] & 0x0f
+	text, "[IF][TEXT]Chip signature: 0x%X%X%X%X%X%X\n%s[/TEXT][BR]OK", 
+	to_hex(signature, 5),to_hex(signature, 4),  
+	to_hex(signature, 3),to_hex(signature, 2),  
+	to_hex(signature, 1),to_hex(signature, 0), 
+	take_signature_name( signature )
     );
     show_message(0, text,NULL,NULL);
 }
@@ -190,7 +205,7 @@ void verify_AT89Cx051(int size, char silent)
     set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode
     hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
-    progress_loop(addr, 1, size, "Veryfication"){
+    progress_loop(addr, size, "Veryfying"){
 	hw_delay(100);
 	rdata = hw_get_data();
 	wdata = get_buffer(addr);
@@ -252,7 +267,7 @@ void write_AT89Cx051(int size)
     hw_delay(1000); // 1ms
     AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
     hw_delay(1000); // 1ms
-    progress_loop(addr, 1, size, "Writing"){
+    progress_loop(addr, size, "Writing"){
 	set_AT89Cx051_mode(AT89Cx051_WR_MODE); // set mode to write
 	hw_delay(100); // 100µs    
 	AT89Cx051_mux(AT89Cx051_PROG_MUX); // PROG as pulse
@@ -289,7 +304,7 @@ void write_AT89Cx051(int size)
     }
     set_address(0);
     finish_action();
-    verify_AT89Cx051(size, 1);		// verificate whole at and
+    verify_AT89Cx051(size, 1);		// verificate whole at end
 }
 
 void lock_bit_AT89Cx051(int size)
@@ -300,7 +315,6 @@ void lock_bit_AT89Cx051(int size)
 	"[CB:1:0:LB1 (further programing of the flash is disabled)]"
 	"[CB:2:0:LB2 (same as LB1, also verify is disabled)]"
     );
-printf("LB %i\n", lb);
     TEST_CONNECTION(VOID)
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
@@ -338,114 +352,326 @@ printf("LB %i\n", lb);
     set_address(0);
     finish_action();
 }
-
 /*************************************************************************/
+void set_AT89C5x_mode(int mode)
+{
+    addr_state &= ~AT89C5x_MODE_MASK;
+    addr_state |= mode & AT89C5x_MODE_MASK;
+    set_address(addr_state);  /* ustawienie linii selekcji stanu: A15-P2.6, A16-P2.7, A17-P3.6, A18-P3.7 */
+}
 
-REG_FUNC_BEGIN(read_AT89C1051)
-    read_AT89Cx051(SIZE_AT89C1051); 
-REG_FUNC_END
+void set_AT89C5x_addr(int addr)
+{
+    addr_state &= AT89C5x_MODE_MASK;
+    addr_state |= addr & ~AT89C5x_MODE_MASK;
+    set_address(addr_state);  /* ustawienie linii adresowych A0..A14, z pominięciem linii sterujących */
+}
 
-REG_FUNC_BEGIN(read_AT89C2051)
-    read_AT89Cx051(SIZE_AT89C2051);
-REG_FUNC_END
+#define AT89C5x_prog_pulse	AT89Cx051_pulse	
 
-REG_FUNC_BEGIN(read_AT89C4051) 
-    read_AT89Cx051(SIZE_AT89C4051); 
-REG_FUNC_END
+unsigned char read_byte_AT89C5x(int addr, int mode)
+{
+    set_AT89C5x_mode( mode | AT89C5x_P27_H_MODE);
+    hw_delay(1); // 1us 
+    set_AT89C5x_addr(addr);
+    hw_delay(1); // 1us 
+    set_AT89C5x_mode( mode );	
+    hw_delay(1); // 1us 
+    return hw_get_data();
+}
 
-REG_FUNC_BEGIN(verify_AT89C1051)
-    verify_AT89Cx051(SIZE_AT89C1051, 0); 
-REG_FUNC_END
+void read_AT89C5x(int size)
+{ 
+    int addr = 0;
+    int signature;
+    addr_state = 0;
 
-REG_FUNC_BEGIN(verify_AT89C2051)
-    verify_AT89Cx051(SIZE_AT89C2051, 0); 
-REG_FUNC_END
+    TEST_CONNECTION( VOID )
+    hw_sw_vpp(0);   // VPP OFF
+    hw_sw_vcc(1);   // VCC ON
+    hw_delay(10000); // 10ms for power stabilise
+    ce(1,100);
+    signature = 0;
+    progress_loop(addr, size, "Reading")
+	put_buffer( addr, read_byte_AT89C5x(addr, AT89C5x_READ_MODE) );
 
-REG_FUNC_BEGIN(verify_AT89C4051)
-    verify_AT89Cx051(SIZE_AT89C4051, 0);
-REG_FUNC_END
+    set_address(0);
+    set_data(0);
+    finish_action();
+}
 
-REG_FUNC_BEGIN(write_AT89C1051)
-    write_AT89Cx051(SIZE_AT89C1051); 
-REG_FUNC_END
+void sign_AT89C5x(int size)
+{ 
 
-REG_FUNC_BEGIN(write_AT89C2051)
-    write_AT89Cx051(SIZE_AT89C2051); 
-REG_FUNC_END
+    int addr = 0;
+    int signature;
+    char text[256];
+    addr_state = 0;
+    TEST_CONNECTION( VOID )
+    hw_sw_vpp(0);   // VPP OFF
+    hw_sw_vcc(1);   // VCC ON
+    hw_delay(10000); // 10ms for power stabilise
+    ce(1,100);
+    signature = 0;
+    progress_loop(addr, 3, "Reading")
+	signature |= read_byte_AT89C5x(addr + 0x30, AT89C5x_SIGN_MODE) << (8 * addr);
+    set_address(0);
+    set_data(0);
+    finish_action();
+    sprintf(
+	text, "[IF][TEXT]Chip signature: 0x%X%X%X%X%X%X\n%s[/TEXT][BR]OK", 
+	to_hex(signature, 5),to_hex(signature, 4),  
+	to_hex(signature, 3),to_hex(signature, 2),  
+	to_hex(signature, 1),to_hex(signature, 0), 
+	take_signature_name( signature )
+    );
+    show_message(0, text,NULL,NULL);
+}
 
-REG_FUNC_BEGIN(write_AT89C4051)
-    write_AT89Cx051(SIZE_AT89C4051); 
-REG_FUNC_END
+void verify_AT89C5x(int size, char silent)
+{ 
+    int addr = 0;
+    char text[256];
+    addr_state = 0;
+    char rdata, wdata;
 
-REG_FUNC_BEGIN(lock_bit_AT89C1051)
-    lock_bit_AT89Cx051(SIZE_AT89C1051); 
-REG_FUNC_END
+    TEST_CONNECTION( VOID )
+    hw_sw_vpp(0);   // VPP OFF
+    hw_sw_vcc(1);   // VCC ON
+    hw_delay(10000); // 10ms for power stabilise
+    ce(1,100);
+    progress_loop(addr, size, "Verifying"){
+	rdata = read_byte_AT89C5x(addr, AT89C5x_READ_MODE);
+	wdata = get_buffer(addr);
+	if( rdata != wdata){
+	   progressbar_free();
+	   break;
+	}
+    }
 
-REG_FUNC_BEGIN(lock_bit_AT89C2051)
-    lock_bit_AT89Cx051(SIZE_AT89C2051); 
-REG_FUNC_END
+    if(!silent | (wdata != rdata)){
+	 sprintf(text, "[WN][TEXT]Flash and buffer differ !!!\nAddress = 0x%X \nBuffer = 0x%X%X\nChip = 0x%X%X[/TEXT][BR]OK",
+	    addr,
+	    to_hex(wdata, 1), to_hex(wdata, 0),
+	    to_hex(rdata, 1), to_hex(rdata, 0) 
+	 );	    
+	 show_message(0,(rdata == wdata) ? "[IF][TEXT]Flash and buffer are consistent[/TEXT][BR]OK" : text, NULL, NULL);
+     }
+    
+    set_address(0);
+    set_data(0);
+    finish_action();
+}
 
-REG_FUNC_BEGIN(lock_bit_AT89C4051)
-    lock_bit_AT89Cx051(SIZE_AT89C4051); 
-REG_FUNC_END
+void test_blank_AT89C5x(int size, char silent)
+{ 
+    int addr = 0;
+    char text[256];
+    addr_state = 0;
+    unsigned char rdata;
 
-REG_FUNC_BEGIN(erase_AT89C1051)
-    erase_AT89Cx051(SIZE_AT89C1051); 
-REG_FUNC_END
+    TEST_CONNECTION( VOID )
+    hw_sw_vpp(0);   // VPP OFF
+    hw_sw_vcc(1);   // VCC ON
+    hw_delay(10000); // 10ms for power stabilise
+    ce(1,100);
+    progress_loop(addr, size, "Test blank"){
+	rdata = read_byte_AT89C5x(addr, AT89C5x_READ_MODE);
+	if( rdata != 0xff){
+	   progressbar_free();
+	   break;
+	}
+    }
+    if(!silent | (rdata != 0xff)){
+	 sprintf(text, "[WN][TEXT]Flash is not empty !!!\nAddress = 0x%X\n byte = 0x%X%X[/TEXT][BR]OK",
+	    addr,
+	    to_hex(rdata, 1), to_hex(rdata, 0) 
+	 );	    
+	 show_message(0,(rdata == 0xff) ? "[IF][TEXT]Flash is clear[/TEXT][BR]OK" : text, NULL, NULL);
+    }
+    set_address(0);
+    set_data(0);
+    finish_action();
+}
+/*
+    set_AT89C5x_mode( mode | AT89C5x_P27_H_MODE);
+    hw_delay(1); // 1us 
+    set_AT89C5x_addr(addr);
+    hw_delay(1); // 1us 
+    set_AT89C5x_mode( mode );	
+    hw_delay(1); // 1us 
+    return hw_get_data();
+*/
+#define AT89C5x_pulse	AT89Cx051_pulse
 
-REG_FUNC_BEGIN(erase_AT89C2051)
-    erase_AT89Cx051(SIZE_AT89C2051); 
-REG_FUNC_END
+void write_AT89C5x(int size)
+{ 
+    int addr = 0;
+    unsigned char wdata, rdata;
+    char text[256];
+    addr_state = 0;
 
-REG_FUNC_BEGIN(erase_AT89C4051)
-    erase_AT89Cx051(SIZE_AT89C4051); 
-REG_FUNC_END
+    TEST_CONNECTION( VOID )
+    hw_sw_vpp(0);   // VPP OFF
+    hw_sw_vcc(1);   // VCC ON
+    hw_delay(10000); // 10ms for power stabilise
+    ce(1,100);
+    progress_loop(addr, size, "Writing"){
+        wdata = get_buffer(addr);
+        if(wdata == 0xff){
+	    rdata = 0xff;
+    	    continue; // skip 0xff
+        }
+	set_AT89C5x_mode( AT89C5x_WRITE_MODE);
+	hw_sw_vpp(1);
+	hw_delay(1); // 1us 
+        set_AT89C5x_addr(addr);
+        set_data(wdata);
+	hw_delay(1); // 1us 
+	AT89C5x_pulse( 1250 );   // 1.25 ms program pulse
+	hw_sw_vpp(0);
+	hw_delay(400); // 400us 
+	set_AT89C5x_mode( AT89C5x_READ_MODE );	
+	hw_delay(400); // 400us 
+	rdata = hw_get_data();
+	if(rdata != wdata){
+	   progressbar_free();
+	   break;
+	}
+    }
+    if(rdata != wdata){
+	sprintf(
+	    text, "[ER][TEXT]Veryfication error: 0x%X%X do not match 0x%X%X at address 0x%X[/TEXT][BR]OK", 
+	    to_hex(rdata, 1), to_hex(rdata, 0), 
+	    to_hex(wdata, 1), to_hex(wdata, 0), 
+	    addr
+	);
+	show_message(0,text, NULL, NULL);
+	SET_ERROR;
+    }
+    set_address(0);
+    set_data(0);
+    finish_action();
+    verify_AT89C5x(size, 1); // verificate whole at end
+}
 
-REG_FUNC_BEGIN(sign_AT89C1051)
-    sign_AT89Cx051(SIZE_AT89C1051); 
-REG_FUNC_END
+void erase_AT89C5x(int size)
+{ 
+    TEST_CONNECTION(VOID)
+    hw_sw_vpp(0);   // VPP OFF
+    hw_sw_vcc(1);   // VCC ON
+    hw_delay(10000); // 10ms for power stabilise
+    ce(1,100);
+    set_AT89C5x_mode( AT89C5x_ERASE_MODE);
+    hw_sw_vpp(1);	// set VPP    
+    // erase pulse
+    AT89C5x_pulse( 11000 ); // 11ms
+    set_address(0);
+    finish_action();
+    test_blank_AT89C5x(size, 0);
+}
 
-REG_FUNC_BEGIN(sign_AT89C2051)
-    sign_AT89Cx051(SIZE_AT89C2051); 
-REG_FUNC_END
+void lock_bit_AT89C5x(int size)
+{ 
+    char lb = 0;
+    lb = checkbox(
+	"[TITLE]LOCKBITS[/TITLE][TYPE:QS]"
+	"[CB:1:0:LB1 (further programing of the flash is disabled, lock on MOVC)]"
+	"[CB:2:0:LB2 (same as LB1, also verify is disabled)]"
+	"[CB:4:0:LB3 (same as LB2, also external execution is disabled)]"
+    );
+    TEST_CONNECTION(VOID)
+    hw_sw_vpp(0);    // VPP OFF
+    hw_sw_vcc(1);    // VCC ON
+    hw_delay(10000); // 10ms for power stabilise
+    if(lb & 1){
+	ce(1,100);
+	set_AT89C5x_mode( AT89C5x_LB1_MODE);
+	hw_sw_vpp(1);	// set VPP    
+	AT89C5x_pulse( 11000 ); // 11ms
+	set_address(0);
+	hw_sw_vpp(0);	// set VPP    
+    }
+    hw_delay(1000); // 1ms
+    if(lb & 2){
+	ce(1,100);
+	set_AT89C5x_mode( AT89C5x_LB2_MODE);
+	hw_sw_vpp(1);	// set VPP    
+	AT89C5x_pulse( 11000 ); // 11ms
+	set_address(0);
+	hw_sw_vpp(0);	// set VPP    
+    }
+    hw_delay(1000); // 1ms
+    if(lb & 4){
+	ce(1,100);
+	set_AT89C5x_mode( AT89C5x_LB3_MODE);
+	hw_sw_vpp(1);	// set VPP    
+	AT89C5x_pulse( 11000 ); // 11ms
+	set_address(0);
+	hw_sw_vpp(0);	// set VPP    
+    }
+    finish_action();
+}
 
-REG_FUNC_BEGIN(sign_AT89C4051)
-    sign_AT89Cx051(SIZE_AT89C4051); 
-REG_FUNC_END
+/************************************************************************
+* AT89Cx051
+*/
+REGISTER_FUNCTION( read,       AT89C1051, AT89Cx051, SIZE_AT89C1051 );
+REGISTER_FUNCTION( read,       AT89C2051, AT89Cx051, SIZE_AT89C2051 );
+REGISTER_FUNCTION( read,       AT89C4051, AT89Cx051, SIZE_AT89C4051 );
+REGISTER_FUNCTION( verify,     AT89C1051, AT89Cx051, SIZE_AT89C1051, 0 );
+REGISTER_FUNCTION( verify,     AT89C2051, AT89Cx051, SIZE_AT89C2051, 0 );
+REGISTER_FUNCTION( verify,     AT89C4051, AT89Cx051, SIZE_AT89C4051, 0 );
+REGISTER_FUNCTION( write,      AT89C1051, AT89Cx051, SIZE_AT89C1051 );
+REGISTER_FUNCTION( write,      AT89C2051, AT89Cx051, SIZE_AT89C2051 );
+REGISTER_FUNCTION( write,      AT89C4051, AT89Cx051, SIZE_AT89C4051 );
+REGISTER_FUNCTION( erase,      AT89C1051, AT89Cx051, SIZE_AT89C1051 );
+REGISTER_FUNCTION( erase,      AT89C2051, AT89Cx051, SIZE_AT89C2051 );
+REGISTER_FUNCTION( erase,      AT89C4051, AT89Cx051, SIZE_AT89C4051 );
+REGISTER_FUNCTION( sign,       AT89C1051, AT89Cx051, SIZE_AT89C1051 );
+REGISTER_FUNCTION( sign,       AT89C2051, AT89Cx051, SIZE_AT89C2051 );
+REGISTER_FUNCTION( sign,       AT89C4051, AT89Cx051, SIZE_AT89C4051 );
+REGISTER_FUNCTION( lock_bit,   AT89C1051, AT89Cx051, SIZE_AT89C1051 );
+REGISTER_FUNCTION( lock_bit,   AT89C2051, AT89Cx051, SIZE_AT89C2051 );
+REGISTER_FUNCTION( lock_bit,   AT89C4051, AT89Cx051, SIZE_AT89C4051 );
+REGISTER_FUNCTION( test_blank, AT89C1051, AT89Cx051, SIZE_AT89C1051, 0 );
+REGISTER_FUNCTION( test_blank, AT89C2051, AT89Cx051, SIZE_AT89C2051, 0 );
+REGISTER_FUNCTION( test_blank, AT89C4051, AT89Cx051, SIZE_AT89C4051, 0 );
 
-REG_FUNC_BEGIN(test_blank_AT89C1051)
-    test_blank_AT89Cx051(SIZE_AT89C1051, 0); 
-REG_FUNC_END
-
-REG_FUNC_BEGIN(test_blank_AT89C2051)
-    test_blank_AT89Cx051(SIZE_AT89C1051, 0); 
-REG_FUNC_END
-
-REG_FUNC_BEGIN(test_blank_AT89C4051)
-    test_blank_AT89Cx051(SIZE_AT89C1051, 0); 
-REG_FUNC_END
-
-
-REG_FUNC_BEGIN(dummy)
-// ------ dummy function
-REG_FUNC_END
+/************************************************************************
+* AT89C5x
+*/
+REGISTER_FUNCTION( read,       AT89C51, AT89C5x, SIZE_AT89C51 );
+REGISTER_FUNCTION( read,       AT89C52, AT89C5x, SIZE_AT89C52 );
+REGISTER_FUNCTION( write,      AT89C51, AT89C5x, SIZE_AT89C51 );
+REGISTER_FUNCTION( write,      AT89C52, AT89C5x, SIZE_AT89C52 );
+REGISTER_FUNCTION( verify,     AT89C51, AT89C5x, SIZE_AT89C51, 0 );
+REGISTER_FUNCTION( verify,     AT89C52, AT89C5x, SIZE_AT89C52, 0 );
+REGISTER_FUNCTION( erase,      AT89C51, AT89C5x, SIZE_AT89C51 );
+REGISTER_FUNCTION( erase,      AT89C52, AT89C5x, SIZE_AT89C52 );
+REGISTER_FUNCTION( sign,       AT89C51, AT89C5x, SIZE_AT89C51 );
+REGISTER_FUNCTION( sign,       AT89C52, AT89C5x, SIZE_AT89C52 );
+REGISTER_FUNCTION( lock_bit,   AT89C51, AT89C5x, SIZE_AT89C51 );
+REGISTER_FUNCTION( lock_bit,   AT89C52, AT89C5x, SIZE_AT89C52 );
+REGISTER_FUNCTION( test_blank, AT89C51, AT89C5x, SIZE_AT89C51, 0 );
+REGISTER_FUNCTION( test_blank, AT89C52, AT89C5x, SIZE_AT89C52, 0 );
 
 /*************************************************************************/
 
 REGISTER_MODULE_BEGIN( MCS-51 )
 // INTEL i8751, i8742
-    register_chip_begin("/uk/MCS-51/INTEL","i8751", "i8751", 1);
-	add_action(MODULE_READ_ACTION, dummy);
-	add_action(MODULE_PROG_ACTION, dummy);
-	add_action(MODULE_VERIFY_ACTION, dummy);
-	add_action(MODULE_LOCKBIT_ACTION, dummy);
-    register_chip_end;
-    register_chip_begin("/uk/MCS-51/INTEL","i8742", "i8742", 1);
-	add_action(MODULE_READ_ACTION, dummy);
-	add_action(MODULE_PROG_ACTION, dummy);
-	add_action(MODULE_VERIFY_ACTION, dummy);
-	add_action(MODULE_LOCKBIT_ACTION, dummy);
-    register_chip_end;
+//    register_chip_begin("/uk/MCS-51/INTEL","i8751", "i8751", 1);
+//	add_action(MODULE_READ_ACTION, dummy);
+//	add_action(MODULE_PROG_ACTION, dummy);
+//	add_action(MODULE_VERIFY_ACTION, dummy);
+//	add_action(MODULE_LOCKBIT_ACTION, dummy);
+//    register_chip_end;
+//    register_chip_begin("/uk/MCS-51/INTEL","i8742", "i8742", 1);
+//	add_action(MODULE_READ_ACTION, dummy);
+//	add_action(MODULE_PROG_ACTION, dummy);
+//	add_action(MODULE_VERIFY_ACTION, dummy);
+//	add_action(MODULE_LOCKBIT_ACTION, dummy);
+//    register_chip_end;
 // ATMEL AT89Cx051
     register_chip_begin("/uk/MCS-51/ATMEL/AT89Cx051","AT89C1051", "AT89Cxx51", SIZE_AT89C1051);
 	add_action(MODULE_READ_ACTION, read_AT89C1051);
@@ -475,16 +701,22 @@ REGISTER_MODULE_BEGIN( MCS-51 )
 	add_action(MODULE_TEST_BLANK_ACTION, test_blank_AT89C4051);
     register_chip_end;
 // ATMEL AT89C5x
-    register_chip_begin("/uk/MCS-51/ATMEL/AT89C5x","AT89C51", "AT89C5x", 1);
-	add_action(MODULE_READ_ACTION, dummy);
-	add_action(MODULE_PROG_ACTION, dummy);
-	add_action(MODULE_VERIFY_ACTION, dummy);
-	add_action(MODULE_LOCKBIT_ACTION, dummy);
+    register_chip_begin("/uk/MCS-51/ATMEL/AT89C5x","AT89C51", "AT89C5x", SIZE_AT89C51);
+	add_action(MODULE_READ_ACTION, read_AT89C51);
+	add_action(MODULE_PROG_ACTION, write_AT89C51);
+	add_action(MODULE_VERIFY_ACTION, verify_AT89C51);
+	add_action(MODULE_LOCKBIT_ACTION, lock_bit_AT89C51);
+	add_action(MODULE_ERASE_ACTION, erase_AT89C51);
+	add_action(MODULE_SIGN_ACTION, sign_AT89C51);
+	add_action(MODULE_TEST_BLANK_ACTION, test_blank_AT89C51);
     register_chip_end;
-    register_chip_begin("/uk/MCS-51/ATMEL/AT89C5x","AT89C52", "AT89C5x", 1);
-	add_action(MODULE_READ_ACTION, dummy);
-	add_action(MODULE_PROG_ACTION, dummy);
-	add_action(MODULE_VERIFY_ACTION, dummy);
-	add_action(MODULE_LOCKBIT_ACTION, dummy);
+    register_chip_begin("/uk/MCS-51/ATMEL/AT89C5x","AT89C52", "AT89C5x", SIZE_AT89C52);
+	add_action(MODULE_READ_ACTION, read_AT89C52);
+	add_action(MODULE_PROG_ACTION, write_AT89C52);
+	add_action(MODULE_VERIFY_ACTION, verify_AT89C52);
+	add_action(MODULE_LOCKBIT_ACTION, lock_bit_AT89C52);
+	add_action(MODULE_ERASE_ACTION, erase_AT89C52);
+	add_action(MODULE_SIGN_ACTION, sign_AT89C52);
+	add_action(MODULE_TEST_BLANK_ACTION, test_blank_AT89C52);
     register_chip_end;
 REGISTER_MODULE_END

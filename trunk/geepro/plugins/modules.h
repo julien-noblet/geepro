@@ -1,4 +1,4 @@
-/* $Revision: 1.6 $ */
+/* $Revision: 1.7 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -47,9 +47,9 @@
     hw_set_ce(state);\
     hw_delay(delay)
 
-#define progress_loop(cn, cnini, rounds, title)		\
+#define progress_loop(cn, rounds, title)		\
 	for(cn = 0, gui_progress_bar_init(___geep___,title, rounds);\
-	    gui_cmp_pls(___geep___,cn, rounds); cn++, gui_progress_bar_set(___geep___,cn))
+	    gui_cmp_pls(___geep___,cn, rounds); cn++, gui_progress_bar_set(___geep___,cn, rounds))
 
 #define finish_action()	\
     hw_sw_vpp(0);\
@@ -68,6 +68,8 @@
 
 #define copy_data_to_buffer(addr)	\
     buffer_write(___geep___,addr, hw_get_data())
+
+#define put_buffer( addr, data) buffer_write(___geep___,addr, data)
 
 #define get_buffer(addr) buffer_read(___geep___,addr)
 
@@ -180,6 +182,14 @@
 
 #define MODULE_LOCKBIT_ACTION	\
     "geepro-lockbit-action", "Set lock-bits"
+
+#define REGISTER_FUNCTION_( registered_func, exec_func, call_parameters... )	\
+    REG_FUNC_BEGIN( registered_func )	\
+	exec_func(call_parameters);	\
+    REG_FUNC_END
+
+#define REGISTER_FUNCTION( action, registered_name, exec_name, call_parameters... )	\
+    REGISTER_FUNCTION_( action##_##registered_name, action##_##exec_name, call_parameters)
 
 #endif
 
