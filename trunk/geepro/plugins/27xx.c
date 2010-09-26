@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -63,7 +63,7 @@ void read_27xx(char *pname, int size, int t1, int t2, char ce, char oe)
 
     gui_progress_bar_init(___geep___,pname, size);
     for(addr = 0; addr < size; addr++){
-	gui_progress_bar_set(___geep___,addr);
+	gui_progress_bar_set(___geep___,addr, size);
 	buffer_write(___geep___,addr, read_eprom_byte(addr, t2, ce, oe));
     }
     gui_progress_bar_free(___geep___);
@@ -88,7 +88,7 @@ void verify_27xx(char *pname, int size, int t1, int t2, char ce, char oe)
 
     gui_progress_bar_init(___geep___,pname,size);
     for(addr = 0; addr < size; addr++){
-	gui_progress_bar_set(___geep___,addr);
+	gui_progress_bar_set(___geep___,addr, size);
 	if( (a = read_eprom_byte(addr, t2,ce,oe)) != (b = buffer_read(___geep___,addr) & 0xff) ){
 //printf("%i != %i, adres: %x\n",a,b,addr);
 	    error = 1;
@@ -122,7 +122,7 @@ void test_27xx(char *pname, int size, int t1, int t2, char ce, char oe)
     hw_delay(t1);
     error=0;
     for(addr = 0; addr < size; addr++){
-	gui_progress_bar_set(___geep___,addr);
+	gui_progress_bar_set(___geep___,addr,size);
 	if( read_eprom_byte(addr, t2,ce,oe) != 0xff ){
 	    error = 1;
 	    gui_dialog_box(___geep___,"Test","Uklad nie jest w pelni skasowany","OK",NULL);
@@ -163,7 +163,7 @@ REG_FUNC_BEGIN(prog_2716)
     hw_set_data(0);
     hw_delay(1000);
     for(addr = 0; addr < SIZE_2716; addr++){
-	gui_progress_bar_set(___geep___,addr);
+	gui_progress_bar_set(___geep___,addr,SIZE_2716);
 	if((buffer_read(___geep___,addr) & 0xff) != 0xff )
 	    write_eprom_byte_2716(addr, buffer_read(___geep___,addr), 20, 50 * 1000);
 	if( (a = read_eprom_byte(addr, 20,0,0)) != (b = buffer_read(___geep___,addr) & 0xff) ){
@@ -284,7 +284,7 @@ void fast_prog(int size, char type, int tp, int ts, char ce, char oe)
     error = 0;
     for(addr=0; addr < size; addr++){
 printf("ADDR: %x\n",addr);
-	gui_progress_bar_set(___geep___,addr);
+	gui_progress_bar_set(___geep___,addr,size);
 	set_prog_data(addr);
 	hw_delay(ts);	
         pgm_imp(type,tp,ts);
@@ -301,7 +301,7 @@ printf("ADDR: %x\n",addr);
     if(!error){
 	gui_progress_bar_init(___geep___,"Weryfikacja zapisu", size);
 	for(addr = 0; addr < size; addr++ ){
-		gui_progress_bar_set(___geep___,addr);
+		gui_progress_bar_set(___geep___,addr,size);
 		if( byte_verify(addr, type, ce, oe) ){ error = 1; break; }
 	}
 	gui_progress_bar_free(___geep___);
@@ -324,7 +324,7 @@ void normal_prog(int size, char type, int tp, int ts, char ce, char oe)
     error = 0;
 
     do{
-	gui_progress_bar_set(___geep___,addr);
+	gui_progress_bar_set(___geep___,addr,size);
 
 	hw_set_addr(addr);
 	hw_set_data(buffer_read(___geep___,addr));

@@ -1,4 +1,4 @@
-/* $Revision: 1.5 $ */
+/* $Revision: 1.6 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -173,7 +173,7 @@ void sign_AT89Cx051(int size)
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, 3, "Reading"){
 	hw_delay(100);
-	signature[addr]	|= hw_get_data() << (addr * 8);
+	signature |= hw_get_data() << (addr * 8);
 	AT89Cx051_pulse( 150 );
     }
     set_address(0);
