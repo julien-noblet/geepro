@@ -38,7 +38,7 @@
 		<vbox>
 		    <hbox border="0">
 			<jumper name_up="29x" set="0"/>
-			<dipswitch name="Dip switch" len="12" value="0xa94"/>
+			<dipswitch name="Dip switch" len="12" value="0xab4"/>
 		    </hbox>
 		</vbox>
 	    </if>
