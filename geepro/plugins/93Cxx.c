@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -147,7 +147,7 @@ void read_9346(int dev_size, char data_bits, char addr_bits)
 	buffer_write(___geep___,i++,d & 0xff);
 	stop_93_seq();
 	hw_delay(TCR);
-	gui_progress_bar_set(___geep___,i);
+	gui_progress_bar_set(___geep___, i, dev_size);
     }
     gui_progress_bar_free(___geep___);
     finish_action();
@@ -189,7 +189,7 @@ if(addr_bits==16)
 	send_instruction(buffer_read(___geep___,i++),8);
 	stop_93_seq();
 	hw_delay(TCW);
-	gui_progress_bar_set(___geep___,i);
+	gui_progress_bar_set(___geep___,i, dev_size);
     }
     send_op_code(EWDS_93, addr_bits);
     hw_sw_vcc(0);
