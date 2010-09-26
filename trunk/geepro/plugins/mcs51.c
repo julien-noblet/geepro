@@ -1,4 +1,4 @@
-/* $Revision: 1.6 $ */
+/* $Revision: 1.7 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -97,6 +97,42 @@ void AT89Cx051_RST(char state )
     }        
 }
 
+unsigned char AT89Cx051_transcode0(unsigned char data)
+{
+    char tmp;
+    tmp  = (data << 4) & 0xc0;
+    tmp |= (data >> 7) & 0x01;
+    tmp |= (data >> 5) & 0x02;
+    tmp |= (data >> 2) & 0x08;
+    tmp |= (data << 1) & 0x20;
+    tmp |= (data << 3) & 0x10;
+    tmp |= (data << 2) & 0x04;
+    return tmp;
+}
+
+unsigned char AT89Cx051_transcode1(unsigned char data)
+{
+    char tmp;
+    tmp  = (data >> 4) & 0x0c;
+    tmp |= (data >> 1) & 0x10;
+    tmp |= (data >> 3) & 0x02;
+    tmp |= (data << 2) & 0x20;
+    tmp |= (data >> 2) & 0x01;
+    tmp |= (data << 5) & 0x40;
+    tmp |= (data << 7) & 0x80;
+    return tmp;
+}
+
+unsigned char AT89Cx051_get_data()
+{
+    return AT89Cx051_transcode0(hw_get_data());
+}
+
+void AT89Cx051_put_data(char data)
+{
+    set_data( AT89Cx051_transcode1( data & 0xff ));
+}
+
 //----------------------------------------------------------------------------------------------------------
 
 int test_blank_AT89Cx051(int size, char mode)
@@ -117,7 +153,7 @@ int test_blank_AT89Cx051(int size, char mode)
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, size, "Checking blank"){
 	hw_delay(100);
-	tmp = hw_get_data();
+	tmp = AT89Cx051_get_data();
 	if( tmp != 0xff){
 	   progressbar_free();
 	   break;
@@ -147,7 +183,7 @@ void read_AT89Cx051(int size)
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, size, "Reading"){
 	hw_delay(100);
-	copy_data_to_buffer(addr);	
+	put_buffer( addr, AT89Cx051_get_data());
 	AT89Cx051_pulse( 150 );
     }
     set_address(0);
@@ -173,7 +209,7 @@ void sign_AT89Cx051(int size)
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, 3, "Reading"){
 	hw_delay(100);
-	signature |= hw_get_data() << (addr * 8);
+	signature |= AT89Cx051_get_data() << (addr * 8);
 	AT89Cx051_pulse( 150 );
     }
     set_address(0);
@@ -207,7 +243,7 @@ void verify_AT89Cx051(int size, char silent)
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, size, "Veryfying"){
 	hw_delay(100);
-	rdata = hw_get_data();
+	rdata = AT89Cx051_get_data();
 	wdata = get_buffer(addr);
 	if( rdata != wdata){
 	   progressbar_free();
@@ -272,17 +308,17 @@ void write_AT89Cx051(int size)
 	hw_delay(100); // 100µs    
 	AT89Cx051_mux(AT89Cx051_PROG_MUX); // PROG as pulse
 	wdata = get_buffer(addr);	   // get data from buffer and store it for veryfication
-	set_data(wdata);		   // out data
+	AT89Cx051_put_data(wdata);	   // out data
 	hw_delay(10);
 	hw_sw_vpp(1);			   // VPP ON
 	hw_delay(20);
 	AT89Cx051_pulse( 1250 );           // 1.25 ms program pulse
 	hw_delay(20);
 	hw_sw_vpp(0);			   // VPP OFF
-	hw_delay(100); 			   // 100µs    
+	hw_delay(500); 			   // 100µs    
 	set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode to read for veryfication
 	hw_delay(500); 			   // 500µs    
-	rdata = hw_get_data();
+	rdata = AT89Cx051_get_data();
 	if(rdata != wdata){                // veryfication
 	    progressbar_free();
 	    break;	   
@@ -720,3 +756,4 @@ REGISTER_MODULE_BEGIN( MCS-51 )
 	add_action(MODULE_TEST_BLANK_ACTION, test_blank_AT89C52);
     register_chip_end;
 REGISTER_MODULE_END
+
