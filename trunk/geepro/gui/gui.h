@@ -1,4 +1,4 @@
-/* $Revision: 1.15 $ */
+/* $Revision: 1.16 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -213,7 +213,7 @@ extern void gui_kill_me(geepro*);
 extern char gui_cmp_pls(geepro*,int a,int b);
 extern void gui_exit(geepro *gep);
 extern void gui_set_statusbar(geepro *gep, char *tmp, char *fmt, ...);
-extern int  gui_checkbox(geepro *gep, const char *fmt);
+extern unsigned long *gui_checkbox(geepro *gep, const char *fmt);
 
 
 /* uzywnae przez drivery */

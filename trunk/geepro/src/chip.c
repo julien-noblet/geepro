@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -410,7 +410,7 @@ void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void *, char
 
 const char *take_signature_name(int data)
 {
-    char b0 = (data >>  0) & 0xff;
+//    char b0 = (data >>  0) & 0xff;
     char b1 = (data >>  8) & 0xff;
     char b2 = (data >> 16) & 0xff;
     char *text = "Unknown signature";
@@ -422,6 +422,9 @@ const char *take_signature_name(int data)
                       default:   text = "Vendor: ATMEL"; break;
     		    }
 		    break;
+    }
+    switch(data){
+	case 0x01901e: text= "Vendor: ATMEL\nCHIP: AT90S1200\nFLASH: 1kB";    
     }
     return text;
 }

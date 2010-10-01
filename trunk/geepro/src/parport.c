@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* parport - user space wrapper for LPT port using ppdev v 0.0.2
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -84,34 +84,24 @@ int PARPORT(init)(const char *dev_path, int dev_flags)
 {
     static char first_run=1;
     allow = 1;
-printf("parport_init A\n");
     if(first_run){
-printf("parport_init B\n");
 	PARPORT_M(message)(0, PARPORT_EM, PARPORT_VERSION);
 	first_run=0;
     } else{
-printf("parport_init C\n");
 	if(PARPORT_M(cleanup)() == PP_ERROR) return PP_ERROR;
-printf("parport_init D\n");
     }
     PARPORT_M(message)(1, PARPORT_EM, "Opening device %s\n", dev_path);
-printf("parport_init E\n");
     if((PARPORT_M(ppdev_fd) = open(dev_path, O_RDWR | dev_flags)) == -1 ){
-printf("parport_init F %s \n", strerror(errno));
 	PARPORT_M(message)(7, PARPORT_EM, "open(\"%s\", O_RDWR): %s\n", dev_path, strerror(errno));    
 	return PP_ERROR;
     }
-printf("parport_init G\n");
     PARPORT_M(init_lvl) = 1;
     PARPORT_M(message)(1, PARPORT_EM, "Device %s opened with handler=%d\n", dev_path, PARPORT_M(ppdev_fd));
-printf("parport_init H\n");
     if(ioctl(PARPORT_M(ppdev_fd), PPCLAIM) == -1){
-printf("parport_init I\n");
 	PARPORT_M(message)(7, PARPORT_EM, "ioctl(%d, PPCLAIM): %s\n", PARPORT_M(ppdev_fd), strerror(errno));
 	PARPORT_M(cleanup)();
 	return PP_ERROR;
     }
-printf("parport_init J\n");
     PARPORT_M(init_lvl) = 2;
     PARPORT_M(mirror)[0] = PARPORT_M(mirror)[1] = PARPORT_M(mirror)[2] = 0;      
 
