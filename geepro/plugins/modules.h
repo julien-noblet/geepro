@@ -1,4 +1,4 @@
-/* $Revision: 1.7 $ */
+/* $Revision: 1.8 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -162,26 +162,19 @@
 
 #define checkbox(fmt)	gui_checkbox(___geep___, fmt)
 
-#define MODULE_READ_ACTION	\
-    "geepro-read-action", "Read data from chip"
-
-#define MODULE_SIGN_ACTION	\
-    "geepro-sign-action", "Read signature from chip"
-
-#define MODULE_PROG_ACTION	\
-    "geepro-write-action", "Write data to chip"
-
-#define MODULE_ERASE_ACTION	\
-    "geepro-erase-action", "Erase memory"
-
-#define MODULE_TEST_ACTION	\
-    "geepro-testblank-action", "Test blank memory"
-
-#define MODULE_VERIFY_ACTION	\
-    "geepro-verify-action", "Verify chip memory with buffer"
-
-#define MODULE_LOCKBIT_ACTION	\
-    "geepro-lockbit-action", "Set lock-bits"
+#define MODULE_READ_ACTION		"geepro-read-action", "Read data from chip"
+#define MODULE_READ_FLASH_ACTION	"geepro-read-action", "Read data from chip"
+#define MODULE_READ_EEPROM_ACTION 	"geepro-read-eeprom-action", "Read EEPROM data from chip"
+#define MODULE_SIGN_ACTION		"geepro-sign-action", "Read signature from chip"
+#define MODULE_PROG_ACTION		"geepro-write-action", "Write data to chip"
+#define MODULE_PROG_FLASH_ACTION 	"geepro-write-action", "Write data to chip"
+#define MODULE_PROG_EEPROM_ACTION	"geepro-write-eeprom-action", "Write EEPROM data to chip"
+#define MODULE_ERASE_ACTION		"geepro-erase-action", "Erase memory"
+#define MODULE_TEST_ACTION		"geepro-testblank-action", "Test blank memory"
+#define MODULE_VERIFY_ACTION		"geepro-verify-action", "Verify chip memory with buffer"
+#define MODULE_VERIFY_FLASH_ACTION 	"geepro-verify-action", "Verify chip memory with buffer"
+#define MODULE_VERIFY_EEPROM_ACTION 	"geepro-verify-eeprom-action", "Verify EEPROM chip memory with buffer"
+#define MODULE_LOCKBIT_ACTION		"geepro-lockbit-action", "Set lock-bits and fuses"
 
 #define REGISTER_FUNCTION_( registered_func, exec_func, call_parameters... )	\
     REG_FUNC_BEGIN( registered_func )	\
@@ -190,6 +183,8 @@
 
 #define REGISTER_FUNCTION( action, registered_name, exec_name, call_parameters... )	\
     REGISTER_FUNCTION_( action##_##registered_name, action##_##exec_name, call_parameters)
+
+#define BYTE_POSITION( value, position )	((value) << ( 8 * (position)))
 
 #endif
 

@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* 
  * Copyright (C) Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -130,17 +130,12 @@ int iface_select_iface(iface *ifc, char *name)
 {
     char *dev;
     iface *ifct = ifc;    
-printf("iface.c A\n");
     dev = iface_get_dev(ifc, name);
-printf("iface.c B\n");    
     printf("Opening interface %s (device: %s)\n", name, dev);
-printf("iface.c C\n");
     if(hw_open(dev, 0) == HW_ERROR){
-printf("iface.c D\n");
 	ifc = ifct;
 	return -1;
     }
-printf("iface.c E\n");
     return 0;
 }
 
@@ -260,7 +255,10 @@ int iface_dir_fltr(iface *ifc, const char *lst, const char *path, const char *ex
     }
 
 
-    chdir(path);    
+    if(chdir(path) != 0){
+	printf("{iface.h} iface_dir_fltr() -> chdir() error 1 \n");
+	return -1;
+    }        
     if(!(dir = opendir("./"))){
 	printf("{iface.h} iface_dir_fltr() -> error opening current directory \n");
 	return -1;
@@ -285,7 +283,11 @@ int iface_dir_fltr(iface *ifc, const char *lst, const char *path, const char *ex
     }
 
     closedir(dir);
-    chdir(old_path);
+    if(chdir(old_path) != 0){
+	printf("{iface.h} iface_dir_fltr() -> chdir() error 2 \n");
+	return -1;
+    }        
+
     free(old_path);
     return 0;
 } 

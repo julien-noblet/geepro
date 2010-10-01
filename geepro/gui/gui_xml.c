@@ -1,4 +1,4 @@
-/* $Revision: 1.8 $ */
+/* $Revision: 1.9 $ */
 /* xml parser for gui
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -222,7 +222,7 @@ static GtkWidget *gui_xml_dipsw(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *wg0, *wg1, *wg2;
     char tmp[8], *arg0, *desc, rev = 0;
-    int i=0, mask, len;
+    int i=0, mask, len = 0;
     long set = 0;
 
     arg0 = (char *)xmlGetProp(cur, (unsigned char *)"len");

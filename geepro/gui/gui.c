@@ -1,4 +1,4 @@
-/* $Revision: 1.18 $ */
+/* $Revision: 1.19 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -47,11 +47,14 @@ void gui_action_icon_set()
 
     gtk_icon_factory_add(ifact, "geepro-logo", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( LOGO_ICON )));
     gtk_icon_factory_add(ifact, "geepro-read-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( READ_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-read-eeprom-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( READ_EEPROM_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-sign-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( SIGN_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-write-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( WRITE_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-write-eeprom-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( WRITE_EEPROM_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-erase-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( ERASE_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-testblank-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( TESTBLANK_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-verify-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( VERIFY_ACTION_ICON )));
+    gtk_icon_factory_add(ifact, "geepro-verify-eeprom-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( VERIFY_EEPROM_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-lockbit-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( LOCKBIT_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-lockbreak-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( LOCKBREAK_ACTION_ICON )));
 
@@ -1138,7 +1141,7 @@ char *gui_lookup_tag(const char *fmt, char *tmp, int size, const char *key_begin
 }
 
 // global
-static unsigned int gui_checkbox_result;
+static unsigned long gui_checkbox_result;
 
 void gui_checkbox_action(GtkWidget *wg, void *value)
 {
@@ -1148,18 +1151,22 @@ void gui_checkbox_action(GtkWidget *wg, void *value)
 	gui_checkbox_result &= ~((unsigned int)value);
 }
 
-int gui_checkbox(geepro *gep, const char *fmt)
+unsigned long *gui_checkbox(geepro *gep, const char *fmt)
 {
     GtkWidget *wd, *hbox, *vbox, *r;
-    int result;
+
     char *x = NULL, *str, t;
-    char tmp[256];
-    if(strlen(fmt) > 255){
-	printf("[WARN] gui_checkbox(): format exceed 255 characters.\n");
-	return 0;
+    char *tmp;
+    int tmp_size;    
+    int result = 0;
+
+    tmp_size = strlen( fmt );
+    if(!(tmp = (char *)malloc(tmp_size + 1))){
+	printf("[WARN] gui_checkbox(): malloc error\n");
+	return NULL;
     }
     gui_checkbox_result = 0;
-    gui_lookup_tag(fmt, tmp, 256, "[TITLE]", "[/TITLE]");
+    gui_lookup_tag(fmt, tmp, tmp_size, "[TITLE]", "[/TITLE]");
     wd = gtk_dialog_new_with_buttons(tmp, 
 	GTK_WINDOW(GUI(gep->gui)->wmain), 
 	GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -1167,7 +1174,7 @@ int gui_checkbox(geepro *gep, const char *fmt)
 	GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 	NULL 
     );    
-    gui_lookup_tag(fmt, tmp, 256, "[TYPE:", "]");
+    gui_lookup_tag(fmt, tmp, tmp_size, "[TYPE:", "]");
     if(!strcmp(tmp, "QS")) x = GTK_STOCK_DIALOG_QUESTION;
     hbox = gtk_hbox_new(FALSE, 0);
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(wd)->vbox), hbox, TRUE, TRUE, 0);
@@ -1176,11 +1183,11 @@ int gui_checkbox(geepro *gep, const char *fmt)
     vbox = gtk_vbox_new(FALSE, 0);
     gtk_box_pack_end(GTK_BOX(hbox), vbox, FALSE, 0, 0);    
     str = (char *)fmt; 
-    while( (str = gui_lookup_tag(str, tmp, 256, "[CB:", "]")) ){
+    while( (str = gui_lookup_tag(str, tmp, tmp_size, "[CB:", "]")) ){
 	sscanf(tmp, " %i ", &result);
 	if((x = strchr(tmp, ':'))) x++;
 	t = *x;
-	if((x = strchr(tmp, ':'))) x++;
+	if((x = strchr(x, ':'))) x++;
 	r = gtk_check_button_new_with_label( x );
 	gtk_box_pack_start( GTK_BOX(vbox), r, TRUE, TRUE, 2 );
 	gtk_signal_connect(GTK_OBJECT(r), "toggled", GTK_SIGNAL_FUNC(gui_checkbox_action), (void *)result); // ptr as integer
@@ -1189,9 +1196,10 @@ int gui_checkbox(geepro *gep, const char *fmt)
     
     gtk_widget_show_all(GTK_DIALOG(wd)->vbox);
     result = gtk_dialog_run(GTK_DIALOG(wd));    
-    if(result != GTK_RESPONSE_ACCEPT) gui_checkbox_result = 0;
     gtk_widget_destroy(GTK_WIDGET(wd));
-    return gui_checkbox_result;
+    free(tmp);
+    if(result != GTK_RESPONSE_ACCEPT) return NULL;
+    return &gui_checkbox_result;
 }
 
 
