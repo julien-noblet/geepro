@@ -1,4 +1,4 @@
-/* $Revision: 1.8 $ */
+/* $Revision: 1.9 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -1090,10 +1090,14 @@ void fusebits_AT90S_20pin(int size)
     fusebits = ~fusebits;
     sprintf(text, 
 	"[TITLE]LOCKBITS AND FUSES[/TITLE][TYPE:QS]"
-	"[CB:2:%x:LB1 (further programing of the FLASH and EEPROM is disabled)]"
-	"[CB:4:%x:LB2 (same as LB1, also verify is disabled)]\n"
-	"[CB:32:%x:SPIEN Fuse (SPI snable)]"
-	"[CB:1:%x:RCEN Fuse (RC Oscillator enable)]",
+	"[FRAME:Lock Bits]"
+	"[CB:2:%x:LOCK:Lock Bit 1 (further programing of the FLASH and EEPROM is disabled)]"
+	"[CB:4:%x:LOCK:Lock Bit 2 (same as LB 1, also verify is disabled)]\n"
+	"[/FRAME]"
+	"[FRAME:Fuse Bits]"
+	"[CB:32:%x:SPIEN (SPI snable)]"
+	"[CB:1:%x:RCEN   (RC Oscillator enable)]"
+	"[/FRAME]",
 	(fusebits >> 7) & 1, (fusebits >> 6) & 1,
 	(fusebits >> 5) & 1, fusebits & 1
     );

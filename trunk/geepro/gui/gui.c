@@ -1,4 +1,4 @@
-/* $Revision: 1.19 $ */
+/* $Revision: 1.20 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -1158,7 +1158,7 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
     char *x = NULL, *str, t;
     char *tmp;
     int tmp_size;    
-    int result = 0;
+    int result = 0, lock;
 
     tmp_size = strlen( fmt );
     if(!(tmp = (char *)malloc(tmp_size + 1))){
@@ -1188,10 +1188,14 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
 	if((x = strchr(tmp, ':'))) x++;
 	t = *x;
 	if((x = strchr(x, ':'))) x++;
+	if((lock = strncmp(x, "LOCK:", 5)) == 0){
+	    if((x = strchr(x, ':'))) x++;
+	}
 	r = gtk_check_button_new_with_label( x );
 	gtk_box_pack_start( GTK_BOX(vbox), r, TRUE, TRUE, 2 );
 	gtk_signal_connect(GTK_OBJECT(r), "toggled", GTK_SIGNAL_FUNC(gui_checkbox_action), (void *)result); // ptr as integer
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(r), t == '1');
+	gtk_widget_set_sensitive(GTK_WIDGET(r), !((lock == 0) && (t == '1')));
     }
     
     gtk_widget_show_all(GTK_DIALOG(wd)->vbox);
