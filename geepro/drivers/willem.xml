@@ -23,12 +23,42 @@
 		</vbox>
 	    </if>
 	    <if family="93Cxx">
-		<description>Jakis opis do poprawy.</description>
+		<description>SERIAL MICROWIRE EEPROM.</description>
 		<image src="./pixmaps/willem_93Cxx.png"/>
 		<vbox>
 		    <hbox border="0">
 			<jumper name_up="29x" set="0"/>
-			<dipswitch name="Dip switch" len="12" value="0x0a0a0a"/>
+			<dipswitch name="Dip switch" len="12" value="0x0"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="24Cxx">
+		<description>I2C EEPROM.</description>
+		<image src="./pixmaps/willem_24Cxx.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x0"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="27C0xx">
+		<description>I2C EEPROM.</description>
+		<image src="./pixmaps/willem_32pin.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x636"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="27xx">
+		<description>I2C EEPROM.</description>
+		<image src="./pixmaps/willem_24pin.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x1a3"/>
 		    </hbox>
 		</vbox>
 	    </if>
@@ -138,3 +168,5 @@
 </notebook>
 
 </gui>
+
+
