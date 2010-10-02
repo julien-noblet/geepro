@@ -1,4 +1,4 @@
-/* $Revision: 1.9 $ */
+/* $Revision: 1.10 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -762,7 +762,7 @@ void AT90S1200_write_data_high_byte()
 }
 
 /***********/
-void signature_AT90S_20pin(int size)
+void signature_AT90S1200_(int size)
 {
     int signature = 0;
     int addr;
@@ -791,7 +791,7 @@ void signature_AT90S_20pin(int size)
     finish_action();
 }
 
-void read_flash_AT90S_20pin(int size)
+void read_flash_AT90S1200_(int size)
 {
     int addr;
 
@@ -811,7 +811,7 @@ void read_flash_AT90S_20pin(int size)
     finish_action();
 }
 
-void read_eeprom_AT90S_20pin(int size)
+void read_eeprom_AT90S1200_(int size)
 {
     int addr;
 
@@ -829,7 +829,7 @@ void read_eeprom_AT90S_20pin(int size)
     finish_action();
 }
 
-void verify_flash_AT90S_20pin(int size, char silent)
+void verify_flash_AT90S1200_(int size, char silent)
 {
     int addr = 0;
     char text[256];
@@ -873,7 +873,7 @@ void verify_flash_AT90S_20pin(int size, char silent)
     finish_action();
 }
 
-void verify_eeprom_AT90S_20pin(int size, char silent)
+void verify_eeprom_AT90S1200_(int size, char silent)
 {
     int addr = 0;
     char text[256];
@@ -909,7 +909,7 @@ void verify_eeprom_AT90S_20pin(int size, char silent)
 
 }
 
-char test_blank_AT90S_20pin(int size, char silent)
+char test_blank_AT90S1200_(int size, char silent)
 {
     int addr = 0;
     char text[256];
@@ -950,7 +950,7 @@ char test_blank_AT90S_20pin(int size, char silent)
     return 0;
 }
 
-void chiperase_AT90S_20pin(int size)
+void chiperase_AT90S1200_(int size)
 {
     TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
@@ -962,11 +962,11 @@ void chiperase_AT90S_20pin(int size)
     finish_action();
 }
 
-void write_flash_AT90S_20pin(int size)
+void write_flash_AT90S1200_(int size)
 {
     int addr;
 
-    if(test_blank_AT90S_20pin( size, 1)) return;
+    if(test_blank_AT90S1200_( size, 1)) return;
 
     TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
@@ -985,10 +985,10 @@ void write_flash_AT90S_20pin(int size)
     set_address(0);
     set_data(0);
     finish_action();
-    verify_flash_AT90S_20pin(size, 1); // verificate whole at end
+    verify_flash_AT90S1200_(size, 1); // verificate whole at end
 }
 
-void write_eeprom_AT90S_20pin(int size)
+void write_eeprom_AT90S1200_(int size)
 {
     int addr;
     TEST_CONNECTION(VOID)
@@ -1006,7 +1006,7 @@ void write_eeprom_AT90S_20pin(int size)
     set_address(0);
     set_data(0);
     finish_action();
-    verify_eeprom_AT90S_20pin(size, 1); // verificate whole at end
+    verify_eeprom_AT90S1200_(size, 1); // verificate whole at end
 }
 
 unsigned char AT90S1200_load_lb()
@@ -1077,7 +1077,7 @@ void AT90S1200_set_lock_bits( char locks )
     finish_action();
 }    
 
-void fusebits_AT90S_20pin(int size)
+void fusebits_AT90S1200_(int size, char mode) // mode=0 - AT90S1200
 {
     unsigned long *res;
     char fusebits;
@@ -1096,10 +1096,11 @@ void fusebits_AT90S_20pin(int size)
 	"[/FRAME]"
 	"[FRAME:Fuse Bits]"
 	"[CB:32:%x:SPIEN (SPI snable)]"
-	"[CB:1:%x:RCEN   (RC Oscillator enable)]"
+	"[CB:1:%x:%s]"
 	"[/FRAME]",
 	(fusebits >> 7) & 1, (fusebits >> 6) & 1,
-	(fusebits >> 5) & 1, fusebits & 1
+	(fusebits >> 5) & 1, fusebits & 1,
+	mode ? "FSTRT (Short Start-up Time)":"RCEN   (RC Oscillator enable)" 
     );
 
     if(!(res = (checkbox( text )))){
@@ -1162,40 +1163,29 @@ REGISTER_FUNCTION( test_blank, AT89C51, AT89C5x, SIZE_AT89C51, 0 );
 REGISTER_FUNCTION( test_blank, AT89C52, AT89C5x, SIZE_AT89C52, 0 );
 
 /*************************************************************************
-* AT90S1200 & 90S2313 & ATtiny2313
+* AT90S1200 & AT90S2313
 */
-REGISTER_FUNCTION( read_flash,   AT90S1200, AT90S_20pin, SIZE_AT90S1200_FLASH  );
-REGISTER_FUNCTION( read_eeprom,  AT90S1200, AT90S_20pin, SIZE_AT90S1200_EEPROM );
-REGISTER_FUNCTION( write_flash,  AT90S1200, AT90S_20pin, SIZE_AT90S1200_FLASH  );
-REGISTER_FUNCTION( write_eeprom, AT90S1200, AT90S_20pin, SIZE_AT90S1200_EEPROM );
-REGISTER_FUNCTION( verify_flash, AT90S1200, AT90S_20pin, SIZE_AT90S1200_FLASH, 0 );
-REGISTER_FUNCTION( verify_eeprom,AT90S1200, AT90S_20pin, SIZE_AT90S1200_EEPROM, 0 );
-REGISTER_FUNCTION( fusebits,     AT90S1200, AT90S_20pin, SIZE_AT90S1200_FLASH  );
-REGISTER_FUNCTION( chiperase,    AT90S1200, AT90S_20pin, SIZE_AT90S1200_FLASH  );
-REGISTER_FUNCTION( signature,    AT90S1200, AT90S_20pin, SIZE_AT90S1200_FLASH  );
-REGISTER_FUNCTION( test_blank,   AT90S1200, AT90S_20pin, SIZE_AT90S1200_FLASH, 0  );
+REGISTER_FUNCTION( read_flash,   AT90S1200, AT90S1200_, SIZE_AT90S1200_FLASH  );
+REGISTER_FUNCTION( read_eeprom,  AT90S1200, AT90S1200_, SIZE_AT90S1200_EEPROM );
+REGISTER_FUNCTION( write_flash,  AT90S1200, AT90S1200_, SIZE_AT90S1200_FLASH  );
+REGISTER_FUNCTION( write_eeprom, AT90S1200, AT90S1200_, SIZE_AT90S1200_EEPROM );
+REGISTER_FUNCTION( verify_flash, AT90S1200, AT90S1200_, SIZE_AT90S1200_FLASH, 0 );
+REGISTER_FUNCTION( verify_eeprom,AT90S1200, AT90S1200_, SIZE_AT90S1200_EEPROM, 0 );
+REGISTER_FUNCTION( fusebits,     AT90S1200, AT90S1200_, SIZE_AT90S1200_FLASH, 0 );
+REGISTER_FUNCTION( chiperase,    AT90S1200, AT90S1200_, SIZE_AT90S1200_FLASH  );
+REGISTER_FUNCTION( signature,    AT90S1200, AT90S1200_, SIZE_AT90S1200_FLASH  );
+REGISTER_FUNCTION( test_blank,   AT90S1200, AT90S1200_, SIZE_AT90S1200_FLASH, 0  );
 
-REGISTER_FUNCTION( read_flash,   AT90S2313, AT90S_20pin, SIZE_AT90S2313_FLASH  );
-REGISTER_FUNCTION( read_eeprom,  AT90S2313, AT90S_20pin, SIZE_AT90S2313_EEPROM );
-REGISTER_FUNCTION( write_flash,  AT90S2313, AT90S_20pin, SIZE_AT90S2313_FLASH  );
-REGISTER_FUNCTION( write_eeprom, AT90S2313, AT90S_20pin, SIZE_AT90S2313_EEPROM );
-REGISTER_FUNCTION( verify_flash, AT90S2313, AT90S_20pin, SIZE_AT90S2313_FLASH, 0  );
-REGISTER_FUNCTION( verify_eeprom,AT90S2313, AT90S_20pin, SIZE_AT90S2313_EEPROM, 0 );
-REGISTER_FUNCTION( fusebits,     AT90S2313, AT90S_20pin, SIZE_AT90S2313_FLASH  );
-REGISTER_FUNCTION( chiperase,    AT90S2313, AT90S_20pin, SIZE_AT90S2313_FLASH  );
-REGISTER_FUNCTION( signature,    AT90S2313, AT90S_20pin, SIZE_AT90S2313_FLASH  );
-REGISTER_FUNCTION( test_blank,   AT90S2313, AT90S_20pin, SIZE_AT90S2313_FLASH, 0  );
-
-REGISTER_FUNCTION( read_flash,   ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_FLASH  );
-REGISTER_FUNCTION( read_eeprom,  ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_EEPROM );
-REGISTER_FUNCTION( write_flash,  ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_FLASH  );
-REGISTER_FUNCTION( write_eeprom, ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_EEPROM );
-REGISTER_FUNCTION( verify_flash, ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_FLASH, 0  );
-REGISTER_FUNCTION( verify_eeprom,ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_EEPROM, 0 );
-REGISTER_FUNCTION( fusebits,     ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_FLASH  );
-REGISTER_FUNCTION( chiperase,    ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_FLASH  );
-REGISTER_FUNCTION( signature,    ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_FLASH  );
-REGISTER_FUNCTION( test_blank,   ATtiny2313, AT90S_20pin, SIZE_ATtiny2313_FLASH, 0  );
+REGISTER_FUNCTION( read_flash,   AT90S2313, AT90S1200_, SIZE_AT90S2313_FLASH  );
+REGISTER_FUNCTION( read_eeprom,  AT90S2313, AT90S1200_, SIZE_AT90S2313_EEPROM );
+REGISTER_FUNCTION( write_flash,  AT90S2313, AT90S1200_, SIZE_AT90S2313_FLASH  );
+REGISTER_FUNCTION( write_eeprom, AT90S2313, AT90S1200_, SIZE_AT90S2313_EEPROM );
+REGISTER_FUNCTION( verify_flash, AT90S2313, AT90S1200_, SIZE_AT90S2313_FLASH, 0  );
+REGISTER_FUNCTION( verify_eeprom,AT90S2313, AT90S1200_, SIZE_AT90S2313_EEPROM, 0 );
+REGISTER_FUNCTION( fusebits,     AT90S2313, AT90S1200_, SIZE_AT90S2313_FLASH, 1 );
+REGISTER_FUNCTION( chiperase,    AT90S2313, AT90S1200_, SIZE_AT90S2313_FLASH  );
+REGISTER_FUNCTION( signature,    AT90S2313, AT90S1200_, SIZE_AT90S2313_FLASH  );
+REGISTER_FUNCTION( test_blank,   AT90S2313, AT90S1200_, SIZE_AT90S2313_FLASH, 0  );
 
 /***********************************************************************************
 * AT90S2333, AT90S4433, AT90S8535, AT90S4434, AT90S8515, AT90S4414, AT90S2323
@@ -1270,6 +1260,7 @@ REGISTER_MODULE_BEGIN( MCS-51 )
 	add_action(MODULE_SIGN_ACTION, signature_AT90S1200);
 	add_action(MODULE_TEST_BLANK_ACTION, test_blank_AT90S1200);
     register_chip_end;
+
     register_chip_begin("/uk/AVR/AT90S","AT90S2313", "AT90S20pin", SIZE_AT90S2313);
 	add_action(MODULE_READ_FLASH_ACTION, read_flash_AT90S2313);
 	add_action(MODULE_READ_EEPROM_ACTION, read_eeprom_AT90S2313);
@@ -1282,18 +1273,6 @@ REGISTER_MODULE_BEGIN( MCS-51 )
 	add_action(MODULE_SIGN_ACTION, signature_AT90S2313);
 	add_action(MODULE_TEST_BLANK_ACTION, test_blank_AT90S2313);
     register_chip_end;
-    register_chip_begin("/uk/AVR/ATtiny","ATtiny2313", "AT90S20pin", SIZE_ATtiny2313);
-	add_action(MODULE_READ_FLASH_ACTION, read_flash_ATtiny2313);
-	add_action(MODULE_READ_EEPROM_ACTION, read_eeprom_ATtiny2313);
-	add_action(MODULE_PROG_FLASH_ACTION, write_flash_ATtiny2313);
-	add_action(MODULE_PROG_EEPROM_ACTION, write_eeprom_ATtiny2313);
-	add_action(MODULE_VERIFY_FLASH_ACTION, verify_flash_ATtiny2313);
-	add_action(MODULE_VERIFY_EEPROM_ACTION, verify_eeprom_ATtiny2313);
-	add_action(MODULE_LOCKBIT_ACTION, fusebits_ATtiny2313);
-	add_action(MODULE_ERASE_ACTION, chiperase_ATtiny2313);
-	add_action(MODULE_SIGN_ACTION, signature_ATtiny2313);
-	add_action(MODULE_TEST_BLANK_ACTION, test_blank_ATtiny2313);
-    register_chip_end;
-// 
+ 
 REGISTER_MODULE_END
 
