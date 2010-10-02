@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -425,6 +425,7 @@ const char *take_signature_name(int data)
     }
     switch(data){
 	case 0x01901e: text= "Vendor: ATMEL\nCHIP: AT90S1200\nFLASH: 1kB";    
+	case 0x01911e: text= "Vendor: ATMEL\nCHIP: AT90S2313\nFLASH: 2kB";    
     }
     return text;
 }
