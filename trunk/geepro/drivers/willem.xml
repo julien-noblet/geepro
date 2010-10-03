@@ -43,7 +43,7 @@
 		</vbox>
 	    </if>
 	    <if family="27C0xx">
-		<description>I2C EEPROM.</description>
+		<description>EEPROM.</description>
 		<image src="./pixmaps/willem_32pin.png"/>
 		<vbox>
 		    <hbox border="0">
@@ -52,9 +52,10 @@
 		    </hbox>
 		</vbox>
 	    </if>
-	    <if family="27xx">
-		<description>I2C EEPROM.</description>
-		<image src="./pixmaps/willem_24pin.png"/>
+
+	    <if family="2716">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_2716.png"/>
 		<vbox>
 		    <hbox border="0">
 			<jumper name_up="29x" set="0"/>
@@ -62,6 +63,48 @@
 		    </hbox>
 		</vbox>
 	    </if>
+	    <if family="2732">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_2732.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x1c0"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="2764_128">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_28pin.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x12b"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="27256">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_28pin.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x1b3"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="27512">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_28pin.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x1d4"/>
+		    </hbox>
+		</vbox>
+	    </if>
+
+
 	    <if family="AT89Cxx51">
 		<description>Jakis opis do poprawy.</description>
 		<image src="./pixmaps/mcs51.png"/>
