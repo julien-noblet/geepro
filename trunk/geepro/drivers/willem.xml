@@ -54,7 +54,7 @@
 	    </if>
 
 	    <if family="2716">
-		<description>EPROM</description>
+		<description>EPROM constant prog pulse 50ms</description>
 		<image src="./pixmaps/willem_2716.png"/>
 		<vbox>
 		    <hbox border="0">
@@ -64,7 +64,7 @@
 		</vbox>
 	    </if>
 	    <if family="2732">
-		<description>EPROM</description>
+		<description>EPROM constant prog pulse 50ms </description>
 		<image src="./pixmaps/willem_2732.png"/>
 		<vbox>
 		    <hbox border="0">

@@ -1,4 +1,4 @@
-/* $Revision: 1.11 $ */
+/* $Revision: 1.12 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -188,10 +188,7 @@ int test_blank_AT89Cx051(int size, char mode)
     progress_loop(addr, size, "Checking blank"){
 	hw_delay(100);
 	tmp = AT89Cx051_get_data();
-	if( tmp != 0xff){
-	   progressbar_free();
-	   break;
-	}
+	break_if( tmp != 0xff);
 	AT89Cx051_pulse( 150 );
     }
     if(!mode) show_message(0,(tmp == 0xff) ? "[IF][TEXT]Flash is empty[/TEXT][BR]OK" : "[WN][TEXT]Flash is dirty !!![/TEXT][BR]OK",NULL, NULL);
@@ -279,10 +276,7 @@ void verify_AT89Cx051(int size, char silent)
 	hw_delay(100);
 	rdata = AT89Cx051_get_data();
 	wdata = get_buffer(addr);
-	if( rdata != wdata){
-	   progressbar_free();
-	   break;
-	}
+	break_if( rdata != wdata);
 	AT89Cx051_pulse( 150 );
     }
     if(!silent | (wdata != rdata)){
@@ -353,10 +347,7 @@ void write_AT89Cx051(int size)
 	set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode to read for veryfication
 	hw_delay(500); 			   // 500µs    
 	rdata = AT89Cx051_get_data();
-	if(rdata != wdata){                // veryfication
-	    progressbar_free();
-	    break;	   
-	}
+	break_if(rdata != wdata);                // veryfication
 	AT89Cx051_mux(AT89Cx051_X1_MUX);   // X1 as pulse
 	hw_delay(20);
 	AT89Cx051_pulse( 150 );		   // address increment
@@ -514,10 +505,7 @@ void verify_AT89C5x(int size, char silent)
     progress_loop(addr, size, "Verifying"){
 	rdata = read_byte_AT89C5x(addr, AT89C5x_READ_MODE);
 	wdata = get_buffer(addr);
-	if( rdata != wdata){
-	   progressbar_free();
-	   break;
-	}
+	break_if( rdata != wdata);
     }
 
     if(!silent | (wdata != rdata)){
@@ -548,10 +536,7 @@ void test_blank_AT89C5x(int size, char silent)
     ce(1,100);
     progress_loop(addr, size, "Test blank"){
 	rdata = read_byte_AT89C5x(addr, AT89C5x_READ_MODE);
-	if( rdata != 0xff){
-	   progressbar_free();
-	   break;
-	}
+	break_if( rdata != 0xff);
     }
     if(!silent | (rdata != 0xff)){
 	 sprintf(text, "[WN][TEXT]Flash is not empty !!!\nAddress = 0x%X\n byte = 0x%X%X[/TEXT][BR]OK",
@@ -605,10 +590,7 @@ void write_AT89C5x(int size)
 	set_AT89C5x_mode( AT89C5x_READ_MODE );	
 	hw_delay(400); // 400us 
 	rdata = hw_get_data();
-	if(rdata != wdata){
-	   progressbar_free();
-	   break;
-	}
+	break_if(rdata != wdata);
     }
     if(rdata != wdata){
 	sprintf(
@@ -850,10 +832,7 @@ void verify_flash_AT90S1200_(int size, char silent)
 	rdata = AT90S1200_get_data( 0 );
 	wdata = get_buffer(addr*2);
 	k = 0;
-	if( rdata != wdata){
-	   progressbar_free();
-	   break;
-	}
+	break_if( rdata != wdata);
 	k = 1;
 	rdata = AT90S1200_get_data( 1 );
 	wdata = get_buffer(addr*2 + 1);
@@ -892,10 +871,7 @@ void verify_eeprom_AT90S1200_(int size, char silent)
 	AT90S1200_load_address_low_byte( addr & 0xff);
 	rdata = AT90S1200_get_data( 0 );
 	wdata = get_buffer(addr);
-	if( rdata != wdata){
-	   progressbar_free();
-	   break;
-	}
+	break_if( rdata != wdata);
     }    
 
     if(!silent | (wdata != rdata)){
@@ -929,15 +905,9 @@ char test_blank_AT90S1200_(int size, char silent)
 	    AT90S1200_load_address_high_byte( (addr >> 8) & 0xff );
 	AT90S1200_load_address_low_byte( addr & 0xff);
 	rdata = AT90S1200_get_data( 0 );
-	if( rdata != 0xff ){
-	   progressbar_free();
-	   break;
-	}
+	break_if( rdata != 0xff );
 	rdata = AT90S1200_get_data( 1 );
-	if( rdata != 0xff ){
-	   progressbar_free();
-	   break;
-	}
+	break_if( rdata != 0xff );
     }    
 
     if(!silent | (rdata != 0xff)){
