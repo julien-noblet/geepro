@@ -92,7 +92,6 @@
 		    </hbox>
 		</vbox>
 	    </if>
-
 	    <if family="AT90S20pin">
 		<description>Jakis opis do poprawy.</description>
 		<image src="./pixmaps/mcs51.png"/>
@@ -100,6 +99,16 @@
 		    <hbox border="0">
 			<jumper name_up="29x" set="0"/>
 			<dipswitch name="Dip switch" len="12" value="0xab4"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="MCS-48">
+		<description>Jakis opis do poprawy.</description>
+		<image src="./pixmaps/mcs48.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0xab6"/>
 		    </hbox>
 		</vbox>
 	    </if>
