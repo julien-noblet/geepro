@@ -1,4 +1,4 @@
-/* $Revision: 1.7 $ */
+/* $Revision: 1.8 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -278,6 +278,11 @@ REGISTER_FUNCTION( read,   2764, 2716_, SIZE_2764, 1 );
 REGISTER_FUNCTION( verify, 2764, 2716_, SIZE_2764, 1 );
 REGISTER_FUNCTION( test,   2764, 2716_, SIZE_2764, 1, 0 );
 REGISTER_FUNCTION( prog,   2764, 2764_, SIZE_2764 );
+/* 27128 */
+REGISTER_FUNCTION( read,   27128, 2716_, SIZE_27128, 1 );
+REGISTER_FUNCTION( verify, 27128, 2716_, SIZE_27128, 1 );
+REGISTER_FUNCTION( test,   27128, 2716_, SIZE_27128, 1, 0 );
+REGISTER_FUNCTION( prog,   27128, 2764_, SIZE_27128 );
 
 /********************************************************************************************/
 REGISTER_MODULE_BEGIN( 27xx )
@@ -300,6 +305,12 @@ REGISTER_MODULE_BEGIN( 27xx )
 	add_action(MODULE_PROG_ACTION, prog_2764);
 	add_action(MODULE_VERIFY_ACTION, verify_2764);
 	add_action(MODULE_TEST_ACTION, test_2764);
+    register_chip_end;
+    register_chip_begin("/EPROM/28 pin", "27128", "2764_128", SIZE_27128);
+	add_action(MODULE_READ_ACTION, read_27128);
+	add_action(MODULE_PROG_ACTION, prog_27128);
+	add_action(MODULE_VERIFY_ACTION, verify_27128);
+	add_action(MODULE_TEST_ACTION, test_27128);
     register_chip_end;
 
 
