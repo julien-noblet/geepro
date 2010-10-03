@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -79,10 +79,7 @@ void test_blank_mcs48(int size)
     progress_loop(addr, size, "Test blank"){
 	set_address_mcs48( addr, MCS48_READ_MODE );
 	data = hw_get_data();
-	if( data != 0xff ){
-	    progressbar_free();
-	    break;
-	}
+	break_if( data != 0xff );
     }
     set_address(0);
     set_data(0);
@@ -110,10 +107,7 @@ void verify_mcs48(int size)
 	set_address_mcs48( addr, MCS48_READ_MODE );
 	rdata = hw_get_data();
 	wdata = get_buffer( addr );
-	if( rdata != wdata ){
-	    progressbar_free();
-	    break;
-	}
+	break_if( rdata != wdata );
     }
     set_address(0);
     set_data(0);
@@ -154,10 +148,7 @@ void prog_mcs48(int size)
 	prog_pulse_mcs48();	
 	set_address_mcs48( addr, MCS48_READ_MODE );
 	rdata = hw_get_data();
-	if( rdata != wdata ){
-	    progressbar_free();
-	    break;
-	}
+	break_if( rdata != wdata );
     }
     set_address(0);
     set_data(0);
