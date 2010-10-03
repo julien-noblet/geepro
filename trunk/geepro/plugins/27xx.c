@@ -1,4 +1,4 @@
-/* $Revision: 1.5 $ */
+/* $Revision: 1.6 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -148,19 +148,81 @@ void prog_2716_(int size)
     verify_2716_( size );
 }
 
+void write_byte_2732(int addr, char data)
+{
+    oe(0, 1);
+    ce(1, 100);
+    hw_sw_vpp(1);
+    hw_delay( 100 );
+    set_address( addr );
+    set_data(data);    
+    hw_delay( 5 );
+    hw_delay( 100 );
+    ce(0, 50000);
+    ce(1, 5);
+    hw_sw_vpp(0);   
+    ce(0, 1);
+    oe(1, 100); 
+}
+
+void prog_2732_(int size)
+{
+    int addr, tries;
+    unsigned char rdata, wdata;
+    char text[256];
+    
+    TEST_CONNECTION( VOID )
+    if(test_2716_(size, 1)) return;
+    start_action(0, 0);
+    progress_loop(addr, size, "Writing data"){
+        tries = 0;
+	do{
+	    wdata = get_buffer( addr );	
+	    if(wdata != 0xff)
+		write_byte_2732( addr, wdata );	
+	    rdata = read_byte_2716( addr );
+	} while( (wdata != rdata) && (++tries < 20));
+	break_if( rdata != wdata );
+    }    
+    finish_action();
+    if(rdata != wdata ){
+	sprintf( text,
+	    "[WN][TEXT]Write error !!!\n Address = 0x%X\nByte = 0x%X%X, should be 0x%X%X [/TEXT][BR]OK",
+	    addr,
+	    to_hex(rdata, 1), to_hex(rdata, 0),
+	    to_hex(wdata, 1), to_hex(wdata, 0)
+	);    
+	show_message(0, (rdata == wdata) ? "[IF][TEXT]Chip program OK.[/TEXT][BR]OK" : text, NULL, NULL);
+	return;
+    }
+    verify_2716_( size );
+}
+
 /* 2716 */
 REGISTER_FUNCTION( read,   2716, 2716_, SIZE_2716 );
 REGISTER_FUNCTION( verify, 2716, 2716_, SIZE_2716 );
 REGISTER_FUNCTION( test,   2716, 2716_, SIZE_2716, 0 );
 REGISTER_FUNCTION( prog,   2716, 2716_, SIZE_2716 );
 
+/* 2732 */
+REGISTER_FUNCTION( read,   2732, 2716_, SIZE_2732 );
+REGISTER_FUNCTION( verify, 2732, 2716_, SIZE_2732 );
+REGISTER_FUNCTION( test,   2732, 2716_, SIZE_2732, 0 );
+REGISTER_FUNCTION( prog,   2732, 2732_, SIZE_2732 );
+
 /********************************************************************************************/
 REGISTER_MODULE_BEGIN( 27xx )
-    register_chip_begin("/EPROM/Standard/24 pin", "2716", "2716", SIZE_2716);
+    register_chip_begin("/EPROM/24 pin", "2716", "2716", SIZE_2716);
 	add_action(MODULE_READ_ACTION, read_2716);
+	add_action(MODULE_PROG_ACTION, prog_2716);
 	add_action(MODULE_VERIFY_ACTION, verify_2716);
 	add_action(MODULE_TEST_ACTION, test_2716);
-	add_action(MODULE_PROG_ACTION, prog_2716);
+    register_chip_end;
+    register_chip_begin("/EPROM/24 pin", "2732", "2732", SIZE_2732);
+	add_action(MODULE_READ_ACTION, read_2732);
+	add_action(MODULE_PROG_ACTION, prog_2732);
+	add_action(MODULE_VERIFY_ACTION, verify_2732);
+	add_action(MODULE_TEST_ACTION, test_2732);
     register_chip_end;
 
 REGISTER_MODULE_END
