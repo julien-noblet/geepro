@@ -1,4 +1,4 @@
-/* $Revision: 1.9 $ */
+/* $Revision: 1.10 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -62,6 +62,8 @@
     hw_set_oe(0);\
     hw_set_ce(0);\
     hw_sw_vcc(0);\
+    set_address(0);\
+    set_data(0);\
     buffer_checksum(___geep___);\
     gui_stat_rfsh(___geep___)
 
