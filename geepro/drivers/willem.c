@@ -1,4 +1,4 @@
-/* $Revision: 1.14 $ */
+/* $Revision: 1.15 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -79,6 +79,8 @@ static const char *data_pin_name[] = {"pin_13","pin_14","pin_15","pin_17","pin_1
 
 
 static unsigned int _addr=0;
+static int programmer_mode = 0;
+
 extern int ___uid___;
 
 /**************************************************************************************************************************/
@@ -197,6 +199,13 @@ static int willem_set_oe_pin(char bool)
 
 static int willem_set_ce_pin(char bool)
 {
+    if(programmer_mode == PRAGMA_CE_EQ_PGM ) return 0;
+    if(bool) return parport_set_bit(PC,PP_17); 
+    return parport_clr_bit(PC,PP_17);
+}
+
+static int willem_set_pgm_pin(char bool) // the same as CE, dependent on dip switch
+{
     if(bool) return parport_set_bit(PC,PP_17); 
     return parport_clr_bit(PC,PP_17);
 }
@@ -267,6 +276,12 @@ static int willem_set_test_pin(char val)
 
 static int willem_get_sda_pin(void)
 { return willem_get_do_pin(); }
+
+static int willem_set_pragma(int pragma)
+{ 
+    programmer_mode = pragma;
+    return 0; 
+}
 
 static int willem_reset(void)
 {
@@ -461,7 +476,7 @@ int willem_40_hardware_module(int funct, int val, void *ptr)
 	case HW_SET_VPP:  return willem_set_vpp_voltage(val);
 	case HW_SW_VCC:	  if(val == 0) return willem_vcc_off(); else return willem_vcc_on();
 	case HW_SW_VPP:	  if(val == 0) return willem_vpp_off(); else return willem_vpp_on();
-
+	case HW_PRAGMA:   return willem_set_pragma( val );
 	case HW_SW_DPSW:  return willem_set_dip_sw(val);
 	/* funkcje gniazda eprom */
 	case HW_SET_DATA: return willem_set_par_data_pin(val);
@@ -473,6 +488,7 @@ int willem_40_hardware_module(int funct, int val, void *ptr)
 	case HW_SET_WE:   return willem_set_we_pin(val);
 	case HW_SET_OE:   return willem_set_oe_pin(val);
 	case HW_SET_CE:   return willem_set_ce_pin(val);
+	case HW_SET_PGM:  return willem_set_pgm_pin(val);
 	/* Serial SPI jak 93Cxx, 25Cxx*/
 	case HW_SET_CS:	  return willem_set_cs_pin(val);
 	case HW_SET_CLK:  return willem_set_clk_pin(val);
@@ -509,7 +525,7 @@ int willem4_hardware_module(int funct, int val, void *ptr)
 	case HW_SET_VPP:  return willem_set_vpp_voltage(val);
 	case HW_SW_VCC:	  if(val == 0) return willem_vcc_off(); else return willem_vcc_on();
 	case HW_SW_VPP:	  if(val == 0) return willem_vpp_off(); else return willem_vpp_on();
-
+	case HW_PRAGMA:   return willem_set_pragma( val );
 	case HW_SW_DPSW:  return willem_set_dip_sw(val);
 	/* funkcje gniazda eprom */
 	case HW_SET_DATA: return willem_set_par_data_pin(val);
@@ -521,6 +537,7 @@ int willem4_hardware_module(int funct, int val, void *ptr)
 	case HW_SET_WE:   return willem_set_we_pin(val);
 	case HW_SET_OE:   return willem_set_oe_pin(val);
 	case HW_SET_CE:   return willem_set_ce_pin(val);
+	case HW_SET_PGM:  return willem_set_pgm_pin(val);
 	/* Serial SPI jak 93Cxx, 25Cxx*/
 	case HW_SET_CS:	  return willem_set_cs_pin(val);
 	case HW_SET_CLK:  return willem_set_clk_pin(val);
@@ -556,7 +573,7 @@ int willempro2_hardware_module(int funct, int val, void *ptr)
 	case HW_SET_VPP:  return willem_set_vpp_voltage(val);
 	case HW_SW_VCC:	  if(val == 0) return willem_vcc_off(); else return willem_vcc_on();
 	case HW_SW_VPP:	  if(val == 0) return willem_vpp_off(); else return willem_vpp_on();
-
+	case HW_PRAGMA:   return willem_set_pragma( val );
 	case HW_SW_DPSW:  return willem_set_dip_sw(val);
 	/* funkcje gniazda eprom */
 	case HW_SET_DATA: return willem_set_par_data_pin(val);
@@ -568,6 +585,7 @@ int willempro2_hardware_module(int funct, int val, void *ptr)
 	case HW_SET_WE:   return willem_set_we_pin(val);
 	case HW_SET_OE:   return willem_set_oe_pin(val);
 	case HW_SET_CE:   return willem_set_ce_pin(val);
+	case HW_SET_PGM:  return willem_set_pgm_pin(val);
 	/* Serial SPI jak 93Cxx, 25Cxx*/
 	case HW_SET_CS:	  return willem_set_cs_pin(val);
 	case HW_SET_CLK:  return willem_set_clk_pin(val);

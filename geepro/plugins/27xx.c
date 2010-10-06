@@ -1,4 +1,4 @@
-/* $Revision: 1.9 $ */
+/* $Revision: 1.10 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -116,12 +116,25 @@ void write_byte_2716(int addr, char data)
 
 void prog_2716_(int size)
 {
+    unsigned long *lb;
     int addr, tries;
     unsigned char rdata, wdata;
     char text[256];
     
     TEST_CONNECTION( VOID )
-//    if(test_2716_(size, 0, 1)) return;
+    lb = checkbox(
+	"[TITLE]Chip burning[/TITLE][TYPE:QS]"
+	"[FRAME:Algorithm][RADIO]"
+	"[CB:4:0: Slow 50ms]"
+	"[/RADIO][/FRAME]"
+	"[CB:8:1: Test blank]"
+	"[CB:16:1: Verify]"
+    );
+    if( !lb ) return;
+    if( (*lb & 0x07) != 4 ) return; // missing algorithm choice
+    if( *lb & 0x08 )	// test blank
+	if(test_2716_(size, 0, 1)) return;
+
     start_action(0, 0);
     hw_sw_vpp(1);
     progress_loop(addr, size, "Writing data"){
@@ -145,7 +158,9 @@ void prog_2716_(int size)
 	show_message(0, (rdata == wdata) ? "[IF][TEXT]Chip program OK.[/TEXT][BR]OK" : text, NULL, NULL);
 	return;
     }
-    verify_2716_( size, 0 );
+
+    if( *lb & 0x10 )
+	verify_2716_( size, 0 );
 }
 
 void write_byte_2732(int addr, char data)
@@ -165,91 +180,103 @@ void write_byte_2732(int addr, char data)
     oe(1, 100); 
 }
 
-void prog_2732_(int size)
-{
-    int addr, tries;
-    unsigned char rdata, wdata;
-    char text[256];
-    
-    TEST_CONNECTION( VOID )
-//    if(test_2716_(size, 0, 1)) return;
-    start_action(0, 0);
-    progress_loop(addr, size, "Writing data"){
-        tries = 0;
-	do{
-	    wdata = get_buffer( addr );	
-	    if(wdata != 0xff)
-		write_byte_2732( addr, wdata );	
-	    rdata = read_byte_2716( addr );
-	} while( (wdata != rdata) && (++tries < 20));
-	break_if( rdata != wdata );
-    }    
-    finish_action();
-    if(rdata != wdata ){
-	sprintf( text,
-	    "[WN][TEXT]Write error !!!\n Address = 0x%X\nByte = 0x%X%X, should be 0x%X%X [/TEXT][BR]OK",
-	    addr,
-	    to_hex(rdata, 1), to_hex(rdata, 0),
-	    to_hex(wdata, 1), to_hex(wdata, 0)
-	);    
-	show_message(0, (rdata == wdata) ? "[IF][TEXT]Chip program OK.[/TEXT][BR]OK" : text, NULL, NULL);
-	return;
-    }
-    verify_2716_( size, 0 );
-}
-
 /**********************************************************************************************/
-void overprogram_2764(int tpp)
+void write_eprom(int addr, char data, int time, char ce_pgm)
 {
-    tpp = 3 * tpp * 1000;
-    ce(0, tpp);
-    ce(1, 100);
-}
-
-void write_byte_2764(int addr, char data, int time)
-{
-    oe(1, 1);
-    ce(1, 100);
-    hw_delay( 100 );
+    oe(1, 10);
     set_address( addr );
     set_data(data);    
-    hw_delay( 100 ); 	// data and address valid, oe = 1, ce = 0, PGM = 1
-    ce(0, time);	// pgm = 0
-    ce(1, 100);		// pgm = 1
+    hw_delay( 2 ); 	// data and address valid, oe = 1, PGM = 1
+    if( ce_pgm ){
+	ce(0, time);	// ce = 0
+	ce(1, 100);	// ce = 1
+    } else {
+	pgm(0, time);	// pgm = 0
+	pgm(1, 100);	// pgm = 1
+    }
 }
 
-char read_byte_2764( int addr )
+char read_eprom(int addr, char oe_vpp)
 {
-    oe(0, 1);
-    ce(1, 10);
-    return read_byte_2716( addr );
+    char data;
+    set_address(addr);
+    hw_delay(5); // tPHQX + tQXGL
+    oe(0, 5);
+    if(oe_vpp){
+        hw_sw_vpp(0);
+        ce(0, 1);
+    }
+    data = hw_get_data();
+    if(oe_vpp){
+      ce(1, 1);
+      hw_sw_vpp(1);
+    }
+    oe(1, 2);
+    return data;
 }
 
-void prog_2764_(int size)
+void prog_eprom(int size, char ce_pgm, char oe_vpp)
 {
     int addr, x;
     unsigned char rdata, wdata;
+    unsigned long *lb;
     char text[256];
     
     TEST_CONNECTION( VOID )
-//    if(test_2716_(size, 1, 1)) return;
-    start_action(0, 1);
-    hw_sw_vpp(1);
+    lb = checkbox(
+	"[TITLE]Chip burning[/TITLE][TYPE:QS]"
+	"[FRAME:Algorithm][RADIO]"
+	"[CB:1:0: FAST]"
+	"[CB:2:0: RAPID-PULSE]"
+	"[CB:4:0: Slow 50ms]"
+	"[/RADIO][/FRAME]"
+	"[CB:8:1: Test blank]"
+	"[CB:16:1: Verify]"
+    );
+    if( !lb ) return;
+    x = *lb & 0x07;
+    if(!(( x == 1) || (x == 2) || (x == 4))) return; // missing algorithm choice
+    if( *lb & 0x08 )	// test blank
+	if(test_2716_(size, !ce_pgm, 1)) return;
+    if( !ce_pgm ) hw_pragma( PRAGMA_CE_EQ_PGM ); // if set, ignoring ce() command for programmers like willem, PROG() will be CE
+    ce(ce_pgm, 10);
+    pgm(1, 10 );
+    hw_set_vcc( 6 );
+    hw_sw_vcc(1);
+    hw_sw_vpp( 1 );
     progress_loop(addr, size, "Writing data"){
 	wdata = get_buffer( addr );	
 	if(wdata != 0xff){
-	    for(x = 1; x < 26; x++){
-		write_byte_2764( addr, wdata, 1000 ); // impuls 1ms
-		rdata = read_byte_2764( addr );
-		if( wdata == rdata ) break;
+	    if( *lb & 1 ){ // Fast
+		for(x = 1; x < 26; x++){
+		    write_eprom( addr, wdata, 1000, ce_pgm ); // impuls 1ms
+		    rdata = read_eprom( addr, oe_vpp );
+		    if( wdata == rdata ) break;
+		}
+		break_if( wdata != rdata );
+		write_eprom( addr, wdata, 3 * x * 1000, ce_pgm ); // impuls 3xms
 	    }
-	    break_if( wdata != rdata );
-	    overprogram_2764( x );
+	    if( *lb & 2){ // rapid-pulse
+		for(x = 1; x < 26; x++){
+		    write_eprom( addr, wdata, 100, ce_pgm ); // impuls 100µs
+		    rdata = read_eprom( addr, oe_vpp );
+		    if( wdata == rdata ) break;
+		}
+		break_if( wdata != rdata );
+	    }
+	    if( *lb & 4){ // Slow 50ms
+		write_eprom( addr, wdata, 50000, ce_pgm ); // impuls 50ms
+		rdata = read_eprom( addr, oe_vpp );
+		break_if( wdata != rdata );	    
+	    }
 	} else 
-	    rdata = read_byte_2764( addr );
+	    rdata = read_eprom( addr, oe_vpp );
 	break_if( rdata != wdata );
     }    
-    finish_action();
+    hw_sw_vpp(0);
+    hw_sw_vcc(0);    
+    set_address(0);
+    set_data(0);
     if(rdata != wdata ){
 	sprintf( text,
 	    "[WN][TEXT]Write error !!!\n Address = 0x%X\nByte = 0x%X%X, should be 0x%X%X [/TEXT][BR]OK",
@@ -258,87 +285,46 @@ void prog_2764_(int size)
 	    to_hex(wdata, 1), to_hex(wdata, 0)
 	);    
 	show_message(0, (rdata == wdata) ? "[IF][TEXT]Chip program OK.[/TEXT][BR]OK" : text, NULL, NULL);
+	hw_pragma( 0 );
 	return;
     }
-    verify_2716_( size, 1 );
+    if( *lb & 0x10 )
+	verify_2716_( size, !ce_pgm );
+    hw_pragma( 0 );
 }
 
 /*********************************************************************************************************/
-char read_byte_27256()
-{
-    oe(0, 10);
-    return hw_get_data();
-}
-
-void prog_27256_(int size)
-{
-    int addr, x;
-    unsigned char rdata, wdata;
-    char text[256];
-    
-    TEST_CONNECTION( VOID )
-//    if(test_2716_(size, 1, 1)) return;
-    start_action(0, 1);
-    hw_sw_vpp(1);
-    progress_loop(addr, size, "Writing data"){
-	wdata = get_buffer( addr );	
-	if(wdata != 0xff){
-	    for(x = 1; x < 26; x++){
-		//write_byte_2764( addr, wdata, 1000 ); // impuls 1ms
-		oe(1,1);
-		ce(1,10);
-		set_address( addr );
-		set_data( wdata );
-		hw_delay(2);
-		ce(0, 1000); // 1ms pulse
-		ce(1, 10);
-		rdata = read_byte_27256( addr );
-		if( wdata == rdata ) break;
-	    }
-	    break_if( wdata != rdata );
-	    overprogram_2764( x );
-	}
-	break_if( rdata != wdata );
-    }    
-    finish_action();
-    if(rdata != wdata ){
-	sprintf( text,
-	    "[WN][TEXT]Write error !!!\n Address = 0x%X\nByte = 0x%X%X, should be 0x%X%X [/TEXT][BR]OK",
-	    addr,
-	    to_hex(rdata, 1), to_hex(rdata, 0),
-	    to_hex(wdata, 1), to_hex(wdata, 0)
-	);    
-	show_message(0, (rdata == wdata) ? "[IF][TEXT]Chip program OK.[/TEXT][BR]OK" : text, NULL, NULL);
-	return;
-    }
-    verify_2716_( size, 1 );
-}
 
 /* 2716 */
-REGISTER_FUNCTION( read,   2716, 2716_, SIZE_2716, 0 );
-REGISTER_FUNCTION( verify, 2716, 2716_, SIZE_2716, 0 );
-REGISTER_FUNCTION( test,   2716, 2716_, SIZE_2716, 0, 0 );
-REGISTER_FUNCTION( prog,   2716, 2716_, SIZE_2716 );
+REGISTER_FUNCTION( read,   2716,  2716_, SIZE_2716, 0 );
+REGISTER_FUNCTION( verify, 2716,  2716_, SIZE_2716, 0 );
+REGISTER_FUNCTION( test,   2716,  2716_, SIZE_2716, 0, 0 );
+REGISTER_FUNCTION( prog,   2716,  2716_, SIZE_2716 );
 /* 2732 */
-REGISTER_FUNCTION( read,   2732, 2716_, SIZE_2732, 0 );
-REGISTER_FUNCTION( verify, 2732, 2716_, SIZE_2732, 0 );
-REGISTER_FUNCTION( test,   2732, 2716_, SIZE_2732, 0, 0 );
-REGISTER_FUNCTION( prog,   2732, 2732_, SIZE_2732 );
+REGISTER_FUNCTION( read,   2732,  2716_, SIZE_2732, 0 );
+REGISTER_FUNCTION( verify, 2732,  2716_, SIZE_2732, 0 );
+REGISTER_FUNCTION( test,   2732,  2716_, SIZE_2732, 0, 0 );
+REGISTER_FUNCTION( prog,   2732,  eprom, SIZE_2732, 1, 1 );
 /* 2764 */
-REGISTER_FUNCTION( read,   2764, 2716_, SIZE_2764, 1 );
-REGISTER_FUNCTION( verify, 2764, 2716_, SIZE_2764, 1 );
-REGISTER_FUNCTION( test,   2764, 2716_, SIZE_2764, 1, 0 );
-REGISTER_FUNCTION( prog,   2764, 2764_, SIZE_2764 );
+REGISTER_FUNCTION( read,   2764,  2716_, SIZE_2764, 1 );
+REGISTER_FUNCTION( verify, 2764,  2716_, SIZE_2764, 1 );
+REGISTER_FUNCTION( test,   2764,  2716_, SIZE_2764, 1, 0 );
+REGISTER_FUNCTION( prog,   2764,  eprom, SIZE_2764, 0, 0 );
 /* 27128 */
 REGISTER_FUNCTION( read,   27128, 2716_, SIZE_27128, 1 );
 REGISTER_FUNCTION( verify, 27128, 2716_, SIZE_27128, 1 );
 REGISTER_FUNCTION( test,   27128, 2716_, SIZE_27128, 1, 0 );
-REGISTER_FUNCTION( prog,   27128, 2764_, SIZE_27128 );
+REGISTER_FUNCTION( prog,   27128, eprom, SIZE_27128, 0, 0 );
 /* 27256 */
-REGISTER_FUNCTION( read,   27256, 2716_, SIZE_27256,0 );
-REGISTER_FUNCTION( verify, 27256, 2716_, SIZE_27256,0 );
-REGISTER_FUNCTION( test,   27256, 2716_, SIZE_27256,0, 0 );
-REGISTER_FUNCTION( prog,   27256, 27256_, SIZE_27256 );
+REGISTER_FUNCTION( read,   27256, 2716_, SIZE_27256, 0 );
+REGISTER_FUNCTION( verify, 27256, 2716_, SIZE_27256, 0 );
+REGISTER_FUNCTION( test,   27256, 2716_, SIZE_27256, 0, 0 );
+REGISTER_FUNCTION( prog,   27256, eprom, SIZE_27256, 1, 0 );
+/* 27512 */
+REGISTER_FUNCTION( read,   27512, 2716_, SIZE_27512, 0 );
+REGISTER_FUNCTION( verify, 27512, 2716_, SIZE_27512, 0 );
+REGISTER_FUNCTION( test,   27512, 2716_, SIZE_27512, 0, 0 );
+REGISTER_FUNCTION( prog,   27512, eprom, SIZE_27512, 1, 1 );
 
 /********************************************************************************************/
 REGISTER_MODULE_BEGIN( 27xx )
@@ -374,5 +360,12 @@ REGISTER_MODULE_BEGIN( 27xx )
 	add_action(MODULE_VERIFY_ACTION, verify_27256);
 	add_action(MODULE_TEST_ACTION, test_27256);
     register_chip_end;
+    register_chip_begin("/EPROM/28 pin", "27512", "27512", SIZE_27512);
+	add_action(MODULE_READ_ACTION, read_27512);
+	add_action(MODULE_PROG_ACTION, prog_27512);
+	add_action(MODULE_VERIFY_ACTION, verify_27512);
+	add_action(MODULE_TEST_ACTION, test_27512);
+    register_chip_end;
+/* 32 PIN EPROM */
 
 REGISTER_MODULE_END
