@@ -1,4 +1,4 @@
-/* $Revision: 1.10 $ */
+/* $Revision: 1.11 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -45,6 +45,10 @@
     
 #define ce(state, delay)	\
     hw_set_ce(state);\
+    hw_delay(delay)
+
+#define pgm(state, delay)	\
+    hw_set_pgm(state);\
     hw_delay(delay)
 
 #define progress_loop(cn, rounds, title)		\

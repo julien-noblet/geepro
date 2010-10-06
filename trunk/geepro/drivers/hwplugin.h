@@ -1,4 +1,4 @@
-/* $Revision: 1.3 $ */
+/* $Revision: 1.4 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -25,6 +25,9 @@
 /********************************************************************/
 /* funkcje v. 0.0.1 */
 
+/* pragms */
+#define PRAGMA_CE_EQ_PGM	1
+
 /* ogólne */
 #define HW_IFACE	1
 #define HW_GINIT	2
@@ -41,6 +44,7 @@
 #define HW_NAME		13
 #define HW_DESTROY	14
 #define HW_SET_CHIP	15
+#define HW_PRAGMA	16	// specyficzny parametr dla danego programatora
 
 /* specyficzne dla programatora eprom */
 #define HW_SET_DATA	  1024
@@ -61,6 +65,8 @@
 #define HW_SW_DPSW	  1040
 #define HW_SET_SDA	  1041
 #define HW_GET_SDA        1042
+#define HW_SET_PGM	  1043
+
 
 /********************************************************************/
 /* błędy */
@@ -93,6 +99,7 @@ extern hw_module_type ___hardware_module___;
 #define hw_get_name(val)	___hardware_module___( HW_NAME, 0, &(val))
 #define hw_destroy(geepro)	___hardware_module___( HW_DESTROY, 0, geepro)
 #define hw_set_chip(geepro)	___hardware_module___( HW_SET_CHIP, 0, geepro)  /* ustawia programator pod wybrany uklad, jesli go nie obsluguje zwraca HW_ERROR */
+#define hw_pragma( pragma )	___hardware_module___( HW_PRAGMA, pragma, NULL)  /* ustawia pragmę */
 
 /* specyficzne dla programatora eprom */
 #define hw_set_data(val)	___hardware_module___( HW_SET_DATA, val, NULL)
@@ -104,6 +111,7 @@ extern hw_module_type ___hardware_module___;
 #define hw_set_we(val)		___hardware_module___( HW_SET_WE,   val, NULL)
 #define hw_set_oe(val)		___hardware_module___( HW_SET_OE,   val, NULL)
 #define hw_set_ce(val)		___hardware_module___( HW_SET_CE,   val, NULL)
+#define hw_set_pgm(val)		___hardware_module___( HW_SET_PGM,   val, NULL)
 #define hw_set_cs(val)		___hardware_module___( HW_SET_CS,   val, NULL)
 #define hw_set_clk(val)		___hardware_module___( HW_SET_CLK,  val, NULL)
 #define hw_set_di(val)		___hardware_module___( HW_SET_DI,   val, NULL)
