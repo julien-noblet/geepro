@@ -54,7 +54,7 @@
 	    </if>
 
 	    <if family="2716">
-		<description>EPROM constant prog pulse 50ms</description>
+		<description>EPROM constant prog pulse 50ms, 2kB</description>
 		<image src="./pixmaps/willem_2716.png"/>
 		<vbox>
 		    <hbox border="0">
@@ -64,7 +64,7 @@
 		</vbox>
 	    </if>
 	    <if family="2732">
-		<description>EPROM constant prog pulse 50ms </description>
+		<description>EPROM 4kB </description>
 		<image src="./pixmaps/willem_2732.png"/>
 		<vbox>
 		    <hbox border="0">
@@ -103,6 +103,37 @@
 		    </hbox>
 		</vbox>
 	    </if>
+	    <if family="27C010">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_32pin.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x634"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="27C040">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_32pin.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0xab4"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="27C080">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_32pin.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0xad4"/>
+		    </hbox>
+		</vbox>
+	    </if>
+
 
 
 	    <if family="AT89Cxx51">

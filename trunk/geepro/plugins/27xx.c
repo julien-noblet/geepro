@@ -1,4 +1,4 @@
-/* $Revision: 1.10 $ */
+/* $Revision: 1.11 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -32,6 +32,7 @@ MODULE_IMPLEMENTATION
 #define SIZE_27C010	131072
 #define SIZE_27C020	262144
 #define SIZE_27C040	524288
+#define SIZE_27C080	1048576
 
 /* 2716 */
 char read_byte_2716( int addr )
@@ -325,6 +326,26 @@ REGISTER_FUNCTION( read,   27512, 2716_, SIZE_27512, 0 );
 REGISTER_FUNCTION( verify, 27512, 2716_, SIZE_27512, 0 );
 REGISTER_FUNCTION( test,   27512, 2716_, SIZE_27512, 0, 0 );
 REGISTER_FUNCTION( prog,   27512, eprom, SIZE_27512, 1, 1 );
+/* 27C010 */
+REGISTER_FUNCTION( read,   27C010, 2716_, SIZE_27C010, 0 );
+REGISTER_FUNCTION( verify, 27C010, 2716_, SIZE_27C010, 0 );
+REGISTER_FUNCTION( test,   27C010, 2716_, SIZE_27C010, 1, 0 );
+REGISTER_FUNCTION( prog,   27C010, eprom, SIZE_27C010, 0, 0 );
+/* 27C020 */
+REGISTER_FUNCTION( read,   27C020, 2716_, SIZE_27C020, 0 );
+REGISTER_FUNCTION( verify, 27C020, 2716_, SIZE_27C020, 0 );
+REGISTER_FUNCTION( test,   27C020, 2716_, SIZE_27C020, 1, 0 );
+REGISTER_FUNCTION( prog,   27C020, eprom, SIZE_27C020, 0, 0 );
+/* 27C040 */
+REGISTER_FUNCTION( read,   27C040, 2716_, SIZE_27C040, 0 );
+REGISTER_FUNCTION( verify, 27C040, 2716_, SIZE_27C040, 0 );
+REGISTER_FUNCTION( test,   27C040, 2716_, SIZE_27C040, 0, 0 );
+REGISTER_FUNCTION( prog,   27C040, eprom, SIZE_27C040, 1, 0 );
+/* 27C080 */
+REGISTER_FUNCTION( read,   27C080, 2716_, SIZE_27C080, 0 );
+REGISTER_FUNCTION( verify, 27C080, 2716_, SIZE_27C080, 0 );
+REGISTER_FUNCTION( test,   27C080, 2716_, SIZE_27C080, 0, 0 );
+REGISTER_FUNCTION( prog,   27C080, eprom, SIZE_27C080, 1, 1 );
 
 /********************************************************************************************/
 REGISTER_MODULE_BEGIN( 27xx )
@@ -367,5 +388,28 @@ REGISTER_MODULE_BEGIN( 27xx )
 	add_action(MODULE_TEST_ACTION, test_27512);
     register_chip_end;
 /* 32 PIN EPROM */
-
+    register_chip_begin("/EPROM/32 pin", "27C010,27C1000,27C1001", "27C010", SIZE_27C010);
+	add_action(MODULE_READ_ACTION, read_27C010);
+	add_action(MODULE_PROG_ACTION, prog_27C010);
+	add_action(MODULE_VERIFY_ACTION, verify_27C010);
+	add_action(MODULE_TEST_ACTION, test_27C010);
+    register_chip_end;
+    register_chip_begin("/EPROM/32 pin", "27C020,27C2000,27C2001", "27C010", SIZE_27C020);
+	add_action(MODULE_READ_ACTION, read_27C020);
+	add_action(MODULE_PROG_ACTION, prog_27C020);
+	add_action(MODULE_VERIFY_ACTION, verify_27C020);
+	add_action(MODULE_TEST_ACTION, test_27C020);
+    register_chip_end;
+    register_chip_begin("/EPROM/32 pin", "27C040,27C4000,27C4001", "27C040", SIZE_27C040);
+	add_action(MODULE_READ_ACTION, read_27C040);
+	add_action(MODULE_PROG_ACTION, prog_27C040);
+	add_action(MODULE_VERIFY_ACTION, verify_27C040);
+	add_action(MODULE_TEST_ACTION, test_27C040);
+    register_chip_end;
+    register_chip_begin("/EPROM/32 pin", "27C080,27C8000,27C8001", "27C080", SIZE_27C080);
+	add_action(MODULE_READ_ACTION, read_27C080);
+	add_action(MODULE_PROG_ACTION, prog_27C080);
+	add_action(MODULE_VERIFY_ACTION, verify_27C080);
+	add_action(MODULE_TEST_ACTION, test_27C080);
+    register_chip_end;
 REGISTER_MODULE_END
