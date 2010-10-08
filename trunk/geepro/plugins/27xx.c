@@ -1,4 +1,4 @@
-/* $Revision: 1.11 $ */
+/* $Revision: 1.12 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -412,4 +412,6 @@ REGISTER_MODULE_BEGIN( 27xx )
 	add_action(MODULE_VERIFY_ACTION, verify_27C080);
 	add_action(MODULE_TEST_ACTION, test_27C080);
     register_chip_end;
+/* 40 PIN 16bit EPROM */
+/* 42 PIN 16bit EPROM */
 REGISTER_MODULE_END
