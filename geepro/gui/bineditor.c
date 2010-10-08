@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* binary editor
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -919,25 +919,25 @@ static void gui_bineditor_clear_buffer(GtkWidget *bt, GuiBineditor *be)
     gtk_misc_set_alignment(GTK_MISC(wg2), 0, 0.5);
     gtk_table_attach(GTK_TABLE(wg1), wg2, 0,1, 3,4, GTK_FILL,0, 0,0);
 
-    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,1);
+    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,0);
     wg2 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(wg1), wg2, 1,3, 0,1, GTK_FILL | GTK_EXPAND, 0,0,0);
     gtk_signal_connect(GTK_OBJECT(wg2), "changed", GTK_SIGNAL_FUNC(gui_bineditor_clear_clc), wgg);
     wgg[0] = wg2;
 
-    adj = gtk_adjustment_new(be->buffer_size, 0, be->buffer_size, 1,1,1);
+    adj = gtk_adjustment_new(be->buffer_size, 0, be->buffer_size, 1,1,0);
     wg2 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(wg1), wg2, 1,3, 1,2, GTK_FILL | GTK_EXPAND, 0,0,0);
     gtk_signal_connect(GTK_OBJECT(wg2), "changed", GTK_SIGNAL_FUNC(gui_bineditor_clear_clc), wgg);
     wgg[1] = wg2;
 
-    adj = gtk_adjustment_new(be->buffer_size, 0, be->buffer_size, 1,1,1);
+    adj = gtk_adjustment_new(be->buffer_size, 0, be->buffer_size, 1,1,0);
     wg2 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(wg1), wg2, 1,3, 2,3, GTK_FILL | GTK_EXPAND, 0,0,0);
     gtk_signal_connect(GTK_OBJECT(wg2), "changed", GTK_SIGNAL_FUNC(gui_bineditor_clear_cli), wgg);
     wgg[2] = wg2;
 
-    adj = gtk_adjustment_new(0, 0, 255, 1,1,1);
+    adj = gtk_adjustment_new(0, 0, 255, 1,1,0);
     wg2 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(wg1), wg2, 1,3, 3,4, GTK_FILL | GTK_EXPAND, 0,0,0);
     wgg[3] = wg2;
@@ -945,7 +945,6 @@ static void gui_bineditor_clear_buffer(GtkWidget *bt, GuiBineditor *be)
     wg2 = gtk_button_new_with_label("Cancel");
     gtk_table_attach(GTK_TABLE(wg1), wg2, 1,2, 4,5, GTK_FILL | GTK_EXPAND, 0,0,15);
     gtk_signal_connect(GTK_OBJECT(wg2), "clicked", GTK_SIGNAL_FUNC(gui_bineditor_kill), wg0);
-
 
     wg2 = gtk_button_new_with_label("  OK  ");
     gtk_table_attach(GTK_TABLE(wg1), wg2, 2,3, 4,5, GTK_FILL | GTK_EXPAND, 0,0,15);
@@ -998,17 +997,17 @@ static int gui_bineditor_get_grid_addr(GuiBineditor *be, int xi, int yi)
 static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBineditor *be)
 {
     int address;
-    
+
     if(!be->buffer || !be->buffer_size) return;
     address = gui_bineditor_get_grid_addr(be, ev->x, ev->y);
     if(address < 0) return;
 
-    if(ev->button == 3){
+    if(ev->button == 1){
 	be->address_mark = address;
         gtk_widget_queue_draw(be->drawing_area);
 	return;
     }
-    if(ev->button != 1) return;
+    if(ev->button != 3) return;
 
     gui_bineditor_editor(be, address);
     gtk_widget_queue_draw(be->drawing_area);
@@ -1052,7 +1051,7 @@ static void gui_bineditor_leave(GtkWidget *wg, GdkEventCrossing *ev, GuiBinedito
 static void gui_bineditor_enter(GtkWidget *wg, GdkEventCrossing *ev, GuiBineditor *be)
 {
     GdkCursor *cursor;
-    cursor = gdk_cursor_new(GDK_HAND1);
+    cursor = gdk_cursor_new(GDK_CROSSHAIR);
     gdk_window_set_cursor(wg->window, cursor);
     gdk_cursor_destroy(cursor);
 }
@@ -1342,7 +1341,7 @@ static void gui_bineditor_init(GuiBineditor *be)
     be->drawing_area = gtk_drawing_area_new();
     gtk_widget_set_events(be->drawing_area, 
 	GDK_SCROLL_MASK | GDK_BUTTON_MOTION_MASK | GDK_POINTER_MOTION_MASK
-	| GDK_LEAVE_NOTIFY_MASK | GDK_ENTER_NOTIFY_MASK 
+	| GDK_LEAVE_NOTIFY_MASK | GDK_ENTER_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK
     );
     gtk_signal_connect(GTK_OBJECT(be->drawing_area),"expose_event",GTK_SIGNAL_FUNC(gui_bineditor_expose), be);
     gtk_signal_connect(GTK_OBJECT(be->drawing_area),"configure_event",GTK_SIGNAL_FUNC(gui_bineditor_configure), be);
