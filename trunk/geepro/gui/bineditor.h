@@ -1,4 +1,4 @@
-/* $Revision: 1.1.1.1 $ */
+/* $Revision: 1.2 $ */
 /* hex, binary viewer, editor, kontrolka GTK
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -121,6 +121,7 @@ GtkWidget *gui_bineditor_new(GtkWindow *parent);
 void gui_bineditor_set_buffer(GuiBineditor *be, int bfsize, unsigned char *buffer);
 void gui_bineditor_set_properties(GuiBineditor *be, GuiBineditorProperties prop);
 void gui_bineditor_set_colors(GuiBineditor *be, GuiBineditorColors color, float r, float g, float b);
+void gui_bineditor_redraw(GuiBineditor *be);
 void gui_bineditor_connect_statusbar(GuiBineditor *be, GtkWidget *sb);
 GtkType gui_bineditor_get_type(void);
 
