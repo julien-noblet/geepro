@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2007 Bartłomiej Zimoń
  * Email: uzi18 (at) o2 (dot) pl
@@ -28,17 +28,23 @@
 
 MODULE_IMPLEMENTATION
 
-#define C01_SIZE 1024
-#define C02_SIZE 2048
-#define C04_SIZE 4096
-#define C08_SIZE 8192
-#define C16_SIZE 16384
+#define C01_SIZE 128
+#define C02_SIZE 256
+#define C04_SIZE 512
+#define C08_SIZE 1024
+#define C16_SIZE 2048
 
 #define C01_BLOCK 8
 #define C02_BLOCK 8
 #define C04_BLOCK 16
 #define C08_BLOCK 16
 #define C16_BLOCK 16
+
+#define C01_ADDR_BYTES 1
+#define C02_ADDR_BYTES 1
+#define C04_ADDR_BYTES 2
+#define C08_ADDR_BYTES 2
+#define C16_ADDR_BYTES 2
 
 #define TI 16
 
@@ -74,7 +80,7 @@ char i2c_putbyte(uchar b)
 {
      int i;
 
-     for (i=7;i>=0;i--)
+     for (i=7; i>=0; i--)
      {
          if ( b & (1<<i) )
              I2C_SDL_HI;
@@ -88,7 +94,6 @@ char i2c_putbyte(uchar b)
      HDEL;
      I2C_SCL_HI;                 // clock back up
      b = hw_get_sda();           // get the ACK bit
-
      HDEL;
      I2C_SCL_LO;                 // not really ??
      HDEL;
@@ -131,45 +136,39 @@ void i2c_init(void)
 }
 
 //! Send a byte sequence on the I2C bus
-void i2c_send(uchar device, uint subaddr, uchar length, char *data)
+void i2c_send(uchar device, uint subaddr, uchar length, char *data, uchar addr_bytes)
 {
-     uchar addr_lo;
-     uchar addr_hi;
+     uint i;
 
-     addr_lo = (uchar) (subaddr & 0x00ff);
-     addr_hi = (uchar) (subaddr >> 8);
-     printf("read %d %d \n", addr_hi,addr_lo);
-     I2C_START;                  // do start transition
-     i2c_putbyte(device & 0xfe); // send DEVICE address
-     i2c_putbyte(addr_hi);       // and the hiaddress
-     i2c_putbyte(addr_lo);       // and the loaddress
+     i = 1000; // timeout value
+     do{
+        I2C_START;                  // do start transition
+     }while( !i2c_putbyte(device & 0xfe) && --i); // send DEVICE address, do it until ACK or timeout
+
+    if(i == 0){
+	printf("write init error\n");
+    }
+
+     for( i = addr_bytes; i; i--)
+	    i2c_putbyte((subaddr >> ((i - 1) * 8)) & 0xff);
 
      // send the data
      while (length--)
-         i2c_putbyte(*data++);
+         i2c_putbyte( *data++ );
 
      I2C_SDL_LO;                 // clear data line and
      I2C_STOP;                   // send STOP transition
 }
 
 //! Retrieve a byte sequence on the I2C bus
-void i2c_receive(uchar device, uint subaddr, uchar length, char *data)
+void i2c_receive(uchar device, uint subaddr, uchar length, char *data, uchar addr_bytes)
 {
-     uint j = length;
-     //int i;
-     char *p = data;
-     uchar addr_lo;
-     uchar addr_hi;
-     addr_lo= (uchar) (subaddr & 0x00ff);
-     addr_hi= (uchar) (subaddr >> 8);
-     printf("read %d %d \n", addr_hi,addr_lo);
-     //gui_progress_bar_init("Odczyt pamieci",length);
+     uint i;
 
-
-     I2C_START;                  // do start transition
+     I2C_START;                   // do start transition
      i2c_putbyte(device);         // send DEVICE address
-     i2c_putbyte(addr_hi);        // and the hiaddress
-     i2c_putbyte(addr_lo);        // and the loaddress
+     for( i = addr_bytes; i; i--)
+	    i2c_putbyte((subaddr >> ((i - 1) * 8)) & 0xff);
      HDEL;
      I2C_SCL_HI;                 // do a repeated START
      I2C_START;                  // transition
@@ -177,41 +176,32 @@ void i2c_receive(uchar device, uint subaddr, uchar length, char *data)
      i2c_putbyte(device | 0x01);  // resend DEVICE, with READ bit set
 
      // receive data bytes
-     while (j--){
-         *p++ = i2c_getbyte(j == 0);
-         //gui_progress_bar_set(i++);
-     }
-
-     //gui_progress_bar_free();
+     while (length--)
+         *data++ = i2c_getbyte(length == 0);
 
      I2C_SDL_LO;                 // clear data line and
      I2C_STOP;                   // send STOP transition
 }
 
 /**************************************************************************************************/
-void read_24xx(uint dev_size, uchar block_size)
+void read_24xx(uint dev_size, uchar block_size, uchar addr_bytes)
 {
 
     uint i;
-    //unsigned int d;
 
     char *buf = buffer_get_buffer_ptr(___geep___);
 
     hw_sw_vcc(1);
     i2c_init();
     hw_delay(5*TI);
-    //for(i = 0; i < dev_size; i+=block_size){
-    //i2c_receive(160 ,0 , dev_size, buf);
-    for(i = 0; i < dev_size; i+=block_size,buf+=block_size){
-        i2c_receive(160, i , block_size, buf);
-        //gui_progress_bar_set(i);
+
+    progress_loop(i, dev_size / block_size, "Reading ..."){
+        i2c_receive(0xa0, i * block_size ,block_size, buf, addr_bytes);
+        buf += block_size;
     }
 
-
     finish_action();
-    hw_sw_vcc(0);
 }
-
 
 void erase_24xx(uint dev_size, uchar block_size)
 {
@@ -220,7 +210,7 @@ void erase_24xx(uint dev_size, uchar block_size)
 	hw_set_sda(0);
 }
 
-void prog_24xx(uint dev_size, uchar block_size)
+void prog_24xx(uint dev_size, uchar block_size, uchar addr_bytes)
 {
     uint i;
     char *buf = buffer_get_buffer_ptr(___geep___);
@@ -228,18 +218,13 @@ void prog_24xx(uint dev_size, uchar block_size)
     hw_sw_vcc(1);
     i2c_init();
     hw_delay(5*TI);
-    //gui_progress_bar_init("Programowanie pamieci",dev_size);
 
-    for(i = 0; i < dev_size; i+=block_size){
-        i2c_send(160,i , block_size, buf);
-        //gui_progress_bar_set(i);
+    progress_loop(i, dev_size / block_size, "Writing ..."){
+        i2c_send(0xa0, i * block_size , block_size, buf, addr_bytes);
+        buf += block_size;
     }
 
-    gui_progress_bar_free(___geep___);
     finish_action();
-    hw_sw_vcc(0);
-
-
 }
 
 
@@ -248,11 +233,11 @@ REG_FUNC_BEGIN(erase_24C01)
 REG_FUNC_END
 
 REG_FUNC_BEGIN(prog_24C01)
-	prog_24xx(C01_SIZE,C01_BLOCK);
+	prog_24xx(C01_SIZE,C01_BLOCK,C01_ADDR_BYTES);
 REG_FUNC_END
 
 REG_FUNC_BEGIN(read_24C01)
-	read_24xx(C01_SIZE,C01_BLOCK);
+	read_24xx(C01_SIZE,C01_BLOCK,C01_ADDR_BYTES);
 REG_FUNC_END
 
 
@@ -261,11 +246,11 @@ REG_FUNC_BEGIN(erase_24C02)
 REG_FUNC_END
 
 REG_FUNC_BEGIN(prog_24C02)
-	prog_24xx(C02_SIZE,C02_BLOCK);
+	prog_24xx(C02_SIZE,C02_BLOCK,C02_ADDR_BYTES);
 REG_FUNC_END
 
 REG_FUNC_BEGIN(read_24C02)
-	read_24xx(C02_SIZE,C02_BLOCK);
+	read_24xx(C02_SIZE,C02_BLOCK,C02_ADDR_BYTES);
 REG_FUNC_END
 
 
@@ -274,11 +259,11 @@ REG_FUNC_BEGIN(erase_24C04)
 REG_FUNC_END
 
 REG_FUNC_BEGIN(prog_24C04)
-	prog_24xx(C04_SIZE,C04_BLOCK);
+	prog_24xx(C04_SIZE,C04_BLOCK,C04_ADDR_BYTES);
 REG_FUNC_END
 
 REG_FUNC_BEGIN(read_24C04)
-	read_24xx(C04_SIZE,C04_BLOCK);
+	read_24xx(C04_SIZE,C04_BLOCK,C04_ADDR_BYTES);
 REG_FUNC_END
 
 
@@ -287,11 +272,11 @@ REG_FUNC_BEGIN(erase_24C08)
 REG_FUNC_END
 
 REG_FUNC_BEGIN(prog_24C08)
-	prog_24xx(C08_SIZE,C08_BLOCK);
+	prog_24xx(C08_SIZE,C08_BLOCK,C08_ADDR_BYTES);
 REG_FUNC_END
 
 REG_FUNC_BEGIN(read_24C08)
-	read_24xx(C08_SIZE,C08_BLOCK);
+	read_24xx(C08_SIZE,C08_BLOCK,C08_ADDR_BYTES);
 REG_FUNC_END
 
 
@@ -300,11 +285,11 @@ REG_FUNC_BEGIN(erase_24C16)
 REG_FUNC_END
 
 REG_FUNC_BEGIN(prog_24C16)
-	prog_24xx(C16_SIZE,C16_BLOCK);
+	prog_24xx(C16_SIZE,C16_BLOCK,C16_ADDR_BYTES);
 REG_FUNC_END
 
 REG_FUNC_BEGIN(read_24C16)
-	read_24xx(C16_SIZE,C16_BLOCK);
+	read_24xx(C16_SIZE,C16_BLOCK,C16_ADDR_BYTES);
 REG_FUNC_END
 
 

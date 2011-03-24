@@ -1,4 +1,4 @@
-/* $Revision: 1.20 $ */
+/* $Revision: 1.21 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -239,10 +239,10 @@ static void gui_save_file(GtkWidget *w, geepro *gep)
 static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 {
     int x;
-    
+    geepro *gep = (geepro*)(ga->root);
     if(!ga->action){
 	gui_dialog_box(
-	    (geepro*)(ga->root), 
+	    gep, 
 	    "[ER][TEXT]"
 	    "Plugin internal error. Action button registered, but action function = NULL."
 	    "[/TEXT][BR] OK "
@@ -252,7 +252,7 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 
     if((x = ((chip_act_func)ga->action)(ga->root)))
 	gui_dialog_box(
-	    (geepro*)(ga->root), 
+	    gep, 
 	    "[ER][TEXT]"
 	    "Error ocured during performing action.\n Returned error: %i"
 	    "[/TEXT][BR] OK ", 
@@ -260,11 +260,12 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 	);
     else 
 	gui_dialog_box(
-	    (geepro*)(ga->root), 
+	    gep, 
 	    "[IF][TEXT]"
 	    "Succesfully performed action."
 	    "[/TEXT][BR] OK "
 	);
+    gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
 }
 
 static int gui_add_bt_action(geepro *gep, const char *stock_name, const char *tip, chip_act_func action)

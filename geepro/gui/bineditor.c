@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* binary editor
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -791,7 +791,7 @@ static void gui_bineditor_editor(GuiBineditor *be, int addr)
     g_return_if_fail(be->buffer != NULL);
     g_return_if_fail(be->buffer_size != 0);
     g_return_if_fail(addr < be->buffer_size);    
-
+/*
     dlg = gtk_dialog_new_with_buttons("Edit cell", GTK_WINDOW(be->wmain), GTK_DIALOG_MODAL, 
 	GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
 	GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT, NULL
@@ -817,6 +817,8 @@ static void gui_bineditor_editor(GuiBineditor *be, int addr)
 	if(len) gui_bineditor_emit_signal(be);
     }
     gtk_widget_destroy(dlg);
+*/
+
 }
 
 /******************************************************************************************************************/
@@ -1002,12 +1004,12 @@ static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBinedito
     address = gui_bineditor_get_grid_addr(be, ev->x, ev->y);
     if(address < 0) return;
 
-    if(ev->button == 1){
+    if(ev->button == 3){
 	be->address_mark = address;
         gtk_widget_queue_draw(be->drawing_area);
 	return;
     }
-    if(ev->button != 3) return;
+    if(ev->button != 1) return;
 
     gui_bineditor_editor(be, address);
     gtk_widget_queue_draw(be->drawing_area);
@@ -1223,7 +1225,6 @@ static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, 
 static gboolean gui_bineditor_expose(GtkWidget *wg, GdkEventExpose *ev, GuiBineditor *be)
 {
     cairo_t  *cr;
-
     cr = gdk_cairo_create(wg->window);
 //    if(!be->rfsh){}
     cairo_rectangle(cr, ev->area.x, ev->area.y, ev->area.width, ev->area.height);
@@ -1293,7 +1294,7 @@ static void gui_bineditor_init(GuiBineditor *be)
 	NULL, wg1, GTK_SIGNAL_FUNC(gui_bineditor_find_string), be);
 
     /* Suma kontrolna */
-    wg1 = gtk_image_new_from_stock(GTK_STOCK_SPELL_CHECK, GTK_ICON_SIZE_SMALL_TOOLBAR);
+    wg1 = gtk_image_new_from_stock(GTK_STOCK_DIALOG_AUTHENTICATION, GTK_ICON_SIZE_SMALL_TOOLBAR);
     be->chksum = gtk_toolbar_append_item(GTK_TOOLBAR(be->tb), NULL, "Calculate & insert checksum", 
 	NULL, wg1, GTK_SIGNAL_FUNC(gui_bineditor_checksum), be);
 
@@ -1433,3 +1434,7 @@ void gui_bineditor_connect_statusbar(GuiBineditor *be, GtkWidget *sb)
     be->statusbar_id = gtk_statusbar_get_context_id(GTK_STATUSBAR(sb), "bineditor_statusbar");
 }
 
+void gui_bineditor_redraw(GuiBineditor *be)
+{
+    gtk_widget_queue_draw(be->wmain);
+}
