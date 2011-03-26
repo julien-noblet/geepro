@@ -1,4 +1,4 @@
-/* $Revision: 1.5 $ */
+/* $Revision: 1.6 $ */
 /* binary editor
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -300,19 +300,19 @@ static void gui_bineditor_checksum(GtkWidget *wg, GuiBineditor *be)
     gtk_misc_set_alignment(GTK_MISC(wg0), 0, 0.5);
     gtk_table_attach(GTK_TABLE(tab), wg0, 3,4, 1,2, GTK_FILL,0, 0,10);
 
-    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,1);
+    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,0);
     wg0 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(tab), wg0, 1,2, 0,1, GTK_FILL | GTK_EXPAND,0, 0,10);
     wgg[CHKSUM_START] = wg0;
-    adj = gtk_adjustment_new(be->buffer_size, 0, be->buffer_size, 1,1,1);
+    adj = gtk_adjustment_new(be->buffer_size, 0, be->buffer_size, 1,1,0);
     wg0 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(tab), wg0, 1,2, 1,2, GTK_FILL | GTK_EXPAND,0, 0,10);
     wgg[CHKSUM_STOP] = wg0;
-    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,1);
+    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,0);
     wg0 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(tab), wg0, 4,5, 0,1, GTK_FILL | GTK_EXPAND,0, 0,10);
     wgg[CHKSUM_START_SK] = wg0;
-    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,1);
+    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,0);
     wg0 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(tab), wg0, 4,5, 1,2, GTK_FILL | GTK_EXPAND,0, 0,10);
     wgg[CHKSUM_STOP_SK] = wg0;
@@ -321,7 +321,7 @@ static void gui_bineditor_checksum(GtkWidget *wg, GuiBineditor *be)
     gtk_table_attach(GTK_TABLE(tab), wg0, 0,2, 2,3, GTK_FILL | GTK_EXPAND,0, 0,10);
     wgg[CHKSUM_ADDR_CB] = wg0;    
     gtk_signal_connect(GTK_OBJECT(wg0),"toggled", GTK_SIGNAL_FUNC(gui_bineditor_chksum_chkbox), wgg);
-    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,1);
+    adj = gtk_adjustment_new(0, 0, be->buffer_size, 1,1,0);
     wg0 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(tab), wg0, 2,3, 2,3, GTK_FILL | GTK_EXPAND,0, 0,10);
     gtk_widget_set_sensitive(wg0, FALSE);
