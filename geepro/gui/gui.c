@@ -1,4 +1,4 @@
-/* $Revision: 1.21 $ */
+/* $Revision: 1.22 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -803,7 +803,7 @@ void gui_menu_setup(geepro *gep)
 /* ======================================= */
     wg1 = GUI(gep->gui)->notebook;
     wg0 = gui_bineditor_new(GUI(gep->gui)->wmain);
-    gui_bineditor_connect_statusbar(GUI_BINEDITOR(wg0), GUI(gep->gui)->status_bar);
+//    gui_bineditor_connect_statusbar(GUI_BINEDITOR(wg0), GUI(gep->gui)->status_bar);
     wg3 = gtk_label_new(TXT_BUFFER);
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg3);
     GUI(gep->gui)->bineditor = wg0;
