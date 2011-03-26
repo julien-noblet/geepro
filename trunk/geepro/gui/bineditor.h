@@ -1,4 +1,4 @@
-/* $Revision: 1.2 $ */
+/* $Revision: 1.3 $ */
 /* hex, binary viewer, editor, kontrolka GTK
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -85,6 +85,9 @@ struct _GuiBineditor
     int grid_cols;
     int grid_rows;
     int grid_top;
+    int ascii_start;
+    int ascii_end;
+    int ascii_space;
     int address_mark;
     int address_mark_redo;
     int address_old_hint;    
@@ -99,8 +102,17 @@ struct _GuiBineditor
     GtkWidget *chksum;
     GtkWidget *calc;
     GtkWidget *statusbar;
+    char clear_sens;
+    char print_sens;
+    char find_sens;
+    char mjmp_sens;
+    char rjmp_sens;
+    char chksum_sens;
     int statusbar_id;
-
+    /* hex editor */
+    char edit_hex;		  // flag: bit0 -> hex grid, bit 1 -> ascii grid
+    unsigned int edit_hex_start;  // initial address
+    int edit_hex_cursor; // cursor position in hex grid
     /* <public> */
     GtkAdjustment  *adj;
     int buffer_size;
