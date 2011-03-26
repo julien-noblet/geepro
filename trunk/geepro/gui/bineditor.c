@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* binary editor
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -1021,6 +1021,24 @@ static void gui_bineditor_exit_edit(GuiBineditor *be)
     gtk_widget_set_sensitive(be->chksum, be->chksum_sens);
 }
 
+static void gui_bineditor_off_edit(GuiBineditor *be)
+{
+    be->clear_sens = gtk_widget_get_sensitive(be->clear);
+    gtk_widget_set_sensitive(be->clear, 0);
+    be->mjmp_sens = gtk_widget_get_sensitive(be->mjmp);
+    gtk_widget_set_sensitive(be->mjmp, 0);
+    be->rjmp_sens = gtk_widget_get_sensitive(be->rjmp);
+    gtk_widget_set_sensitive(be->rjmp, 0);
+    be->find_sens = gtk_widget_get_sensitive(be->find);
+    gtk_widget_set_sensitive(be->find, 0);
+#ifndef NO_PRINTER_SUPPORT
+    be->print_sens = gtk_widget_get_sensitive(be->print);
+    gtk_widget_set_sensitive(be->print, 0);
+#endif
+    be->chksum_sens = gtk_widget_get_sensitive(be->chksum);
+    gtk_widget_set_sensitive(be->chksum, 0);
+}
+
 static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBineditor *be)
 {
     int address;
@@ -1045,20 +1063,7 @@ static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBinedito
 	    be->edit_hex_cursor = 0;
 	    be->address_hl_start = address;
 	    be->address_hl_end = address;
-	    be->clear_sens = gtk_widget_get_sensitive(be->clear);
-	    gtk_widget_set_sensitive(be->clear, 0);
-	    be->mjmp_sens = gtk_widget_get_sensitive(be->mjmp);
-	    gtk_widget_set_sensitive(be->mjmp, 0);
-	    be->rjmp_sens = gtk_widget_get_sensitive(be->rjmp);
-	    gtk_widget_set_sensitive(be->rjmp, 0);
-	    be->find_sens = gtk_widget_get_sensitive(be->find);
-	    gtk_widget_set_sensitive(be->find, 0);
-#ifndef NO_PRINTER_SUPPORT
-	    be->print_sens = gtk_widget_get_sensitive(be->print);
-	    gtk_widget_set_sensitive(be->print, 0);
-#endif
-	    be->chksum_sens = gtk_widget_get_sensitive(be->chksum);
-	    gtk_widget_set_sensitive(be->chksum, 0);
+	    gui_bineditor_off_edit( be );
 	} else {
 	    gui_bineditor_exit_edit( be );
 	}
@@ -1087,11 +1092,18 @@ static void gui_bineditor_hint(GtkWidget *wg, GdkEventMotion *ev, GuiBineditor *
     }
     be->address_old_hint = address;
     offs = address - be->address_mark;
-    gui_bineditor_statusbar(be, tmp, " Address: 0x%x;   Data hex: 0x%x   Data dec: %i  Data ASCII: '%c'  |"
-    " Mark address: 0x%x  Mark offset hex: %c0x%x, dec: %i",
-	address, data, data, ((data > 0x1f) && (data < 0x80)) ? data : '.',
-	be->address_mark, offs < 0 ? '-':' ', abs(offs), offs
-    );
+//    gui_bineditor_statusbar(be, tmp, " Address: 0x%x;   Data hex: 0x%x   Data dec: %i  Data ASCII: '%c'  |"
+//    " Mark address: 0x%x  Mark offset hex: %c0x%x, dec: %i",
+//	address, data, data, ((data > 0x1f) && (data < 0x80)) ? data : '.',
+//	be->address_mark, offs < 0 ? '-':' ', abs(offs), offs
+//    );
+
+    sprintf(tmp, " %x:%x(%i) ", address, data & 0xff, data & 0xff);
+    gtk_label_set_text(GTK_LABEL(be->info_addr), tmp);
+
+    sprintf(tmp, " %x:%c%x(%i) ", be->address_mark, offs < 0 ? '-':' ',abs(offs), offs );
+    gtk_label_set_text(GTK_LABEL(be->info_mark), tmp);
+
 }
 
 static void gui_bineditor_leave(GtkWidget *wg, GdkEventCrossing *ev, GuiBineditor *be)
@@ -1449,9 +1461,24 @@ static void gui_bineditor_keystroke(GtkWidget *wg, GdkEventKey *ev, GuiBineditor
 
 static void gui_bineditor_focus_out(GtkWidget *wg, GdkEventKey *ev, GuiBineditor *be)
 {
-    gui_bineditor_exit_edit( be );
     be->edit_hex = 0; 
     be->address_hl_end = be->address_hl_start = -1;
+    gui_bineditor_exit_edit( be );
+}
+
+static void gui_bineditor_focus_in(GtkWidget *wg, GdkEventKey *ev, GuiBineditor *be)
+{
+    be->edit_hex = 0; 
+    be->address_hl_end = be->address_hl_start = -1;
+
+    gtk_widget_set_sensitive(be->clear, TRUE);
+    gtk_widget_set_sensitive(be->mjmp,  TRUE);
+    gtk_widget_set_sensitive(be->find,  TRUE);
+#ifndef NO_PRINTER_SUPPORT
+    gtk_widget_set_sensitive(be->print,  TRUE);
+#endif
+    gtk_widget_set_sensitive(be->rjmp,  FALSE);
+    gtk_widget_set_sensitive(be->chksum, TRUE);    
 }
 
 static void gui_bineditor_init(GuiBineditor *be)
@@ -1536,9 +1563,26 @@ static void gui_bineditor_init(GuiBineditor *be)
     gtk_widget_set_sensitive(be->rjmp, FALSE);
     gtk_widget_set_sensitive(be->chksum, FALSE);    
 
+    /* info fields */
+    wg1 = gtk_hbox_new(FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(be), wg1, FALSE, FALSE, 0);
+    be->info_addr = gtk_label_new("0000:00");
+    wg2 = gtk_frame_new(NULL);
+    gtk_widget_set_size_request( wg2, 120, 20);
+    gtk_frame_set_shadow_type(GTK_FRAME(wg2), GTK_SHADOW_IN);
+    gtk_container_add(GTK_CONTAINER(wg2), be->info_addr);
+    gtk_box_pack_start(GTK_BOX(wg1), wg2, FALSE, FALSE, 0);
+    be->info_mark = gtk_label_new("0000:00");
+    wg2 = gtk_frame_new(NULL);
+    gtk_widget_set_size_request( wg2, 120, 20);
+    gtk_container_add(GTK_CONTAINER(wg2), be->info_mark);
+    gtk_frame_set_shadow_type(GTK_FRAME(wg2), GTK_SHADOW_IN);
+    gtk_box_pack_start(GTK_BOX(wg1), wg2, FALSE, FALSE, 0);
+
 /* utworzenie wklesnietego pola na pole rysunkowe CAIRO i suwak*/
     wg0 = gtk_frame_new(NULL);    
     gtk_frame_set_shadow_type(GTK_FRAME(wg0), GTK_SHADOW_IN);
+
     wg1 = gtk_hbox_new(FALSE, 0);
     gtk_container_add(GTK_CONTAINER(wg0), wg1);
     gtk_container_add(GTK_CONTAINER(be), wg0);    
@@ -1566,7 +1610,7 @@ static void gui_bineditor_init(GuiBineditor *be)
     gtk_signal_connect(GTK_OBJECT(be->drawing_area),"enter_notify_event",GTK_SIGNAL_FUNC(gui_bineditor_enter), be);
     gtk_signal_connect(GTK_OBJECT(be->drawing_area),"key_press_event",GTK_SIGNAL_FUNC(gui_bineditor_keystroke), be);
     gtk_signal_connect(GTK_OBJECT(be->drawing_area),"focus_out_event",GTK_SIGNAL_FUNC(gui_bineditor_focus_out), be);
-
+    gtk_signal_connect(GTK_OBJECT(be->drawing_area),"focus_in_event",GTK_SIGNAL_FUNC(gui_bineditor_focus_in), be);
     gtk_box_pack_end(GTK_BOX(wg1), be->drawing_area, TRUE, TRUE, 1);
     gtk_widget_show_all(wg0);
 }
