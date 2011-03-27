@@ -1,4 +1,4 @@
-## $Revision: 1.5 $
+## $Revision: 1.6 $
 
 progname=geepro
 
@@ -10,12 +10,17 @@ statlibs= libgui.a
 
 objs=files.o buffer.o chip.o dummy.o iface.o timer.o parport.o main.o storings.o
 objs_lok= ./src/files.o ./src/buffer.o ./src/chip.o ./src/dummy.o ./src/iface.o ./src/timer.o ./src/parport.o ./src/main.o ./src/storings.o
-
 MAKE_EXT= make -C
+
+UDEV_RULE= "KERNEL==\\\"parport[0-9]*\\\", GROUP=\\\"lp\\\", MODE=\\\"0666\\\""
+TARGET_RULE = /etc/udev/rules.d/10-local.rules
+TMP_FILE = _rule_
+
 
 .PHONY: clean
 .PHONY: install
 .PHONY: dist
+.PHONY: parport_udev_rule
 
 ALL: lang.h $(progname) documentation
 
@@ -60,7 +65,6 @@ main.o:
 storings.o:
 	$(MAKE_EXT) ./src storings.o
 
-
 libgui.a:
 	$(MAKE_EXT) ./gui
 
@@ -86,3 +90,10 @@ install:
 dist:
 	echo "No dist package build implemented yet"
 
+parport_udev_rule:
+	echo "echo \"$(UDEV_RULE)\" >> $(TARGET_RULE)" > /tmp/$(TMP_FILE)
+	chmod +x /tmp/$(TMP_FILE)
+	sudo sh /tmp/$(TMP_FILE)
+	sudo udevadm control --reload-rules
+	sudo udevadm trigger
+	rm /tmp/$(TMP_FILE)
