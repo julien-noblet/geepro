@@ -1,4 +1,4 @@
-/* $Revision: 1.6 $ */
+/* $Revision: 1.7 $ */
 /* binary editor
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -927,7 +927,7 @@ static void gui_bineditor_clear_buffer(GtkWidget *bt, GuiBineditor *be)
     gtk_signal_connect(GTK_OBJECT(wg2), "changed", GTK_SIGNAL_FUNC(gui_bineditor_clear_clc), wgg);
     wgg[0] = wg2;
 
-    adj = gtk_adjustment_new(be->buffer_size, 0, be->buffer_size, 1,1,0);
+    adj = gtk_adjustment_new((be->buffer_size != 0) ? (be->buffer_size - 1) : 0, 0,(be->buffer_size != 0) ? (be->buffer_size - 1) : 0 , 1,1,0);
     wg2 = gtk_spin_button_new(GTK_ADJUSTMENT(adj), 1, 0);
     gtk_table_attach(GTK_TABLE(wg1), wg2, 1,3, 1,2, GTK_FILL | GTK_EXPAND, 0,0,0);
     gtk_signal_connect(GTK_OBJECT(wg2), "changed", GTK_SIGNAL_FUNC(gui_bineditor_clear_clc), wgg);
