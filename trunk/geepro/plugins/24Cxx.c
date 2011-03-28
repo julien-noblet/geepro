@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2007 Bartłomiej Zimoń
  * Email: uzi18 (at) o2 (dot) pl
@@ -264,16 +264,15 @@ void devsel_24Cxx( char rw )
 
 void read_24Cxx(uint dev_size, uchar block_size, uchar addr_bytes)
 {
-    uint i;//, j;
-//    char b;
+    uint i, j;
 
-//    TEST_CONNECTION( VOID );
-//    i2c_init();
-//    progress_loop(i, dev_size / block_size, "Reading ..."){
-//        break_if( i2c_receive(MEMO_24CXX_DEV_ADDR, i * block_size ,block_size, addr_bytes) );
-//    }
-//    finish_action();
-
+    TEST_CONNECTION( VOID );
+    i2c_init();
+    progress_loop(i, dev_size / block_size, "Reading ..."){
+        break_if( i2c_receive(MEMO_24CXX_DEV_ADDR, i * block_size ,block_size, addr_bytes) );
+    }
+    finish_action();
+/*
     init_i2c();
     start_i2c();
     devsel_24Cxx( 0 );
@@ -290,6 +289,7 @@ void read_24Cxx(uint dev_size, uchar block_size, uchar addr_bytes)
 	send_bit_i2c( i == (dev_size - 1) ? 1 : 0); // ACK/ noack
     }
     finish_action();
+*/
 }
 
 void write_24Cxx(uint dev_size, uchar block_size, uchar addr_bytes)
