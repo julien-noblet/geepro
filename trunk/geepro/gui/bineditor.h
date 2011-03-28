@@ -1,4 +1,4 @@
-/* $Revision: 1.4 $ */
+/* $Revision: 1.5 $ */
 /* hex, binary viewer, editor, kontrolka GTK
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -70,6 +70,17 @@ struct _GuiBineditor
 {
     /* <private> */
     GtkBox container;
+    /* key values */
+    int key_left;
+    int key_right;
+    int key_up;
+    int key_down;
+    int key_home;
+    int key_end;
+    int key_pgup;
+    int key_pgdn;
+    int key_tab;
+    /* */
     float colors[GUI_BINEDITOR_COLOR_LAST * 3];
     GtkWidget *wmain;
     GtkWidget *drawing_area;

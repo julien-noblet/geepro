@@ -1,4 +1,4 @@
-/* $Revision: 1.7 $ */
+/* $Revision: 1.8 $ */
 /* binary editor
  * Copyright (C) 2007 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -1411,38 +1411,38 @@ static void gui_bineditor_keystroke(GtkWidget *wg, GdkEventKey *ev, GuiBineditor
     
     if( be->edit_hex == 0 ) return; // ignore if edit mode not active
     
-    // cursor
-    switch(key){
-	case GDK_KEY_Left:  gui_bineditor_cursor_decrement( be, 1 ); break;
-	case GDK_KEY_Right: gui_bineditor_cursor_increment( be, 1 ); break;
-	case GDK_KEY_Up:    gui_bineditor_cursor_decrement( be, be->grid_cols ); break;
-	case GDK_KEY_Down:  gui_bineditor_cursor_increment( be, be->grid_cols ); break;
-	case GDK_KEY_Home:  be->edit_hex_cursor = 0;
-			    be->address_hl_start = be->address_hl_end = (be->address_hl_start / be->grid_cols) * be->grid_cols;
-			    break;
-	case GDK_KEY_End:   be->edit_hex_cursor = 0;
-			    be->address_hl_start = ((be->address_hl_start / be->grid_cols) + 1) * be->grid_cols - 1;
-			    if(be->address_hl_start >= be->buffer_size) be->address_hl_start = be->buffer_size - 1;
-			    be->address_hl_end = be->address_hl_start;
-			    break;
-/*
-	case GDK_KEY_Page_Up: be->edit_hex_cursor = 0;
-	                      be->address_hl_start -= be->grid_cols * be->grid_rows;
-	                      if(be->address_hl_start < 0) be->address_hl_start = 0;
-	                      be->address_hl_start = be->address_hl_end = (be->address_hl_start / be->grid_cols) * be->grid_cols;
-	                      break;
-	case GDK_KEY_Page_Down: be->edit_hex_cursor = 0;
-	                        be->address_hl_start += be->grid_cols * be->grid_rows - 1;
-				be->address_hl_start = ((be->address_hl_start / be->grid_cols) + 1) * be->grid_cols - 1;
-				if(be->address_hl_start >= be->buffer_size) be->address_hl_start = be->buffer_size - 1;
-	                        be->address_hl_end = be->address_hl_start;
-	                        break;
-*/
-	case GDK_KEY_Tab:   be->edit_hex ^= 0x03; 
-			    if(be->edit_hex == 2) be->edit_hex_cursor = 0; 
-			    break;
-	default: if((key >= 32) && (key < 128)) gui_bineditor_edit( be, key); break;
+    if(key == be->key_left) gui_bineditor_cursor_decrement( be, 1 ); 
+    if(key == be->key_right) gui_bineditor_cursor_increment( be, 1 ); 
+    if(key == be->key_up) gui_bineditor_cursor_decrement( be, be->grid_cols ); 
+    if(key == be->key_down) gui_bineditor_cursor_increment( be, be->grid_cols ); 
+    if(key == be->key_home){
+	be->edit_hex_cursor = 0;
+	be->address_hl_start = be->address_hl_end = (be->address_hl_start / be->grid_cols) * be->grid_cols;
     }
+    if(key == be->key_end){
+        be->edit_hex_cursor = 0;
+        be->address_hl_start = ((be->address_hl_start / be->grid_cols) + 1) * be->grid_cols - 1;
+        if(be->address_hl_start >= be->buffer_size) be->address_hl_start = be->buffer_size - 1;
+        be->address_hl_end = be->address_hl_start;
+    }
+    if(key == be->key_pgup){	
+//	be->edit_hex_cursor = 0;
+//	be->address_hl_start -= be->grid_cols * be->grid_rows;
+//	if(be->address_hl_start < 0) be->address_hl_start = 0;
+//	be->address_hl_start = be->address_hl_end = (be->address_hl_start / be->grid_cols) * be->grid_cols;
+    }
+    if(key == be->key_pgdn){	
+//	be->edit_hex_cursor = 0;
+//      be->address_hl_start += be->grid_cols * be->grid_rows - 1;
+//	be->address_hl_start = ((be->address_hl_start / be->grid_cols) + 1) * be->grid_cols - 1;
+//	if(be->address_hl_start >= be->buffer_size) be->address_hl_start = be->buffer_size - 1;
+//      be->address_hl_end = be->address_hl_start;
+    }
+    if(key == be->key_tab){	
+        be->edit_hex ^= 0x03; 
+        if(be->edit_hex == 2) be->edit_hex_cursor = 0; 
+    }
+    if((key >= 32) && (key < 128)) gui_bineditor_edit( be, key); 
 
     //scroll if outside grid window
     adj = gtk_adjustment_get_value(be->adj);
@@ -1505,6 +1505,16 @@ static void gui_bineditor_init(GuiBineditor *be)
     be->vfind = NULL;
     be->vreplace = NULL;
     be->rfsh = 0; /* wymus przerysowanie calosci */
+
+    be->key_left = gdk_keyval_from_name("Left");
+    be->key_right = gdk_keyval_from_name("Right");
+    be->key_up = gdk_keyval_from_name("Up");
+    be->key_down = gdk_keyval_from_name("Down");
+    be->key_home = gdk_keyval_from_name("Home");
+    be->key_end = gdk_keyval_from_name("End");
+    be->key_pgup = gdk_keyval_from_name("Page_Up");
+    be->key_pgdn = gdk_keyval_from_name("Page_Down");
+    be->key_tab = gdk_keyval_from_name("Tab");
 
     SET_COLOR(be, GUI_BINEDITOR_COLOR_UD, 1, 0.5, 0.5);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_HL, 0.8, 0.8, 0.8);
@@ -1698,3 +1708,4 @@ void gui_bineditor_redraw(GuiBineditor *be)
 {
     gtk_widget_queue_draw(be->wmain);
 }
+
