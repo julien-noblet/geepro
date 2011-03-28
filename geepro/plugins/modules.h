@@ -1,4 +1,4 @@
-/* $Revision: 1.11 $ */
+/* $Revision: 1.12 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -56,7 +56,7 @@
 	    gui_cmp_pls(___geep___,cn, rounds); cn++, gui_progress_bar_set(___geep___,cn, rounds))
 
 #define break_if( cond )	\
-	if(cond){\
+	if((___error___ = (cond)) != 0){\
 	    progressbar_free();\
 	    break;\
 	}
