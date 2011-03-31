@@ -200,6 +200,12 @@
 
 #define BYTE_POSITION( value, position )	((value) << ( 8 * (position)))
 
+#define KB_SIZE( x )	(1024 * (x))
+#define MB_SIZE( x ) 	(1024 * KB_SIZE(x))
+#define GB_SIZE( x ) 	(1024 * MB_SIZE(x))
+#define TB_SIZE( x ) 	(1024 * GB_SIZE(x))
+#define PB_SIZE( x ) 	(1024 * TB_SIZE(x))
+
 #endif
 
 

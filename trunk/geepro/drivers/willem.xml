@@ -134,6 +134,29 @@
 		</vbox>
 	    </if>
 
+	    <if family="27C400">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_42pin_eprom.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0xab6"/>
+		    </hbox>
+		</vbox>
+	    </if>
+	    <if family="27C322">
+		<description>EPROM</description>
+		<image src="./pixmaps/willem_42pin_eprom.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0xad4"/>
+		    </hbox>
+		</vbox>
+	    </if>
+
+
+
 	    <if family="2864_128">
 		<description>EPROM</description>
 		<image src="./pixmaps/willem_28pin.png"/>
@@ -194,6 +217,9 @@
 		    </hbox>
 		</vbox>
 	    </if>
+
+
+
 
 
 
