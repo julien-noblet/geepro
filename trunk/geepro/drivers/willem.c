@@ -277,6 +277,11 @@ static int willem_set_test_pin(char val)
 static int willem_get_sda_pin(void)
 { return willem_get_do_pin(); }
 
+static int willem_get_scl_pin(void)
+{ 
+    return (willem_get_par_data_pin() >> 1) & 1; // D1 signal
+}
+
 static int willem_set_pragma(int pragma)
 { 
     programmer_mode = pragma;
@@ -497,6 +502,7 @@ int willem_40_hardware_module(int funct, int val, void *ptr)
 	/* Serial I2C jak 24Cxx, PIC */
 	case HW_SET_HOLD: return willem_set_test_pin(val);
 	case HW_SET_SCL:  return willem_set_scl_pin(val);
+	case HW_GET_SCL:  return willem_get_scl_pin();
 	case HW_SET_SDA:  return willem_set_sda_pin(val);
 	case HW_GET_SDA:  return willem_get_sda_pin();
 	case HW_DELAY:	  timer_us_delay(val); break;

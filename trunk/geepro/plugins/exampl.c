@@ -20,76 +20,50 @@
  */
 
 #include "modules.h"
+#define SIZE_DUMMY 16
 
+/* makro for defining internal variables etc */
 MODULE_IMPLEMENTATION
 
-REG_FUNC_BEGIN(ex_read) REG_FUNC_END
-REG_FUNC_BEGIN(ex_verify) REG_FUNC_END
-REG_FUNC_BEGIN(ex_prog) REG_FUNC_END
-REG_FUNC_BEGIN(ex_erase) REG_FUNC_END
-REG_FUNC_BEGIN(signature) REG_FUNC_END
-REG_FUNC_BEGIN(lock_bits) REG_FUNC_END
-REG_FUNC_BEGIN(unlock_bits) REG_FUNC_END
-REG_FUNC_BEGIN(test_chip) REG_FUNC_END
+/* function to handle action */
+void read_exec( /* additional arguments given by REGISTER_FUNCTION */ )
+{
+    int count = 100;
+    int iterator_var; // set to 0 by makro progress_loop()
 
+    TEST_CONNECTION( VOID ); // tests hardware connection, exits if fault
+    
+    progress_loop( iterator_var, count, "Displayed text")
+    {
+//	break_if( condition ); -> break loop, and sets ERROR_VAL = condition, if condition differs 0
+        hw_delay(1000); // delay 1 ms 
+        printf("%i\n", iterator_var);
+    }
+    finish_action();
+}
 
-REG_FUNC_BEGIN(autostart_module)
-/*
-    gui_adv_add_page(___geep___,"Konf_1");
-    gui_adv_option_add(___geep___,FO_RB_FIRST,"aaa", 0, NULL, NULL,FO_H_FIRST);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"bbb", 0, NULL, NULL,FO_H_NEXT);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"aaa", 0, NULL, NULL,FO_H_FIRST);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"bbb", 0, NULL, NULL,FO_H_NEXT);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"bbb", 0, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"aaa", 0, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"bbb", 0, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_ENTRY,"zulu:", 0xaa, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_ENTRY,"zulu:", 0xaa, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_ENTRY,"zulu:", 0xaa, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_CHECK,"eee", 0, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_CHECK,"eee", 0, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_CHECK,"eee", 0, NULL, NULL,0);
+/* Register function section */
+REGISTER_FUNCTION( read, dummy, exec /* some arguments separated by comma You can add here */ );
 
-    gui_adv_add_page(___geep___,"Konf_2");
-    gui_adv_option_add(___geep___,FO_CHECK,"eee", 0, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_CHECK,"eee", 0, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_CHECK,"eee", 0, NULL, NULL,0);
-    gui_adv_option_add(___geep___,FO_RB_FIRST,"aaa", 0, NULL, NULL,FO_H_FIRST);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"bbb", 0, NULL, NULL,FO_H_NEXT);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"aaa", 0, NULL, NULL,FO_H_FIRST);
-    gui_adv_option_add(___geep___,FO_RB_NEXT,"bbb", 0, NULL, NULL,FO_H_NEXT);
-*/
-REG_FUNC_END
-
-
+/* Register chip section */
 REGISTER_MODULE_BEGIN( Example dummy )
 
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/Example/example 1","chip 1", 0, 1024);
-//    INIT_IMAGE_SET_IDX(D_93XX_WILLEM_IMG,D_93XX_PCB3_IMG);
-    D_FUNC_INIT_SET(ex_read, ex_prog, ex_erase, ex_verify);
-    D_XFUNC_INIT_SET(signature,lock_bits,unlock_bits,test_chip);
-    D_REGISTER;
-
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/Example/example 2","chip 1", 1, 2048);
-//    INIT_IMAGE_SET_IDX(D_93XX_WILLEM_IMG,D_93XX_PCB3_IMG);
-    D_FUNC_INIT_SET(ex_read, NULL, ex_erase, NULL);
-    SET_AUTOSTART(autostart_module);
-    D_REGISTER;
-
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/Example/example 1","chip2", 2, 65536);
-//    INIT_IMAGE_SET_IDX(D_2764_WILLEM_IMG,D_2764_PCB3_IMG);
-    D_FUNC_INIT_SET(ex_read, ex_prog, ex_erase, ex_verify);
-    SET_AUTOSTART(autostart_module);
-    D_REGISTER;
-
-    INIT_DEFAULT_SET;
-    D_DATA_INIT_SET("/Example","chip", 0, 256);
-//    INIT_IMAGE_SET_IDX(D_93XX_WILLEM_IMG,D_93XX_PCB3_IMG);
-    D_FUNC_INIT_SET(ex_read, ex_prog, ex_erase, ex_verify);
-    SET_AUTOSTART(autostart_module);
-    D_REGISTER;
+    /* register_chip_begin() - is a makro to provide basic information for chip, and 'instruction' for chip description
+	- "/Example/path" is a path in chip menu
+	- "dummy chip" is a chip name
+	- "family" is an identifier for driver, defined in a driver xml file
+	- SIZE_DUMMY is a size in bytes in buffer creation
+    */
+    register_chip_begin("/Example/path", "dummy chip", "family", SIZE_DUMMY); 
+	/*
+	    add_action() - is a makro that adds action like read, write, verify etc
+	    - MODULE_READ_ACTION is an icon action identifier
+	    - read_dummy is a callback to function created by REGISTER_FUNCTION makro, the name has format: action_chipname
+	*/
+	add_action( MODULE_READ_ACTION, read_dummy ); 
+    /*
+	ends definition for chip
+    */
+    register_chip_end;    
 
 REGISTER_MODULE_END

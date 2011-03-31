@@ -1,9 +1,7 @@
 /* $Revision: 1.5 $ */
 /* geepro - Willem eprom programmer for linux
- * Copyright (C) 2007 Bartłomiej Zimoń
- * Email: uzi18 (at) o2 (dot) pl
- *
- * I2C part is from i2csw.c Pascal Stang (avrlib)
+ * Copyright (C) 2006 Krzysztof Komarnicki
+ * Email: krzkomar@wp.pl
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,164 +31,35 @@ MODULE_IMPLEMENTATION
 #define C04_SIZE 512
 #define C08_SIZE 1024
 #define C16_SIZE 2048
+#define C32_SIZE 4096
+#define C64_SIZE 8192
+#define C128_SIZE 16384
+#define C256_SIZE 32768
+#define C512_SIZE 65536
 
 #define C01_BLOCK 8
 #define C02_BLOCK 8
 #define C04_BLOCK 16
 #define C08_BLOCK 16
 #define C16_BLOCK 16
-
-#define C01_ADDR_BYTES 0
-#define C02_ADDR_BYTES 0
-#define C04_ADDR_BYTES 1
-#define C08_ADDR_BYTES 1
-#define C16_ADDR_BYTES 1
+#define C32_BLOCK 16
+#define C64_BLOCK 16
+#define C128_BLOCK 16
+#define C256_BLOCK 16
+#define C512_BLOCK 16
 
 #define TI 16
 
-#define QDEL  hw_delay(TI/2)
-#define HDEL  hw_delay(TI)
-
-#define I2C_SDA_LO      	hw_set_sda(0)
-#define I2C_SDA_HI      	hw_set_sda(1)
-
-#define I2C_SCL_LO      	hw_set_scl(0)
-#define I2C_SCL_HI      	hw_set_scl(1)
-
-#define I2C_SCL_TOGGLE  	i2c_t();
-#define I2C_START       	i2c_start();
-#define I2C_STOP        	i2c_stop();  
 #define MEMO_24CXX_DEV_ADDR	0xa0
-
-void i2c_t(void)
-{
-    HDEL; I2C_SCL_HI; HDEL; I2C_SCL_LO;
-}
-
-void i2c_init(void)
-{
-    hw_sw_vcc(1);
-    I2C_SDA_HI;
-    I2C_SCL_HI;
-    hw_set_hold(0);
-    hw_delay( 5 * TI );
-}
-
-void i2c_start(void)
-{
-    I2C_SDA_LO; 
-    QDEL; 
-    I2C_SCL_LO; 
-    QDEL; 
-}
-
-void i2c_stop(void)
-{
-    HDEL; 
-    I2C_SCL_HI; 
-    QDEL; 
-    I2C_SDA_HI; 
-    HDEL;
-}
-
-char i2c_putbyte(uchar b)
-{
-    int i;
-
-    for( i = 0x80; i; i >>= 1 )
-    {
-         hw_set_sda( (b & i) != 0 );
-         I2C_SCL_TOGGLE;     // clock HI, delay, then LO
-    }
-    I2C_SDA_HI;                 // leave SDA HI
-    HDEL;
-
-    I2C_SCL_HI;                 // clock back up
-    b = hw_get_sda();           // get the ACK bit
-    HDEL;
-    I2C_SCL_LO;                 // not really ??
-    HDEL;
-    return (b != 0);            // return ACK value
-}
-
-uchar i2c_getbyte(char last)
-{
-    int i;
-    uchar b = 0;
-
-    I2C_SDA_HI;                 // make sure pullups are ativated
-
-    for(i = 0x80; i; i >>= 1)
-    {
-         HDEL;
-         I2C_SCL_HI;             // clock HI
-         b |= hw_get_sda() ? i : 0;
-         HDEL;
-         I2C_SCL_LO;             // clock LO
-    }
-
-    hw_set_sda( last ? 1:0); 	// NAK/ACK
-    I2C_SCL_TOGGLE;             // clock pulse
-
-    I2C_SDA_HI;                 // leave with SDA HI
-    HDEL;
-    return b;                   // return received byte
-}
-
-//! Send a byte sequence on the I2C bus
-char i2c_send(uchar device, uint subaddr, uchar length, uchar addr_bytes)
-{
-    I2C_START;                  // do start transition
-    if(i2c_putbyte(device & 0xfe)) return 1; // send DEVICE address, do it until ACK or timeout
-
-    if( addr_bytes)
-	if( i2c_putbyte((subaddr >> 8) & 0xff ) ) return 2;
-    if( i2c_putbyte(subaddr & 0xff ) ) return 3;
-
-     // send the data
-    while (length--)
-         if( i2c_putbyte( get_buffer( subaddr++ ) ) ) return 4;
-
-    I2C_SDA_LO;                 // clear data line and
-    I2C_STOP;                   // send STOP transition
-
-    return 0;
-}
-
-//! Retrieve a byte sequence on the I2C bus
-char i2c_receive(uchar device, uint subaddr, uchar length, uchar addr_bytes)
-{
-    I2C_START;                  		// do start transition
-    if(i2c_putbyte(device)) return 1;          // send DEVICE address
-
-    if( addr_bytes)
-	if( i2c_putbyte((subaddr >> 8) & 0xff ) ) return 2;
-    if( i2c_putbyte(subaddr & 0xff ) ) return 3;
-
-    HDEL;
-    I2C_SCL_HI;                 // do a repeated START
-    I2C_START;                  // transition
-
-    if( i2c_putbyte(device | 0x01)) return 4;  // resend DEVICE, with READ bit set
-
-     // receive data bytes
-    while (length--)
-         put_buffer( subaddr++ , i2c_getbyte(length == 0) );
-
-    I2C_SDA_LO;                 // clear data line and
-    I2C_STOP;                   // send STOP transition
-    return 0;
-}
-
-/**************************************************************************************************/
 
 void init_i2c()
 {
     hw_set_sda(1);
     hw_set_scl(1);
+    hw_set_hold(0);
     hw_delay( TI );
     hw_sw_vcc(1);
-    hw_delay( 10 * TI );  // time for internal reset
+    hw_delay( 10 * TI );  // time for POR
 }
 
 void scl_tik_i2c()
@@ -204,6 +73,11 @@ void scl_tik_i2c()
 
 void start_i2c()
 {
+    hw_set_sda(1);
+    hw_delay( TI / 2 );    
+    hw_set_scl(1);
+    hw_delay( TI / 2 );    
+
     hw_set_sda(0);
     hw_delay( TI / 2 );
     hw_set_scl(0);
@@ -213,10 +87,11 @@ void start_i2c()
 void stop_i2c()
 {
     hw_set_sda(0);
+    hw_delay( TI );
     hw_set_scl(0);
-    hw_delay( TI / 2 );
+    hw_delay( TI );
     hw_set_scl(1);
-    hw_delay( TI / 2 );
+    hw_delay( TI );
     hw_set_sda(1);
     hw_delay( TI );
 }
@@ -233,18 +108,18 @@ char get_bit_i2c()
     
     hw_set_sda( 1 );
     hw_set_scl(1);    
-    hw_delay( TI / 2 );    
+    hw_delay( TI );    
+
     b = hw_get_sda();
-    hw_delay( TI / 2 );    
+    hw_delay( TI);    
     hw_set_scl(0);
-    
     return b;
 }
 
 void send_byte_i2c( char byte )
 {
     int i;
-    for( i = 0x80; i; i >>= 1 ) send_byte_i2c( (byte & i) ? 1:0 );
+    for( i = 0x80; i; i >>= 1 ) send_bit_i2c( (byte & i) ? 1:0 );
 }
 
 char recv_byte_i2c()
@@ -252,101 +127,276 @@ char recv_byte_i2c()
     int i;
     char b = 0;
 
-    for( i = 8; i; i--, b <<= 1 ) b |= get_bit_i2c();
+    for( i = 8; i; i-- ){
+	b <<= 1;
+	b |= get_bit_i2c();
+    }
 
     return b;
 }
 
-void devsel_24Cxx( char rw )
+#define TIMEOUT	100
+
+char wait_ack_i2c()
 {
-    send_byte_i2c( 0xa0 | (rw & 1) );
+    int i;
+    char b;
+    
+    hw_set_sda( 1 );		// release SDA
+    hw_delay( TI / 2 );    	// wait for stabilize
+    hw_set_scl(1);    		// SCL = 1
+    for( b = 1, i = 0; (i < TIMEOUT) && b; i++){
+	hw_delay( TI / 2 );    	// wait for SDA = 0
+	b = hw_get_sda();
+    }
+    hw_set_scl(0);	
+    return (b != 0) ? 1:0;
 }
 
-void read_24Cxx(uint dev_size, uchar block_size, uchar addr_bytes)
-{
-    uint i, j;
+/***************************************************************************/
 
-    TEST_CONNECTION( VOID );
-    i2c_init();
-    progress_loop(i, dev_size / block_size, "Reading ..."){
-        break_if( i2c_receive(MEMO_24CXX_DEV_ADDR, i * block_size ,block_size, addr_bytes) );
+char devsel_24Cxx( char rw, char addr )
+{
+    send_byte_i2c( 0xa0 | (rw & 1) | ((addr << 1) & 0x0e));
+    if( wait_ack_i2c() ) return 1;
+    return 0;
+}
+
+char transm_seq_hdr_24Cxx(int addr, char mode, char addr_mode) // mode = 0 -> write, mode = 1 -> read
+{
+    unsigned int  msb = (addr >> 8) & 0xff;
+    unsigned char page_nb = addr_mode ? 0 : msb & 0x07;
+    unsigned char addr_byte = addr & 0xff;
+    int timeout;
+
+    // send devsel WRITE
+    timeout = TIMEOUT;
+    do{
+	start_i2c();
+	if(--timeout == 0) return 1;
+    }while(devsel_24Cxx( 0, page_nb ));
+
+    // send address
+    if( addr_mode ){
+	send_byte_i2c( msb );    
+	if( wait_ack_i2c() ) return 2;
     }
-    finish_action();
-/*
+    send_byte_i2c( addr_byte & 0xff);
+    if( wait_ack_i2c() ) return 2;
+
+    if( mode ){ // skip for WRITE
+	// repeated start + send devsel READ
+	start_i2c();
+	if(devsel_24Cxx( 1, page_nb )) return 3;
+    }
+    return 0;
+}
+
+void write_24Cxx(int dev_size, char block_size, char addr_mode)
+{
+    int i;
+    char error;
+    
     init_i2c();
-    start_i2c();
-    devsel_24Cxx( 0 );
-    get_bit_i2c();
-    send_byte_i2c( 0 );
-    get_bit_i2c();
-
-    start_i2c();
-    devsel_24Cxx( 1 );
-    get_bit_i2c();
-        
-    progress_loop(i, dev_size, "Reading ..."){
-	put_buffer( i, recv_byte_i2c() );
-	send_bit_i2c( i == (dev_size - 1) ? 1 : 0); // ACK/ noack
+    progress_loop(i, dev_size, "Writing ..."){
+	break_if( (error = transm_seq_hdr_24Cxx( i, 0, addr_mode)) );
+	send_byte_i2c( get_buffer( i ) );
+	break_if( wait_ack_i2c() );
+	stop_i2c();
     }
     finish_action();
-*/
 }
 
-void write_24Cxx(uint dev_size, uchar block_size, uchar addr_bytes)
+void write_PCF_8582_(int dev_size, char block_size, char addr_mode)
 {
-    uint i;
-
-    TEST_CONNECTION( VOID );
-
-    i2c_init();
-    progress_loop(i, dev_size / block_size, "Writing ..."){
-        break_if( i2c_send(MEMO_24CXX_DEV_ADDR, i * block_size , block_size, addr_bytes) );
+    int i;
+//    char error;
+    
+    init_i2c();
+    progress_loop(i, dev_size, "Writing ..."){
+//	break_if( (error = transm_seq_hdr_24Cxx( i, 0, addr_mode)) );
+//	send_byte_i2c( get_buffer( i ) );
+//	break_if( wait_ack_i2c() );
+//	stop_i2c();
     }
     finish_action();
+}
+
+char rd_block_24Cxx(int addr, int block_size, char addr_mode)
+{
+    int i;
+    char error;
+
+    if( (error = transm_seq_hdr_24Cxx( addr, 1, addr_mode)) ) return error;
+    
+    for( i = 0; i < block_size; i++){
+	put_buffer( addr + i, recv_byte_i2c() );
+	send_bit_i2c( i == (block_size - 1) ? 1 : 0); // NOACK / ACK
+    }
+    stop_i2c();
+    return 0;
+}
+
+char verify_block_24Cxx(int addr, int block_size, char addr_mode, int *it)
+{
+    unsigned char error, d0, d1;
+    int i;
+
+    if( (error = transm_seq_hdr_24Cxx( addr, 1, addr_mode)) ) return error;
+    
+    for( i = 0; i < block_size; i++){
+	d0 = get_buffer( addr + i);
+	d1 = recv_byte_i2c();
+	break_if( d0 != d1 );
+	send_bit_i2c( i == (block_size - 1) ? 1 : 0); // NOACK / ACK
+    }
+    stop_i2c();
+    *it = i;
+    return ERROR_VAL;
+}
+
+void read_24Cxx(unsigned int dev_size, unsigned char block_size, char addr_mode)
+{
+    int i;
+
+    init_i2c();
+    progress_loop(i, dev_size / block_size, "Reading ..."){
+	break_if( rd_block_24Cxx(i * block_size, block_size, addr_mode));
+    }
+    finish_action();
+}
+
+void verify_24Cxx(unsigned int dev_size, unsigned char block_size, char addr_mode)
+{
+    int i,j;
+    char text[256];
+
+    init_i2c();
+    progress_loop(i, dev_size / block_size, "Verify ..."){
+	break_if( verify_block_24Cxx(i * block_size, block_size, addr_mode, &j));
+    }
+    finish_action();
+
+    text[0] = 0;
+    if( ERROR_VAL ){
+	sprintf(text, "[WN][TEXT] Memory and buffer differ !!!\n Address = 0x%X[/TEXT][BR]OK", j + i * block_size );
+    }
+    show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory and buffer are consitent[/TEXT][BR]OK", NULL, NULL);    
+    ERROR_VAL = 0;
 }
 
 /**********************************************************************************************/
 
-REGISTER_FUNCTION( read,  24C01, 24Cxx, C01_SIZE, C01_BLOCK, C01_ADDR_BYTES);
-REGISTER_FUNCTION( write, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, C01_ADDR_BYTES);
+REGISTER_FUNCTION( read,  24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
+REGISTER_FUNCTION( verify, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
 
-REGISTER_FUNCTION( read,  24C02, 24Cxx, C02_SIZE, C02_BLOCK, C02_ADDR_BYTES);
-REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, C02_ADDR_BYTES);
+REGISTER_FUNCTION( read,  24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
+REGISTER_FUNCTION( verify, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 
-REGISTER_FUNCTION( read,  24C04, 24Cxx, C04_SIZE, C04_BLOCK, C04_ADDR_BYTES);
-REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, C04_ADDR_BYTES);
+REGISTER_FUNCTION( read,  PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
+REGISTER_FUNCTION( write, PCF_8582, PCF_8582_, C02_SIZE, C02_BLOCK, 0 );
+REGISTER_FUNCTION( verify, PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 
-REGISTER_FUNCTION( read,  24C08, 24Cxx, C08_SIZE, C08_BLOCK, C08_ADDR_BYTES);
-REGISTER_FUNCTION( write, 24C08, 24Cxx, C08_SIZE, C08_BLOCK, C08_ADDR_BYTES);
+REGISTER_FUNCTION( read,  24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
+REGISTER_FUNCTION( verify, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
 
-REGISTER_FUNCTION( read,  24C16, 24Cxx, C16_SIZE, C16_BLOCK, C16_ADDR_BYTES);
-REGISTER_FUNCTION( write, 24C16, 24Cxx, C16_SIZE, C16_BLOCK, C16_ADDR_BYTES);
+REGISTER_FUNCTION( read,  24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0 );
+REGISTER_FUNCTION( verify, 24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0 );
+
+REGISTER_FUNCTION( read,  24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0 );
+REGISTER_FUNCTION( verify, 24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0 );
+
+REGISTER_FUNCTION( read,  24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1 );
+REGISTER_FUNCTION( write, 24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1  );
+REGISTER_FUNCTION( verify, 24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1  );
+
+REGISTER_FUNCTION( read,  24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1  );
+REGISTER_FUNCTION( verify, 24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1  );
+
+REGISTER_FUNCTION( read,  24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1  );
+REGISTER_FUNCTION( verify, 24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1  );
+
+REGISTER_FUNCTION( read,  24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1  );
+REGISTER_FUNCTION( verify, 24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1  );
+
+REGISTER_FUNCTION( read,  24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1  );
+REGISTER_FUNCTION( verify, 24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1  );
 
 REGISTER_MODULE_BEGIN(24Cxx)
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C01A", "24Cxx", C01_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C01", "24Cxx", C01_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C01);
 	add_action(MODULE_PROG_ACTION, write_24C01);
+	add_action(MODULE_VERIFY_ACTION, verify_24C01);
     register_chip_end;
     
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C02, PCF8582", "24Cxx", C02_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C02", "24Cxx", C02_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C02);
 	add_action(MODULE_PROG_ACTION, write_24C02);
+	add_action(MODULE_VERIFY_ACTION, verify_24C02);
     register_chip_end;
     
     register_chip_begin("/Serial EEPROM/24Cxx", "24C04", "24Cxx", C04_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C04);
 	add_action(MODULE_PROG_ACTION, write_24C04);
+	add_action(MODULE_VERIFY_ACTION, verify_24C04);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C08A", "24Cxx", C08_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C08", "24Cxx", C08_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C08);
 	add_action(MODULE_PROG_ACTION, write_24C08);
+	add_action(MODULE_VERIFY_ACTION, verify_24C08);
     register_chip_end;
     
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C16A", "24Cxx", C16_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C16", "24Cxx", C16_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C16);
 	add_action(MODULE_PROG_ACTION, write_24C16);
+	add_action(MODULE_VERIFY_ACTION, verify_24C16);
     register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C32", "24Cxx", C32_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C32);
+	add_action(MODULE_PROG_ACTION, write_24C32);
+	add_action(MODULE_VERIFY_ACTION, verify_24C32);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C64", "24Cxx", C64_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C64);
+	add_action(MODULE_PROG_ACTION, write_24C64);
+	add_action(MODULE_VERIFY_ACTION, verify_24C64);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C128", "24Cxx", C128_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C128);
+	add_action(MODULE_PROG_ACTION, write_24C128);
+	add_action(MODULE_VERIFY_ACTION, verify_24C128);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C256", "24Cxx", C256_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C256);
+	add_action(MODULE_PROG_ACTION, write_24C256);
+	add_action(MODULE_VERIFY_ACTION, verify_24C256);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C512", "24Cxx", C512_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C512);
+	add_action(MODULE_PROG_ACTION, write_24C512);
+	add_action(MODULE_VERIFY_ACTION, verify_24C512);
+    register_chip_end;
+
+//    register_chip_begin("/Serial EEPROM/PCF85xx", "PCF8582", "24Cxx", C02_SIZE);
+//	add_action(MODULE_READ_ACTION, read_PCF_8582);
+//	add_action(MODULE_PROG_ACTION, write_PCF_8582);
+//	add_action(MODULE_VERIFY_ACTION, verify_PCF_8582);
+//    register_chip_end;
 
 REGISTER_MODULE_END
