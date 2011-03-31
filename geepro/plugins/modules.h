@@ -142,6 +142,8 @@
 
 #define SET_ERROR	___error___ = -1;	
 
+#define ERROR_VAL	___error___
+
 #define REG_FUNC_END	\
 	___geep___ = ((void*)0);\
 	return ___error___;\

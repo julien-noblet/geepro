@@ -66,7 +66,7 @@
 #define HW_SET_SDA	  1041
 #define HW_GET_SDA        1042
 #define HW_SET_PGM	  1043
-
+#define HW_GET_SCL        1044
 
 /********************************************************************/
 /* błędy */
@@ -120,6 +120,7 @@ extern hw_module_type ___hardware_module___;
 #define hw_set_scl(val)		___hardware_module___( HW_SET_SCL,  val, NULL)
 #define hw_set_sda(val)		___hardware_module___( HW_SET_SDA,  val, NULL)
 #define hw_get_sda()		___hardware_module___( HW_GET_SDA,  0, NULL)
+#define hw_get_scl()		___hardware_module___( HW_GET_SCL,  0, NULL)
 #define hw_sw_dpsw(val)		___hardware_module___( HW_SW_DPSW,  val, NULL)
 
 #endif
