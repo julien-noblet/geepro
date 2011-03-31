@@ -23,16 +23,28 @@
 
 MODULE_IMPLEMENTATION
 
+// 24 pin
 #define SIZE_2716	2048
 #define SIZE_2732	4096
+// 28pin
 #define SIZE_2764	8192
 #define SIZE_27128	16384
 #define SIZE_27256	32768
 #define SIZE_27512	65536
+// 32pin
 #define SIZE_27C010	131072
 #define SIZE_27C020	262144
 #define SIZE_27C040	524288
 #define SIZE_27C080	1048576
+// 40 pin
+
+// 42pin
+#define SIZE_27C400	KB_SIZE( 512 )
+#define SIZE_27C800	MB_SIZE( 1 )
+#define SIZE_27C160	MB_SIZE( 2 )
+#define SIZE_27C322	MB_SIZE( 4 )
+
+
 
 /* 2716 */
 char read_byte_2716( int addr )
@@ -294,6 +306,11 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
     hw_pragma( 0 );
 }
 
+static void read_27C400_( int size ){printf("Dummy -not implemented yet!\n");}
+static void verify_27C400_( int size ){printf("Dummy -not implemented yet!\n");}
+static void test_27C400_( int size ){printf("Dummy -not implemented yet!\n");}
+static void prog_27C400_( int size ){printf("Dummy -not implemented yet!\n");}
+
 /*********************************************************************************************************/
 
 /* 2716 */
@@ -346,6 +363,26 @@ REGISTER_FUNCTION( read,   27C080, 2716_, SIZE_27C080, 0 );
 REGISTER_FUNCTION( verify, 27C080, 2716_, SIZE_27C080, 0 );
 REGISTER_FUNCTION( test,   27C080, 2716_, SIZE_27C080, 0, 0 );
 REGISTER_FUNCTION( prog,   27C080, eprom, SIZE_27C080, 1, 1 );
+/* 27C400 */
+REGISTER_FUNCTION( read,   27C400, 27C400_, SIZE_27C400 );
+REGISTER_FUNCTION( verify, 27C400, 27C400_, SIZE_27C400 );
+REGISTER_FUNCTION( test,   27C400, 27C400_, SIZE_27C400 );
+REGISTER_FUNCTION( prog,   27C400, 27C400_, SIZE_27C400 );
+/* 27C800 */
+REGISTER_FUNCTION( read,   27C800, 27C400_, SIZE_27C800 );
+REGISTER_FUNCTION( verify, 27C800, 27C400_, SIZE_27C800 );
+REGISTER_FUNCTION( test,   27C800, 27C400_, SIZE_27C800 );
+REGISTER_FUNCTION( prog,   27C800, 27C400_, SIZE_27C800 );
+/* 27C160 */
+REGISTER_FUNCTION( read,   27C160, 27C400_, SIZE_27C160 );
+REGISTER_FUNCTION( verify, 27C160, 27C400_, SIZE_27C160 );
+REGISTER_FUNCTION( test,   27C160, 27C400_, SIZE_27C160 );
+REGISTER_FUNCTION( prog,   27C160, 27C400_, SIZE_27C160 );
+/* 27C322 */
+REGISTER_FUNCTION( read,   27C322, 27C400_, SIZE_27C322 );
+REGISTER_FUNCTION( verify, 27C322, 27C400_, SIZE_27C322 );
+REGISTER_FUNCTION( test,   27C322, 27C400_, SIZE_27C322 );
+REGISTER_FUNCTION( prog,   27C322, 27C400_, SIZE_27C322 );
 
 /********************************************************************************************/
 REGISTER_MODULE_BEGIN( 27xx )
@@ -414,4 +451,28 @@ REGISTER_MODULE_BEGIN( 27xx )
     register_chip_end;
 /* 40 PIN 16bit EPROM */
 /* 42 PIN 16bit EPROM */
+    register_chip_begin("/EPROM/42 pin", "27C400", "27C400", SIZE_27C400);
+	add_action(MODULE_READ_ACTION, read_27C400);
+	add_action(MODULE_PROG_ACTION, prog_27C400);
+	add_action(MODULE_VERIFY_ACTION, verify_27C400);
+	add_action(MODULE_TEST_ACTION, test_27C400);
+    register_chip_end;
+    register_chip_begin("/EPROM/42 pin", "27C800", "27C400", SIZE_27C800);
+	add_action(MODULE_READ_ACTION, read_27C800);
+	add_action(MODULE_PROG_ACTION, prog_27C800);
+	add_action(MODULE_VERIFY_ACTION, verify_27C800);
+	add_action(MODULE_TEST_ACTION, test_27C800);
+    register_chip_end;
+    register_chip_begin("/EPROM/42 pin", "27C160", "27C400", SIZE_27C160);
+	add_action(MODULE_READ_ACTION, read_27C160);
+	add_action(MODULE_PROG_ACTION, prog_27C160);
+	add_action(MODULE_VERIFY_ACTION, verify_27C160);
+	add_action(MODULE_TEST_ACTION, test_27C160);
+    register_chip_end;
+    register_chip_begin("/EPROM/42 pin", "27C322", "27C322", SIZE_27C322);
+	add_action(MODULE_READ_ACTION, read_27C322);
+	add_action(MODULE_PROG_ACTION, prog_27C322);
+	add_action(MODULE_VERIFY_ACTION, verify_27C322);
+	add_action(MODULE_TEST_ACTION, test_27C322);
+    register_chip_end;
 REGISTER_MODULE_END
