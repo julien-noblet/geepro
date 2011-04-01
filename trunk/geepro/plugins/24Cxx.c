@@ -21,8 +21,7 @@
 
 #include "modules.h"
 
-#define uint unsigned int
-#define uchar unsigned char
+#define TIMEOUT 100
 
 MODULE_IMPLEMENTATION
 
@@ -51,109 +50,6 @@ MODULE_IMPLEMENTATION
 #define TI 16
 
 #define MEMO_24CXX_DEV_ADDR	0xa0
-
-void init_i2c()
-{
-    hw_set_sda(1);
-    hw_set_scl(1);
-    hw_set_hold(0);
-    hw_delay( TI );
-    hw_sw_vcc(1);
-    hw_delay( 10 * TI );  // time for POR
-}
-
-void scl_tik_i2c()
-{
-    hw_delay( TI / 2 );
-    hw_set_scl(1);
-    hw_delay( TI );
-    hw_set_scl(0);
-    hw_delay( TI / 2 );
-}
-
-void start_i2c()
-{
-    hw_set_sda(1);
-    hw_delay( TI / 2 );    
-    hw_set_scl(1);
-    hw_delay( TI / 2 );    
-
-    hw_set_sda(0);
-    hw_delay( TI / 2 );
-    hw_set_scl(0);
-    hw_delay( TI / 2 );
-}
-
-void stop_i2c()
-{
-    hw_set_sda(0);
-    hw_delay( TI );
-    hw_set_scl(0);
-    hw_delay( TI );
-    hw_set_scl(1);
-    hw_delay( TI );
-    hw_set_sda(1);
-    hw_delay( TI );
-}
-
-void send_bit_i2c( char bit )
-{
-    hw_set_sda(bit);
-    scl_tik_i2c();
-}
-
-char get_bit_i2c()
-{
-    char b;
-    
-    hw_set_sda( 1 );
-    hw_set_scl(1);    
-    hw_delay( TI );    
-
-    b = hw_get_sda();
-    hw_delay( TI);    
-    hw_set_scl(0);
-    return b;
-}
-
-void send_byte_i2c( char byte )
-{
-    int i;
-    for( i = 0x80; i; i >>= 1 ) send_bit_i2c( (byte & i) ? 1:0 );
-}
-
-char recv_byte_i2c()
-{
-    int i;
-    char b = 0;
-
-    for( i = 8; i; i-- ){
-	b <<= 1;
-	b |= get_bit_i2c();
-    }
-
-    return b;
-}
-
-#define TIMEOUT	100
-
-char wait_ack_i2c()
-{
-    int i;
-    char b;
-    
-    hw_set_sda( 1 );		// release SDA
-    hw_delay( TI / 2 );    	// wait for stabilize
-    hw_set_scl(1);    		// SCL = 1
-    for( b = 1, i = 0; (i < TIMEOUT) && b; i++){
-	hw_delay( TI / 2 );    	// wait for SDA = 0
-	b = hw_get_sda();
-    }
-    hw_set_scl(0);	
-    return (b != 0) ? 1:0;
-}
-
-/***************************************************************************/
 
 char devsel_24Cxx( char rw, char addr )
 {
@@ -207,6 +103,7 @@ void write_24Cxx(int dev_size, char block_size, char addr_mode)
     finish_action();
 }
 
+/*
 void write_PCF_8582_(int dev_size, char block_size, char addr_mode)
 {
     int i;
@@ -221,6 +118,7 @@ void write_PCF_8582_(int dev_size, char block_size, char addr_mode)
     }
     finish_action();
 }
+*/
 
 char rd_block_24Cxx(int addr, int block_size, char addr_mode)
 {
@@ -294,11 +192,11 @@ REGISTER_FUNCTION( verify, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
 REGISTER_FUNCTION( read,  24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( verify, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
-
+/*
 REGISTER_FUNCTION( read,  PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( write, PCF_8582, PCF_8582_, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( verify, PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
-
+*/
 REGISTER_FUNCTION( read,  24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
 REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
 REGISTER_FUNCTION( verify, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
