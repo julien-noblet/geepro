@@ -196,11 +196,11 @@
 	    </if>
 	    <if family="28512">
 		<description>EPROM</description>
-		<image src="./pixmaps/willem_28pin.png"/>
+		<image src="./pixmaps/willem_32pin.png"/>
 		<vbox>
 		    <hbox border="0">
 			<jumper name_up="29x" set="0"/>
-			<dipswitch name="Dip switch" len="12" value="0x1d4"/>
+			<dipswitch name="Dip switch" len="12" value="0x634"/>
 		    </hbox>
 		</vbox>
 	    </if>
