@@ -48,6 +48,10 @@
     hw_set_ce(state);\
     hw_delay(delay)
 
+#define we(state, delay)	\
+    hw_set_we(state);\
+    hw_delay(delay)
+
 #define pgm(state, delay)	\
     hw_set_pgm(state);\
     hw_delay(delay)
