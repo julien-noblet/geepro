@@ -8,8 +8,8 @@ plugins=make_drivers make_plugins
 local_libs = -L./gui  -lgui
 statlibs= libgui.a 
 
-objs=files.o buffer.o chip.o dummy.o iface.o timer.o parport.o main.o storings.o
-objs_lok= ./src/files.o ./src/buffer.o ./src/chip.o ./src/dummy.o ./src/iface.o ./src/timer.o ./src/parport.o ./src/main.o ./src/storings.o
+objs=files.o buffer.o chip.o dummy.o iface.o timer.o parport.o main.o storings.o protocols.o
+objs_lok= ./src/files.o ./src/buffer.o ./src/chip.o ./src/dummy.o ./src/iface.o ./src/timer.o ./src/parport.o ./src/main.o ./src/storings.o ./src/protocols.o
 MAKE_EXT= make -C
 
 UDEV_RULE= "KERNEL==\\\"parport[0-9]*\\\", GROUP=\\\"lp\\\", MODE=\\\"0666\\\""
@@ -61,6 +61,9 @@ parport.o:
 
 main.o:
 	$(MAKE_EXT) ./src main.o
+
+protocols.o:
+	$(MAKE_EXT) ./src protocols.o
 
 storings.o:
 	$(MAKE_EXT) ./src storings.o
