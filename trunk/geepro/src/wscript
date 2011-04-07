@@ -1,0 +1,17 @@
+# -*- coding: utf-8 -*-
+# src
+def build(bld):
+  print('→ building src')
+  sources=['buffer.c', 'chip.c', 'dummy.c', 'files.c', 'iface.c', 'parport.c', 'timer.c', "storings.c", "protocols.c"]
+  bld(
+    features     = 'c', 
+    source       = sources,
+    includes     = '# ../intl',
+    target       = 'maincode'
+  )
+  bld(
+    features     = 'cxx', 
+    source       = "main.cpp",
+    includes     = '# ../intl',
+    target       = 'main.o'
+  )

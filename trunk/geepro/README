@@ -1,0 +1,18 @@
+= GEEPRO README FILE =
+
+
+== COMPILATION ==
+
+The programm geepro uses waf build tool.
+
+To compile geepro, do:
+
+./waf configure
+./waf build
+
+To compile and install geepro to some specified location, do:
+
+./waf configure --prefix=/usr/local
+./waf build
+./waf install
+
