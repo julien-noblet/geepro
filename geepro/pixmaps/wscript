@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+# pixmaps
+def build(bld):
+  print('→ building pixmaps')
+  pixmaps=["mcs48.png", "mcs51.png", "willem_24Cxx.png", "willem_2716.png", "willem_2732.png", "willem_28pin.png", "willem_32pin.png", "willem_40pin_eprom.png", "willem_40.png", "willem_42pin_eprom.png", "willem_93Cxx.jpg", "willem_93Cxx.png", "willem_pro2.jpg"]
+
+  for pix in pixmaps:
+    bld.copy_to_build(geefile=pix)
+
+  bld.install_files("${PREFIX}/share/geepro/pixmaps",pixmaps)
