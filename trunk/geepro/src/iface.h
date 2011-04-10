@@ -23,6 +23,7 @@
 #ifndef __iface_h__
 #define __iface_h__
 #include "chip.h"
+#include "../drivers/hwdriver.h"
 
 #define IFACE_DRIVER_INIT_FUNC_NAME	"driver_init"
 #define IFACE_MODULE_INIT_FUNC_NAME	"init_module"
@@ -40,7 +41,7 @@ enum{
     IFACE_PS2,
 };
 
-typedef int  (*iface_prg_api)(int func, int arg, void *ptr);
+typedef int  (*iface_prg_api)(en_hw_api func, int arg, void *ptr);
 typedef struct iface_qe iface_qe;
 typedef struct iface_prg iface_prg;
 typedef struct iface_driver iface_driver;

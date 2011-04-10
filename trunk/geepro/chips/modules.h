@@ -211,6 +211,13 @@
 #define TB_SIZE( x ) 	(1024 * GB_SIZE(x))
 #define PB_SIZE( x ) 	(1024 * TB_SIZE(x))
 
+#define Bb_SIZE( x )	(( x ) * 8)
+#define Kb_SIZE( x )	(KB_SIZE( x ) * 8)
+#define Mb_SIZE( x ) 	(MB_SIZE( x ) * 8)
+#define Gb_SIZE( x ) 	(GB_SIZE( x ) * 8)
+#define Tb_SIZE( x ) 	(TB_SIZE( x ) * 8)
+#define Pb_SIZE( x ) 	(PB_SIZE( x ) * 8)
+
 #endif
 
 
