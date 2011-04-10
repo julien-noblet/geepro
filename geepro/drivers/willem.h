@@ -21,6 +21,7 @@
 
 #ifndef __willem_h__
 #define __willem_h__
+#include "hwdriver.h"
 /*
 
 #define	TA_01	10
@@ -49,7 +50,7 @@
 
 #define DEBUG printf
 
-extern int willem_hardware_driver(int func, int val, void *ptr);
+extern int willem_hardware_driver(en_hw_api func, int val, void *ptr);
 
 #endif
 
