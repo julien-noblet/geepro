@@ -49,7 +49,7 @@
 
 #define DEBUG printf
 
-extern int willem_hardware_module(int func, int val, void *ptr);
+extern int willem_hardware_driver(int func, int val, void *ptr);
 
 #endif
 

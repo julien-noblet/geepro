@@ -25,8 +25,7 @@
 #include "../drivers/hwdriver.h"
 #include "iface.h"
 
-
-int dummy_hardware_module(int funct, int val, void *ptr)
+int dummy_hardware_driver(en_hw_api funct, int val, void *ptr)
 {
     printf("Dummy module\n");
     switch(funct){

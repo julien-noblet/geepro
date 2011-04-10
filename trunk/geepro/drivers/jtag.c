@@ -23,13 +23,14 @@
 
 #include "drivers.h"
 
-int jtag_byteblaster_api(int func, int val, void *ptr)
+int jtag_byteblaster_api(en_hw_api func, int val, void *ptr)
 {
     switch(func)
     {
 	case HW_IFACE: return IFACE_LPT;
 	case HW_TEST : return 1;
 	case HW_NAME : DRIVER_NAME(ptr) = "JTAG byteblaster - dummy";
+	default: return 0;
     }
 
     return -2;

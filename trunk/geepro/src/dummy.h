@@ -22,7 +22,9 @@
 #ifndef __dummy_h__
 #define __dummy_h__
 
-extern int dummy_hardware_module(int func, int val, void *ptr);
+#include "../drivers/hwdriver.h"
+
+extern int dummy_hardware_driver(en_hw_api func, int val, void *ptr);
 
 #endif
 
