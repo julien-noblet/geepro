@@ -21,35 +21,37 @@
 
 #include "modules.h"
 
-#define TIMEOUT 100
-
 MODULE_IMPLEMENTATION
 
-#define C01_SIZE 128
-#define C02_SIZE 256
-#define C04_SIZE 512
-#define C08_SIZE 1024
-#define C16_SIZE 2048
-#define C32_SIZE 4096
-#define C64_SIZE 8192
-#define C128_SIZE 16384
-#define C256_SIZE 32768
-#define C512_SIZE 65536
+#define C01_SIZE	128
+#define C21_SIZE	128
+#define C02_SIZE	256
+#define PCF8582_SIZE	256
+#define C04_SIZE	512
+#define C08_SIZE	KB_SIZE( 1 )
+#define C16_SIZE	KB_SIZE( 2 )
+#define C32_SIZE	KB_SIZE( 4 )
+#define C64_SIZE	KB_SIZE( 8 )
+#define C128_SIZE	KB_SIZE( 16 )
+#define C256_SIZE	KB_SIZE( 32 )
+#define C512_SIZE	KB_SIZE( 64 )
 
-#define C01_BLOCK 8
-#define C02_BLOCK 8
-#define C04_BLOCK 16
-#define C08_BLOCK 16
-#define C16_BLOCK 16
-#define C32_BLOCK 16
-#define C64_BLOCK 16
-#define C128_BLOCK 16
-#define C256_BLOCK 16
-#define C512_BLOCK 16
+#define C01_BLOCK	8
+#define C21_BLOCK	8
+#define C02_BLOCK	8
+#define PCF8582_BLOCK	8
+#define C04_BLOCK	16
+#define C08_BLOCK	16
+#define C16_BLOCK	16
+#define C32_BLOCK	16
+#define C64_BLOCK	16
+#define C128_BLOCK	16
+#define C256_BLOCK	16
+#define C512_BLOCK	16
 
-#define TI 16
-
-#define MEMO_24CXX_DEV_ADDR	0xa0
+#define TI 			4
+#define TIMEOUT			100
+#define MEMO_24CXX_DEV_ADDR	0xa0	// Device internal address for 24Cxx
 
 char devsel_24Cxx( char rw, char addr )
 {
@@ -193,9 +195,9 @@ REGISTER_FUNCTION( read,  24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( verify, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 /*
-REGISTER_FUNCTION( read,  PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
+//REGISTER_FUNCTION( read,  PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( write, PCF_8582, PCF_8582_, C02_SIZE, C02_BLOCK, 0 );
-REGISTER_FUNCTION( verify, PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
+//REGISTER_FUNCTION( verify, PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 */
 REGISTER_FUNCTION( read,  24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
 REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
@@ -236,7 +238,8 @@ REGISTER_MODULE_BEGIN(24Cxx)
 	add_action(MODULE_PROG_ACTION, write_24C01);
 	add_action(MODULE_VERIFY_ACTION, verify_24C01);
     register_chip_end;
-    
+
+
     register_chip_begin("/Serial EEPROM/24Cxx", "24C02", "24Cxx", C02_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C02);
 	add_action(MODULE_PROG_ACTION, write_24C02);
@@ -291,10 +294,16 @@ REGISTER_MODULE_BEGIN(24Cxx)
 	add_action(MODULE_VERIFY_ACTION, verify_24C512);
     register_chip_end;
 
-//    register_chip_begin("/Serial EEPROM/PCF85xx", "PCF8582", "24Cxx", C02_SIZE);
-//	add_action(MODULE_READ_ACTION, read_PCF_8582);
+    register_chip_begin("/Serial EEPROM/PCF85xx", "PCF8582", "24Cxx", PCF8582_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C02);
 //	add_action(MODULE_PROG_ACTION, write_PCF_8582);
-//	add_action(MODULE_VERIFY_ACTION, verify_PCF_8582);
+	add_action(MODULE_VERIFY_ACTION, verify_24C02);
+    register_chip_end;
+
+//    register_chip_begin("/Serial EEPROM/24Cxx", "24C21", "24Cxx", C21_SIZE);
+//	add_action(MODULE_READ_ACTION, read_24C21);
+//	add_action(MODULE_PROG_ACTION, write_24C21);
+//	add_action(MODULE_VERIFY_ACTION, verify_24C21);
 //    register_chip_end;
 
 REGISTER_MODULE_END

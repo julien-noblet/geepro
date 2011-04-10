@@ -525,7 +525,7 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
 
     gep->ifc->ifc_sel = 0;
     hw_destroy(gep);
-    ___hardware_module___ = api;
+    ___hardware_driver___ = api;
     gep->ifc->cl = hw_get_iface();
     /* utworzenie wyboru interfaców */
     gui_add_iface_combox(gep);

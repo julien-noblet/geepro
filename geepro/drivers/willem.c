@@ -465,7 +465,7 @@ static int willem_close(void)
 
 /**************************************************************************************************************************/
 
-int willem_40_hardware_module(int funct, int val, void *ptr)
+int willem_40_hardware_driver(en_hw_api funct, int val, void *ptr)
 {
     switch(funct){
 	/* ogólne */
@@ -515,7 +515,7 @@ int willem_40_hardware_module(int funct, int val, void *ptr)
 
 /**************************************************************************************************************/
 
-int willem4_hardware_module(int funct, int val, void *ptr)
+int willem4_hardware_driver(en_hw_api funct, int val, void *ptr)
 {
     switch(funct){
 	/* ogólne */
@@ -563,7 +563,7 @@ int willem4_hardware_module(int funct, int val, void *ptr)
 
 /**************************************************************************************************************/
 
-int willempro2_hardware_module(int funct, int val, void *ptr)
+int willempro2_hardware_driver(en_hw_api funct, int val, void *ptr)
 {
     switch(funct){
 	/* ogólne */
@@ -615,9 +615,9 @@ int willempro2_hardware_module(int funct, int val, void *ptr)
 
 driver_register_begin
 
-    register_api( willem_40_hardware_module );
-    register_api( willem4_hardware_module );
-    register_api( willempro2_hardware_module );
+    register_api( willem_40_hardware_driver );
+    register_api( willem4_hardware_driver );
+    register_api( willempro2_hardware_driver );
 
 driver_register_end
 

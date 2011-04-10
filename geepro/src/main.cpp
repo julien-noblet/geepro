@@ -44,7 +44,7 @@ extern "C" {
 
 
 /* uchwyt api do wybranego sterownika, global na cały program */
-hw_module_type ___hardware_module___ = dummy_hardware_module; 
+hw_driver_type ___hardware_driver___ = dummy_hardware_driver; 
 
 /*global do zmiennych przechowywanych w pliku */
 store_str store;
