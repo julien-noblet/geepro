@@ -21,7 +21,20 @@
 
 #include "modules.h"
 
+/**********************************************************************************************
+*
+* VERY IMPORTANT !!!!
+* It initialize and create local variables for plugin, used later by macros.
+*
+*/
+
 MODULE_IMPLEMENTATION
+
+/**********************************************************************************************
+*
+* Device size definition section
+*
+*/
 
 #define C01_SIZE	128
 #define C21_SIZE	128
@@ -36,6 +49,11 @@ MODULE_IMPLEMENTATION
 #define C256_SIZE	KB_SIZE( 32 )
 #define C512_SIZE	KB_SIZE( 64 )
 
+/**********************************************************************************************
+*
+* Some defines used in code
+*
+*/
 #define C01_BLOCK	8
 #define C21_BLOCK	8
 #define C02_BLOCK	8
@@ -52,6 +70,12 @@ MODULE_IMPLEMENTATION
 #define TI 			16
 #define TIMEOUT			100
 #define MEMO_24CXX_DEV_ADDR	0xa0	// Device internal address for 24Cxx
+
+/**********************************************************************************************
+*
+* Some common function, used by action functions.
+*
+*/
 
 char devsel_24Cxx( char rw, char addr )
 {
@@ -90,38 +114,6 @@ char transm_seq_hdr_24Cxx(int addr, char mode, char addr_mode) // mode = 0 -> wr
     return 0;
 }
 
-void write_24Cxx(int dev_size, char block_size, char addr_mode)
-{
-    int i;
-    char error;
-    
-    init_i2c();
-    progress_loop(i, dev_size, "Writing ..."){
-	break_if( (error = transm_seq_hdr_24Cxx( i, 0, addr_mode)) );
-	send_byte_i2c( get_buffer( i ) );
-	break_if( wait_ack_i2c() );
-	stop_i2c();
-    }
-    finish_action();
-}
-
-
-void write_PCF_8582_(int dev_size, char block_size, char addr_mode)
-{
-    int i;
-    char error;
-    
-    init_i2c();
-    hw_set_hold(1);
-    progress_loop(i, dev_size, "Writing ..."){
-	break_if( (error = transm_seq_hdr_24Cxx( i, 0, addr_mode)) );
-	send_byte_i2c( get_buffer( i ) );
-	break_if( wait_ack_i2c() );
-	stop_i2c();
-    }
-    finish_action();
-}
-
 
 char rd_block_24Cxx(int addr, int block_size, char addr_mode)
 {
@@ -156,6 +148,29 @@ char verify_block_24Cxx(int addr, int block_size, char addr_mode, int *it)
     return ERROR_VAL;
 }
 
+/**************************************************************************************
+*
+* Action functions. 
+* Parameters are constants, defined in macro REGISTER_FUNCTION( action_name, name_from_initialisation, action_function_extension, parameters...)
+*
+*/
+
+void write_24Cxx(int dev_size, char block_size, char addr_mode, char n)
+{
+    int i;
+    char error;
+    
+    init_i2c();
+    hw_set_hold( n );
+    progress_loop(i, dev_size, "Writing ..."){
+	break_if( (error = transm_seq_hdr_24Cxx( i, 0, addr_mode)) );
+	send_byte_i2c( get_buffer( i ) );
+	break_if( wait_ack_i2c() );
+	stop_i2c();
+    }
+    finish_action();
+}
+
 void read_24Cxx(unsigned int dev_size, unsigned char block_size, char addr_mode)
 {
     int i;
@@ -186,55 +201,74 @@ void verify_24Cxx(unsigned int dev_size, unsigned char block_size, char addr_mod
     ERROR_VAL = 0;
 }
 
-/**********************************************************************************************/
+/*********************************************************************************************
+*
+* Registering callback functions. It create callback function, that are invoked by action buttons.
+* You can ommit that section and indirectly call action function, but it gives you possibility to add additional parameters, and
+* assign one action function to different, but similar chips.
+*
+*/
 
 REGISTER_FUNCTION( read,  24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0, 0 );
 REGISTER_FUNCTION( verify, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C21, 24Cxx, C01_SIZE, C01_BLOCK, 0, 1 );
 
 REGISTER_FUNCTION( read,  24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0, 0 );
 REGISTER_FUNCTION( verify, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
-
-REGISTER_FUNCTION( write, PCF_8582, PCF_8582_, C02_SIZE, C02_BLOCK, 0 );
+REGISTER_FUNCTION( write, PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0, 1 );
 
 REGISTER_FUNCTION( read,  24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0, 0 );
 REGISTER_FUNCTION( verify, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
 
 REGISTER_FUNCTION( read,  24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0, 0 );
 REGISTER_FUNCTION( verify, 24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0 );
 
 REGISTER_FUNCTION( read,  24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0 );
+REGISTER_FUNCTION( write, 24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0, 0 );
 REGISTER_FUNCTION( verify, 24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0 );
 
 REGISTER_FUNCTION( read,  24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1 );
-REGISTER_FUNCTION( write, 24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1, 0 );
 REGISTER_FUNCTION( verify, 24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1  );
 
 REGISTER_FUNCTION( read,  24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1  );
-REGISTER_FUNCTION( write, 24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1, 0 );
 REGISTER_FUNCTION( verify, 24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1  );
 
 REGISTER_FUNCTION( read,  24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1  );
-REGISTER_FUNCTION( write, 24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1, 0 );
 REGISTER_FUNCTION( verify, 24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1  );
 
 REGISTER_FUNCTION( read,  24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1  );
-REGISTER_FUNCTION( write, 24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1, 0 );
 REGISTER_FUNCTION( verify, 24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1  );
 
 REGISTER_FUNCTION( read,  24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1  );
-REGISTER_FUNCTION( write, 24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1  );
+REGISTER_FUNCTION( write, 24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1, 0 );
 REGISTER_FUNCTION( verify, 24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1  );
 
+/******************************************************************************************************
+*
+* Chip plugin initialisation. It defines actions possible on the chip, buffer size and callback funcion for action on given chip. It also sets
+* menu path, chip name and chip family. Chip family is an identifier used by device driver to identify chip (e.g. show proper switch settings, picture etc).
+* Device actions for family is described in <device>.xml file.
+*
+*/
 REGISTER_MODULE_BEGIN(24Cxx)
 
     register_chip_begin("/Serial EEPROM/24Cxx", "24C01", "24Cxx", C01_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C01);
 	add_action(MODULE_PROG_ACTION, write_24C01);
+	add_action(MODULE_VERIFY_ACTION, verify_24C01);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C21", "24Cxx", C21_SIZE);
+	add_action(MODULE_READ_ACTION, read_24C01);
+	add_action(MODULE_PROG_ACTION, write_24C21);
 	add_action(MODULE_VERIFY_ACTION, verify_24C01);
     register_chip_end;
 
@@ -297,11 +331,5 @@ REGISTER_MODULE_BEGIN(24Cxx)
 	add_action(MODULE_PROG_ACTION, write_PCF_8582);
 	add_action(MODULE_VERIFY_ACTION, verify_24C02);
     register_chip_end;
-
-//    register_chip_begin("/Serial EEPROM/24Cxx", "24C21", "24Cxx", C21_SIZE);
-//	add_action(MODULE_READ_ACTION, read_24C21);
-//	add_action(MODULE_PROG_ACTION, write_24C21);
-//	add_action(MODULE_VERIFY_ACTION, verify_24C21);
-//    register_chip_end;
 
 REGISTER_MODULE_END
