@@ -49,7 +49,7 @@ MODULE_IMPLEMENTATION
 #define C256_BLOCK	16
 #define C512_BLOCK	16
 
-#define TI 			4
+#define TI 			16
 #define TIMEOUT			100
 #define MEMO_24CXX_DEV_ADDR	0xa0	// Device internal address for 24Cxx
 
@@ -105,22 +105,23 @@ void write_24Cxx(int dev_size, char block_size, char addr_mode)
     finish_action();
 }
 
-/*
+
 void write_PCF_8582_(int dev_size, char block_size, char addr_mode)
 {
     int i;
-//    char error;
+    char error;
     
     init_i2c();
+    hw_set_hold(1);
     progress_loop(i, dev_size, "Writing ..."){
-//	break_if( (error = transm_seq_hdr_24Cxx( i, 0, addr_mode)) );
-//	send_byte_i2c( get_buffer( i ) );
-//	break_if( wait_ack_i2c() );
-//	stop_i2c();
+	break_if( (error = transm_seq_hdr_24Cxx( i, 0, addr_mode)) );
+	send_byte_i2c( get_buffer( i ) );
+	break_if( wait_ack_i2c() );
+	stop_i2c();
     }
     finish_action();
 }
-*/
+
 
 char rd_block_24Cxx(int addr, int block_size, char addr_mode)
 {
@@ -194,11 +195,9 @@ REGISTER_FUNCTION( verify, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
 REGISTER_FUNCTION( read,  24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
 REGISTER_FUNCTION( verify, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
-/*
-//REGISTER_FUNCTION( read,  PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
+
 REGISTER_FUNCTION( write, PCF_8582, PCF_8582_, C02_SIZE, C02_BLOCK, 0 );
-//REGISTER_FUNCTION( verify, PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
-*/
+
 REGISTER_FUNCTION( read,  24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
 REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
 REGISTER_FUNCTION( verify, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
@@ -238,7 +237,6 @@ REGISTER_MODULE_BEGIN(24Cxx)
 	add_action(MODULE_PROG_ACTION, write_24C01);
 	add_action(MODULE_VERIFY_ACTION, verify_24C01);
     register_chip_end;
-
 
     register_chip_begin("/Serial EEPROM/24Cxx", "24C02", "24Cxx", C02_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C02);
@@ -296,7 +294,7 @@ REGISTER_MODULE_BEGIN(24Cxx)
 
     register_chip_begin("/Serial EEPROM/PCF85xx", "PCF8582", "24Cxx", PCF8582_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C02);
-//	add_action(MODULE_PROG_ACTION, write_PCF_8582);
+	add_action(MODULE_PROG_ACTION, write_PCF_8582);
 	add_action(MODULE_VERIFY_ACTION, verify_24C02);
     register_chip_end;
 
