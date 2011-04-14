@@ -54,19 +54,6 @@ MODULE_IMPLEMENTATION
 * Some defines used in code
 *
 */
-#define C01_BLOCK	8
-#define C21_BLOCK	8
-#define C02_BLOCK	8
-#define PCF8582_BLOCK	8
-#define C04_BLOCK	16
-#define C08_BLOCK	16
-#define C16_BLOCK	16
-#define C32_BLOCK	16
-#define C64_BLOCK	16
-#define C128_BLOCK	16
-#define C256_BLOCK	16
-#define C512_BLOCK	16
-
 #define TI 			16
 #define TIMEOUT			100
 #define MEMO_24CXX_DEV_ADDR	0xa0	// Device internal address for 24Cxx
@@ -114,38 +101,22 @@ char transm_seq_hdr_24Cxx(int addr, char mode, char addr_mode) // mode = 0 -> wr
     return 0;
 }
 
-
-char rd_block_24Cxx(int addr, int block_size, char addr_mode)
+int rd_byte_24Cxx(int addr, char addr_mode)
 {
-    int i;
-    char error;
-
-    if( (error = transm_seq_hdr_24Cxx( addr, 1, addr_mode)) ) return error;
-    
-    for( i = 0; i < block_size; i++){
-	put_buffer( addr + i, recv_byte_i2c() );
-	send_bit_i2c( i == (block_size - 1) ? 1 : 0); // NOACK / ACK
-    }
-    stop_i2c();
-    return 0;
+    char data;
+    if( transm_seq_hdr_24Cxx( addr, 1, addr_mode) ) return -1;
+    data = recv_byte_i2c();
+    stop_i2c();    
+    return data & 0xff;
 }
 
-char verify_block_24Cxx(int addr, int block_size, char addr_mode, int *it)
+char write_byte_24Cxx( int addr, char byte, char addr_mode)
 {
-    unsigned char error, d0, d1;
-    int i;
-
-    if( (error = transm_seq_hdr_24Cxx( addr, 1, addr_mode)) ) return error;
-    
-    for( i = 0; i < block_size; i++){
-	d0 = get_buffer( addr + i);
-	d1 = recv_byte_i2c();
-	break_if( d0 != d1 );
-	send_bit_i2c( i == (block_size - 1) ? 1 : 0); // NOACK / ACK
-    }
+    if( transm_seq_hdr_24Cxx( addr, 0, addr_mode) ) return 1;
+    send_byte_i2c( byte );
+    if( wait_ack_i2c() ) return 1;
     stop_i2c();
-    *it = i;
-    return ERROR_VAL;
+    return 0;
 }
 
 /**************************************************************************************
@@ -155,50 +126,67 @@ char verify_block_24Cxx(int addr, int block_size, char addr_mode, int *it)
 *
 */
 
-void write_24Cxx(int dev_size, char block_size, char addr_mode, char n)
+void read_24Cxx(unsigned int dev_size, char addr_mode)
 {
-    int i;
-    char error;
-    
+    int i, data;
+
+    TEST_CONNECTION( VOID )
     init_i2c();
-    hw_set_hold( n );
-    progress_loop(i, dev_size, "Writing ..."){
-	break_if( (error = transm_seq_hdr_24Cxx( i, 0, addr_mode)) );
-	send_byte_i2c( get_buffer( i ) );
-	break_if( wait_ack_i2c() );
-	stop_i2c();
+    progress_loop(i, dev_size, "Reading ..."){
+	data = rd_byte_24Cxx(i, addr_mode);
+	break_if( data < 0 );
+	put_buffer( i, data );	
     }
     finish_action();
 }
 
-void read_24Cxx(unsigned int dev_size, unsigned char block_size, char addr_mode)
+void verify_24Cxx(unsigned int dev_size, char addr_mode)
 {
-    int i;
-
-    init_i2c();
-    progress_loop(i, dev_size / block_size, "Reading ..."){
-	break_if( rd_block_24Cxx(i * block_size, block_size, addr_mode));
-    }
-    finish_action();
-}
-
-void verify_24Cxx(unsigned int dev_size, unsigned char block_size, char addr_mode)
-{
-    int i,j;
+    int i, rdata = 0, bdata = 0;
     char text[256];
 
+    TEST_CONNECTION( VOID )
     init_i2c();
-    progress_loop(i, dev_size / block_size, "Verify ..."){
-	break_if( verify_block_24Cxx(i * block_size, block_size, addr_mode, &j));
+    progress_loop(i, dev_size, "Verify ..."){
+	bdata = get_buffer( i );
+	rdata = rd_byte_24Cxx(i, addr_mode);
+	break_if( rdata < 0 || ( (bdata & 0xff) != (rdata & 0xff) ) );
     }
     finish_action();
 
     text[0] = 0;
-    if( ERROR_VAL ){
-	sprintf(text, "[WN][TEXT] Memory and buffer differ !!!\n Address = 0x%X[/TEXT][BR]OK", j + i * block_size );
+    if( ERROR_VAL )
+	sprintf(text, "[WN][TEXT] Memory and buffer differ !!!\n Address = 0x%X\nBuffer=0x%X, Device=0x%X[/TEXT][BR]OK", i, bdata & 0xff, rdata & 0xff);
+    if( rdata >= 0 ){
+	show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory and buffer are consitent[/TEXT][BR]OK", NULL, NULL);    
+	ERROR_VAL = 0;
     }
-    show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory and buffer are consitent[/TEXT][BR]OK", NULL, NULL);    
-    ERROR_VAL = 0;
+}
+
+void write_24Cxx(int dev_size, char addr_mode, char n)
+{
+    int i;
+    unsigned long *lb;
+    
+    TEST_CONNECTION( VOID )
+    
+    lb = checkbox(
+	"[TITLE]Writing chip[/TITLE][TYPE:QS]"
+	"[CB:2:0: Are you sure ? (Tick if Yes)]"
+	"[CB:1:1: Verify after process]"
+    );
+
+    if( !lb ) return; // resignation by button
+    if( !(*lb & 2) ) return; // Not checked
+    
+    init_i2c();
+    hw_set_hold( n );
+    progress_loop(i, dev_size, "Writing ...")
+	    break_if( write_byte_24Cxx(i, get_buffer(i), addr_mode) );
+    finish_action();
+    
+    if( *lb & 1 ) 
+	verify_24Cxx( dev_size, addr_mode);
 }
 
 /*********************************************************************************************
@@ -209,47 +197,47 @@ void verify_24Cxx(unsigned int dev_size, unsigned char block_size, char addr_mod
 *
 */
 
-REGISTER_FUNCTION( read,  24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0, 0 );
-REGISTER_FUNCTION( verify, 24C01, 24Cxx, C01_SIZE, C01_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C21, 24Cxx, C01_SIZE, C01_BLOCK, 0, 1 );
+REGISTER_FUNCTION( read,  24C01, 24Cxx, C01_SIZE, 0 );
+REGISTER_FUNCTION( write, 24C01, 24Cxx, C01_SIZE, 0, 0 );
+REGISTER_FUNCTION( verify, 24C01, 24Cxx, C01_SIZE, 0 );
+REGISTER_FUNCTION( write, 24C21, 24Cxx, C01_SIZE, 0, 1 );
 
-REGISTER_FUNCTION( read,  24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0, 0 );
-REGISTER_FUNCTION( verify, 24C02, 24Cxx, C02_SIZE, C02_BLOCK, 0 );
-REGISTER_FUNCTION( write, PCF_8582, 24Cxx, C02_SIZE, C02_BLOCK, 0, 1 );
+REGISTER_FUNCTION( read,  24C02, 24Cxx, C02_SIZE, 0 );
+REGISTER_FUNCTION( write, 24C02, 24Cxx, C02_SIZE, 0, 0 );
+REGISTER_FUNCTION( verify, 24C02, 24Cxx, C02_SIZE, 0 );
+REGISTER_FUNCTION( write, PCF_8582, 24Cxx, C02_SIZE, 0, 1 );
 
-REGISTER_FUNCTION( read,  24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0, 0 );
-REGISTER_FUNCTION( verify, 24C04, 24Cxx, C04_SIZE, C04_BLOCK, 0 );
+REGISTER_FUNCTION( read,  24C04, 24Cxx, C04_SIZE, 0 );
+REGISTER_FUNCTION( write, 24C04, 24Cxx, C04_SIZE, 0, 0 );
+REGISTER_FUNCTION( verify, 24C04, 24Cxx, C04_SIZE, 0 );
 
-REGISTER_FUNCTION( read,  24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0, 0 );
-REGISTER_FUNCTION( verify, 24C08, 24Cxx, C08_SIZE, C08_BLOCK, 0 );
+REGISTER_FUNCTION( read,  24C08, 24Cxx, C08_SIZE, 0 );
+REGISTER_FUNCTION( write, 24C08, 24Cxx, C08_SIZE, 0, 0 );
+REGISTER_FUNCTION( verify, 24C08, 24Cxx, C08_SIZE, 0 );
 
-REGISTER_FUNCTION( read,  24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0 );
-REGISTER_FUNCTION( write, 24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0, 0 );
-REGISTER_FUNCTION( verify, 24C16, 24Cxx, C16_SIZE, C16_BLOCK, 0 );
+REGISTER_FUNCTION( read,  24C16, 24Cxx, C16_SIZE, 0 );
+REGISTER_FUNCTION( write, 24C16, 24Cxx, C16_SIZE, 0, 0 );
+REGISTER_FUNCTION( verify, 24C16, 24Cxx, C16_SIZE, 0 );
 
-REGISTER_FUNCTION( read,  24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1 );
-REGISTER_FUNCTION( write, 24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1, 0 );
-REGISTER_FUNCTION( verify, 24C32, 24Cxx, C32_SIZE, C32_BLOCK, 1  );
+REGISTER_FUNCTION( read,  24C32, 24Cxx, C32_SIZE, 1 );
+REGISTER_FUNCTION( write, 24C32, 24Cxx, C32_SIZE, 1, 0 );
+REGISTER_FUNCTION( verify, 24C32, 24Cxx, C32_SIZE, 1  );
 
-REGISTER_FUNCTION( read,  24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1  );
-REGISTER_FUNCTION( write, 24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1, 0 );
-REGISTER_FUNCTION( verify, 24C64, 24Cxx, C64_SIZE, C64_BLOCK, 1  );
+REGISTER_FUNCTION( read,  24C64, 24Cxx, C64_SIZE, 1  );
+REGISTER_FUNCTION( write, 24C64, 24Cxx, C64_SIZE, 1, 0 );
+REGISTER_FUNCTION( verify, 24C64, 24Cxx, C64_SIZE, 1  );
 
-REGISTER_FUNCTION( read,  24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1  );
-REGISTER_FUNCTION( write, 24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1, 0 );
-REGISTER_FUNCTION( verify, 24C128, 24Cxx, C128_SIZE, C128_BLOCK, 1  );
+REGISTER_FUNCTION( read,  24C128, 24Cxx, C128_SIZE, 1  );
+REGISTER_FUNCTION( write, 24C128, 24Cxx, C128_SIZE, 1, 0 );
+REGISTER_FUNCTION( verify, 24C128, 24Cxx, C128_SIZE, 1  );
 
-REGISTER_FUNCTION( read,  24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1  );
-REGISTER_FUNCTION( write, 24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1, 0 );
-REGISTER_FUNCTION( verify, 24C256, 24Cxx, C256_SIZE, C256_BLOCK, 1  );
+REGISTER_FUNCTION( read,  24C256, 24Cxx, C256_SIZE, 1  );
+REGISTER_FUNCTION( write, 24C256, 24Cxx, C256_SIZE, 1, 0 );
+REGISTER_FUNCTION( verify, 24C256, 24Cxx, C256_SIZE, 1  );
 
-REGISTER_FUNCTION( read,  24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1  );
-REGISTER_FUNCTION( write, 24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1, 0 );
-REGISTER_FUNCTION( verify, 24C512, 24Cxx, C512_SIZE, C512_BLOCK, 1  );
+REGISTER_FUNCTION( read,  24C512, 24Cxx, C512_SIZE, 1  );
+REGISTER_FUNCTION( write, 24C512, 24Cxx, C512_SIZE, 1, 0 );
+REGISTER_FUNCTION( verify, 24C512, 24Cxx, C512_SIZE, 1  );
 
 /******************************************************************************************************
 *
