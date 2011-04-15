@@ -183,9 +183,13 @@ void write_24Cxx(int dev_size, char addr_mode, char n)
     hw_set_hold( n );
     progress_loop(i, dev_size, "Writing ...")
 	    break_if( write_byte_24Cxx(i, get_buffer(i), addr_mode) );
+    // wait to end of last write cycle
+    if( transm_seq_hdr_24Cxx( 0, 1, 0) ) ERROR_VAL = 1;
+    stop_i2c();        
+
     finish_action();
     
-    if( *lb & 1 ) 
+    if( (*lb & 1) && !ERROR_VAL) 
 	verify_24Cxx( dev_size, addr_mode);
 }
 
