@@ -20,6 +20,9 @@
 
 #include <stdio.h>
 #include "../drivers/hwdriver.h"
+#include "protocols.h"
+
+//#define DEBUG
 
 #define TI 16
 #define TIMEOUT	100
@@ -123,6 +126,119 @@ char wait_ack_i2c()
     return (b != 0) ? 1:0;
 }
 
-/*************************************************************************************************/
+/*******************************************************************************************************************
+        µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire
+********************************************************************************************************************/
+
+void uWire_init(char org )
+{
+//    hw_set_org( org == 16 ? 1:0);
+    hw_set_cs( 0 );
+    hw_set_clk( 0 );
+    hw_set_di( 0 );
+//    hw_set_do( 0 );
+    hw_ms_delay( 100 );    
+    hw_sw_vcc( 1 );
+    hw_ms_delay( 100 );
+}
+
+void uWire_cs( char state )
+{
+    hw_set_cs( state );
+}
+
+// send/receive in full duplex one bit
+char uWire_bit( char si, int us)
+{
+    hw_set_di( si ? 1 : 0);
+    hw_us_delay(us / 2);
+    hw_set_clk( 1 );    
+    hw_us_delay( us );
+    hw_set_clk( 0 );
+    hw_us_delay(us / 2);
+    return hw_get_do() ? 1 : 0;
+}
+
+// send/receive in full duplex word
+unsigned int uWire_word( unsigned int si, int length, int us)
+{
+    int data;
+
+    for(data = 0; length; length--){
+		    data |= uWire_bit((si >> (length - 1)) & 1, us) << (length - 1);
+#ifdef DEBUG
+	printf("%i -> %i\n", length - 1, (si >> (length - 1)) & 1);
+#endif
+    }
+#ifdef DEBUG
+	printf("---\n");
+#endif
+    return data;
+}
+
+void uWire_start(int opcode, int aaa_mask, int adrlen, int address, int us)
+{
+    uWire_cs( 1 );
+    uWire_word(opcode, 3, us);
+    uWire_word((aaa_mask << (adrlen - 2)) | address, adrlen, us);
+}
+
+void uWire_stop(int us)
+{
+    hw_set_cs( 0 );
+    hw_set_clk( 0 );
+    hw_set_di( 0 );
+    hw_set_cs( 0 );    
+    hw_us_delay( us );
+}
+
+// return true if timeout
+int uWire_wait_busy(int us, int timeout)
+{
+    hw_set_cs( 1 );
+    for(; timeout; timeout--)
+	if( hw_get_do() ) return 0;
+	hw_us_delay( us );
+    return 1;
+}
+
+void uWire_erase_cmd( int addr, int alen, int us)
+{
+    uWire_start( uWire_ERASE_OPC, uWire_ERASE_AAA, alen, addr, us );
+    uWire_stop( us );
+}
+
+void uWire_eral_cmd( int alen, int us)
+{
+    uWire_start( uWire_ERAL_OPC, uWire_ERAL_AAA, alen, 0, us );
+    uWire_stop( us );
+}
+
+void uWire_ewds_cmd( int alen, int us)
+{
+    uWire_start( uWire_EWDS_OPC, uWire_EWDS_AAA, alen, 0, us );
+    uWire_stop( us );
+}
+
+void uWire_ewen_cmd( int alen, int us)
+{
+    uWire_start( uWire_EWEN_OPC, uWire_EWEN_AAA, alen, 0, us );
+    uWire_stop( us );
+}
+
+void uWire_read_cmd( int addr, int alen, int us)
+{
+    uWire_start( uWire_READ_OPC, uWire_READ_AAA, alen, addr, us );
+}
+
+void uWire_write_cmd( int addr, int alen, int us)
+{
+    uWire_start( uWire_WRITE_OPC, uWire_WRITE_AAA, alen, addr, us );
+}
+
+void uWire_wral_cmd( int alen, int us)
+{
+    uWire_start( uWire_WRAL_OPC, uWire_WRAL_AAA, alen, 0, us );
+}
 
 

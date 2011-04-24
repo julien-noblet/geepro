@@ -23,252 +23,358 @@
 
 MODULE_IMPLEMENTATION
 
-#define C46_SIZE 128
-#define C56_SIZE 256
-#define C66_SIZE 512
+// memory sizes
+#define SIZE_93C06	12
+#define SIZE_93C13	32
+#define SIZE_93C14	128
+#define SIZE_93C46	128
+#define SIZE_93C56	256
+#define SIZE_93C66	512
+#define SIZE_93C76	1024
+#define SIZE_93C86	2048
 
-#define OP_READ  0x18
+// memory address field length
+#define ADDR_SIZE_93C06	7
+#define ADDR_SIZE_93C13	7
+#define ADDR_SIZE_93C14	7
+#define ADDR_SIZE_93C46	7
+#define ADDR_SIZE_93C56	8
+#define ADDR_SIZE_93C66	9
+#define ADDR_SIZE_93C76	10
+#define ADDR_SIZE_93C86	11
 
-// TI = 4 ok!
-#define TI 6
-
-#define EWEN_93		0x03
-#define ERAL_93		0x02
-#define WRAL_93		0x01
-#define EWDS_93		0x00
-
-#define TCR 100
-#define TCW 1000
-
-#define PARM_9346	128,8,7
-#define PARM_9356	256,8,8
-#define PARM_9366	512,8,9
-
-
-void reset_93_socket()
-{
-    hw_set_cs(0);
-    hw_set_clk(0);
-    hw_set_di(0);    
-}
-
-char conn_test()
-{
-    return 0;
-}
-
-void tic_93_out(char bool)
-{
-    hw_set_clk(0);
-    hw_set_di(bool);
-    hw_delay(TI);
-    hw_set_clk(1);
-    hw_delay(TI);
-    hw_set_clk(0);
-}
-
-char tic_93_in()
-{
-    char bit;
-
-    hw_set_clk(1);
-    hw_delay(TI/2);
-    bit=hw_get_do() ? 1 : 0;
-    hw_delay(TI/2);
-    hw_set_clk(0);
-    hw_delay(TI);
-    return bit;
-}
-
-void start_93_seq()
-{
-    hw_set_cs(0);
-    hw_set_clk(0);
-    hw_set_di(0);    
-
-    hw_delay(TI);
-    hw_set_di(1);
-    hw_delay(TI/2);
-    hw_set_cs(1);        
-    hw_delay(TI/2);
-    hw_set_clk(1);
-    hw_delay(TI);
-    hw_set_clk(0);
-}
-
-void stop_93_seq()
-{
-    hw_set_cs(0);
-    hw_set_clk(0);
-    hw_set_di(0);    
-    hw_delay(TI);
-}
-
-void send_instruction(unsigned int instr, unsigned char bytes)
-{
-    for(;bytes; bytes--) tic_93_out( (instr >> (bytes-1)) & 0x01);
-}
-
-unsigned int recv_93_data(char bites)
-{
-    unsigned int data=0;
-    
-    hw_set_di(0);
-    for(; bites; bites--) data |= tic_93_in() << (bites-1);
-    return data;
-}
-
-void send_op_code(unsigned int opcode, char bits)
-{
-    start_93_seq();
-    send_instruction(opcode << (bits - 2), 2 + bits);
-    stop_93_seq();
-}
+#define TS 50
+#define TIMEOUT 100000
 
 /**************************************************************************************************/
-void read_9346(int dev_size, char data_bits, char addr_bits)
+
+void read_93Cxx(int dev_size, int org, int alen)
 {
-    int i;
-    unsigned int d;
+    unsigned int data, addr;
+    char n = 0;
+
+    TEST_CONNECTION( VOID )
+
+    if(org == 16) n = 1;
+    alen -= n;
     
-    if(conn_test()) return;
-    gui_progress_bar_init(___geep___,"Odczyt pamieci",dev_size);
+    uWire_init( org );
 
-    reset_93_socket();
-    hw_sw_vcc(1);
-    for(i = 0; i < dev_size; ){
-	start_93_seq();
-	send_instruction(2,2);
-	send_instruction(i,addr_bits);
-
-	d=recv_93_data(data_bits);
-	if(data_bits==16)
-	    buffer_write(___geep___,i++,(d >> 8) & 0xff);
-	buffer_write(___geep___,i++,d & 0xff);
-	stop_93_seq();
-	hw_delay(TCR);
-	gui_progress_bar_set(___geep___, i, dev_size);
+    progress_loop( addr, dev_size, "Reading..."){
+	uWire_read_cmd( addr >> n, alen, TS);
+	data = uWire_word( 0, org, TS);
+	uWire_stop( TS );
+	put_buffer( addr, LSB(data) );
+	if(org == 16)
+	    put_buffer( ++addr, MSB(data) );
     }
-    gui_progress_bar_free(___geep___);
     finish_action();
 }
 
-
-void erase_9346(int dev_size, char data_bits, char addr_bits)
+void verify_93Cxx(int dev_size, int org, int alen)
 {
-    if(conn_test()) return;
+    unsigned int addr;
+    unsigned int rdata = 0, bdata = 0;
+    char text[256];
 
-    reset_93_socket();
-    hw_sw_vcc(1);
-    send_op_code(EWEN_93, addr_bits);
-    send_op_code(ERAL_93, addr_bits);
-    send_op_code(EWDS_93, addr_bits);
-    hw_sw_vcc(0);
+    char n = 0;
 
-    read_9346(dev_size, data_bits, addr_bits);
-}
+    TEST_CONNECTION( VOID )
 
-void prog_9346(int dev_size, char data_bits, char addr_bits)
-{
-    int i;
-
-    if(conn_test()) return;
-    gui_progress_bar_init(___geep___,"Programowanie pamieci",dev_size);
-
-    reset_93_socket();
-    hw_sw_vcc(1);
-
-    send_op_code(EWEN_93, addr_bits);
-
-    for(i = 0; i < dev_size;){
-	start_93_seq();
-	send_instruction(1,2);
-	send_instruction(i,addr_bits);
-	send_instruction(buffer_read(___geep___,i++),8);
-if(addr_bits==16)
-	send_instruction(buffer_read(___geep___,i++),8);
-	stop_93_seq();
-	hw_delay(TCW);
-	gui_progress_bar_set(___geep___,i, dev_size);
+    if(org == 16) n = 1;
+    alen -= n;
+    
+    uWire_init( org );
+    progress_loop( addr, dev_size, "Veryfying..."){
+	uWire_read_cmd( addr >> n, alen, TS);
+	rdata = uWire_word( 0, org, TS);
+	uWire_stop( TS );
+	bdata = get_buffer( addr ) & 0xff;
+	break_if( bdata != LSB(rdata));
+	if(org == 16){
+	    bdata = get_buffer( ++addr ) & 0xff;	
+	    break_if( bdata != MSB(rdata) );
+	}
     }
-    send_op_code(EWDS_93, addr_bits);
-    hw_sw_vcc(0);
-    gui_progress_bar_free(___geep___);
+    finish_action();
+
+    text[0] = 0;
+    if( ERROR_VAL )
+	sprintf(text, "[WN][TEXT] Memory and buffer differ !!!\n Address = 0x%X\nBuffer=0x%X, Device=0x%X[/TEXT][BR]OK", addr, bdata & 0xff, rdata & 0xff);
+    if( rdata >= 0 ){
+	show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory and buffer are consitent[/TEXT][BR]OK", NULL, NULL);    
+	ERROR_VAL = 0;
+    }
 }
 
-/**************************************************************************************************
-*
-* Bezposrednia obsluga funkcji zwrotnych, które wraz z wlasciwymi parametrami wykonaja wlasciwe akcje
-*
-*/
+void test_blank_93Cxx(int dev_size, int org, int alen)
+{
+    unsigned int addr;
+    unsigned int rdata = 0;
+    char text[256];
 
-REG_FUNC_BEGIN(erase_9346A)
-    erase_9346(PARM_9346);
-REG_FUNC_END
+    char n = 0;
 
-REG_FUNC_BEGIN(prog_9346A)
-    prog_9346(PARM_9346);
-REG_FUNC_END
+    TEST_CONNECTION( VOID )
 
-REG_FUNC_BEGIN(read_9346A)
-    read_9346(PARM_9346);
-REG_FUNC_END
+    if(org == 16) n = 1;
+    alen -= n;
+    
+    uWire_init( org );
+    progress_loop( addr, dev_size, "Test blank..."){
+	uWire_read_cmd( addr >> n, alen, TS);
+	rdata = uWire_word( 0, org, TS);
+	uWire_stop( TS );
+	break_if( (rdata & 0xff) != 0xff );
+	if( org == 16 )
+	    break_if( (rdata & 0xff00) != 0xff00 );
+    }
+    finish_action();
 
-REG_FUNC_BEGIN(erase_9356)
-    erase_9346(PARM_9356);
-REG_FUNC_END
+    text[0] = 0;
+    if( ERROR_VAL )
+	sprintf(text, "[WN][TEXT] Memory is dirty !!!\n Address = 0x%X\nDevice=0x%X[/TEXT][BR]OK", addr, rdata & 0xff);
+    if( rdata >= 0 ){
+	show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory is clean[/TEXT][BR]OK", NULL, NULL);    
+	ERROR_VAL = 0;
+    }
+}
 
-REG_FUNC_BEGIN(prog_9356)
-    prog_9346(PARM_9356);
-REG_FUNC_END
+void write_93Cxx(int dev_size, int org, int alen)
+{
+    unsigned long *lb;
+    unsigned int data, addr;
+    char n = 0;
 
-REG_FUNC_BEGIN(read_9356)
-    read_9346(PARM_9356);
-REG_FUNC_END
+    TEST_CONNECTION( VOID )
 
-REG_FUNC_BEGIN(erase_9366)
-    erase_9346(PARM_9366);
-REG_FUNC_END
+    lb = checkbox(
+	"[TITLE]Writing chip[/TITLE][TYPE:QS]"
+	"[CB:2:0: Are you sure ? (Tick if Yes)]"
+	"[CB:1:1: Verify after process]"
+    );
+    if( !lb ) return; // resignation by button
+    if( !(*lb & 2) ) return; // Not checked
 
-REG_FUNC_BEGIN(prog_9366)
-    prog_9346(PARM_9366);
-REG_FUNC_END
+    if(org == 16) n = 1;
 
-REG_FUNC_BEGIN(read_9366)
-    read_9346(PARM_9366);
-REG_FUNC_END
+    alen -= n;
+    
+    uWire_init( org );
+    uWire_ewen_cmd( alen, TS);
+    progress_loop( addr, dev_size, "Writing..."){
+	uWire_write_cmd( addr >> n, alen, TS);
+	data = get_buffer( addr ) & 0xff;
+	if(org == 16)
+	    data |= (get_buffer( ++addr ) << 8) & 0xff00;
+	uWire_word( data, org, TS);
+	uWire_stop( TS );	
+	break_if( uWire_wait_busy( TS, TIMEOUT) ); // wait for end of write internal cycle
+    }
+    finish_action();
+    if( (*lb & 1) && !ERROR_VAL) 
+	verify_93Cxx( dev_size, org, alen);
+}
 
+void erase_93Cxx(int dev_size, int org, int alen)
+{
+    unsigned long *lb;
+    TEST_CONNECTION( VOID )
 
-/**************************************************************************************************
-*
-* Rejestracja pluginu
-*
-*/
+    lb = checkbox(
+	"[TITLE]Erase chip[/TITLE][TYPE:QS]"
+	"[CB:2:0: Are you sure ? (Tick if Yes)]"
+	"[CB:1:1: Test blank]"
+    );
+    if( !lb ) return; // resignation by button
+    if( !(*lb & 2) ) return; // Not checked
+
+    if(org == 16) alen--;
+    
+    uWire_init( org );
+    uWire_ewen_cmd( alen, TS);
+    uWire_eral_cmd( alen, TS);
+    if( uWire_wait_busy( TS, TIMEOUT) ) ERROR_VAL = 1;
+    finish_action();    
+
+    if( (*lb & 1) && !ERROR_VAL) 
+	test_blank_93Cxx( dev_size, org, alen);
+}
+
+/**************************************************************************************************/
+REGISTER_FUNCTION(read, 93C06,    93Cxx, SIZE_93C06, 16, ADDR_SIZE_93C06);
+REGISTER_FUNCTION(read, 93C13,    93Cxx, SIZE_93C13, 16, ADDR_SIZE_93C13);
+REGISTER_FUNCTION(read, 93C14,    93Cxx, SIZE_93C14, 16, ADDR_SIZE_93C14);
+REGISTER_FUNCTION(read, 93C46_8,  93Cxx, SIZE_93C46, 8,  ADDR_SIZE_93C46);
+REGISTER_FUNCTION(read, 93C46_16, 93Cxx, SIZE_93C46, 16, ADDR_SIZE_93C46);
+REGISTER_FUNCTION(read, 93C56_8,  93Cxx, SIZE_93C56, 8,  ADDR_SIZE_93C56);
+REGISTER_FUNCTION(read, 93C56_16, 93Cxx, SIZE_93C56, 16, ADDR_SIZE_93C56);
+REGISTER_FUNCTION(read, 93C66_8,  93Cxx, SIZE_93C66, 8,  ADDR_SIZE_93C66);
+REGISTER_FUNCTION(read, 93C66_16, 93Cxx, SIZE_93C66, 16, ADDR_SIZE_93C66);
+REGISTER_FUNCTION(read, 93C76_8,  93Cxx, SIZE_93C76, 8,  ADDR_SIZE_93C76);
+REGISTER_FUNCTION(read, 93C76_16, 93Cxx, SIZE_93C76, 16, ADDR_SIZE_93C76);
+REGISTER_FUNCTION(read, 93C86_8,  93Cxx, SIZE_93C86, 8,  ADDR_SIZE_93C86);
+REGISTER_FUNCTION(read, 93C86_16, 93Cxx, SIZE_93C86, 16, ADDR_SIZE_93C86);
+
+REGISTER_FUNCTION(verify, 93C06,    93Cxx, SIZE_93C06, 16, ADDR_SIZE_93C06);
+REGISTER_FUNCTION(verify, 93C13,    93Cxx, SIZE_93C13, 16, ADDR_SIZE_93C13);
+REGISTER_FUNCTION(verify, 93C14,    93Cxx, SIZE_93C14, 16, ADDR_SIZE_93C14);
+REGISTER_FUNCTION(verify, 93C46_8,  93Cxx, SIZE_93C46, 8,  ADDR_SIZE_93C46);
+REGISTER_FUNCTION(verify, 93C46_16, 93Cxx, SIZE_93C46, 16, ADDR_SIZE_93C46);
+REGISTER_FUNCTION(verify, 93C56_8,  93Cxx, SIZE_93C56, 8,  ADDR_SIZE_93C56);
+REGISTER_FUNCTION(verify, 93C56_16, 93Cxx, SIZE_93C56, 16, ADDR_SIZE_93C56);
+REGISTER_FUNCTION(verify, 93C66_8,  93Cxx, SIZE_93C66, 8,  ADDR_SIZE_93C66);
+REGISTER_FUNCTION(verify, 93C66_16, 93Cxx, SIZE_93C66, 16, ADDR_SIZE_93C66);
+REGISTER_FUNCTION(verify, 93C76_8,  93Cxx, SIZE_93C76, 8,  ADDR_SIZE_93C76);
+REGISTER_FUNCTION(verify, 93C76_16, 93Cxx, SIZE_93C76, 16, ADDR_SIZE_93C76);
+REGISTER_FUNCTION(verify, 93C86_8,  93Cxx, SIZE_93C86, 8,  ADDR_SIZE_93C86);
+REGISTER_FUNCTION(verify, 93C86_16, 93Cxx, SIZE_93C86, 16, ADDR_SIZE_93C86);
+
+REGISTER_FUNCTION(test_blank, 93C06,    93Cxx, SIZE_93C06, 16, ADDR_SIZE_93C06);
+REGISTER_FUNCTION(test_blank, 93C13,    93Cxx, SIZE_93C13, 16, ADDR_SIZE_93C13);
+REGISTER_FUNCTION(test_blank, 93C14,    93Cxx, SIZE_93C14, 16, ADDR_SIZE_93C14);
+REGISTER_FUNCTION(test_blank, 93C46_8,  93Cxx, SIZE_93C46, 8,  ADDR_SIZE_93C46);
+REGISTER_FUNCTION(test_blank, 93C46_16, 93Cxx, SIZE_93C46, 16, ADDR_SIZE_93C46);
+REGISTER_FUNCTION(test_blank, 93C56_8,  93Cxx, SIZE_93C56, 8,  ADDR_SIZE_93C56);
+REGISTER_FUNCTION(test_blank, 93C56_16, 93Cxx, SIZE_93C56, 16, ADDR_SIZE_93C56);
+REGISTER_FUNCTION(test_blank, 93C66_8,  93Cxx, SIZE_93C66, 8,  ADDR_SIZE_93C66);
+REGISTER_FUNCTION(test_blank, 93C66_16, 93Cxx, SIZE_93C66, 16, ADDR_SIZE_93C66);
+REGISTER_FUNCTION(test_blank, 93C76_8,  93Cxx, SIZE_93C76, 8,  ADDR_SIZE_93C76);
+REGISTER_FUNCTION(test_blank, 93C76_16, 93Cxx, SIZE_93C76, 16, ADDR_SIZE_93C76);
+REGISTER_FUNCTION(test_blank, 93C86_8,  93Cxx, SIZE_93C86, 8,  ADDR_SIZE_93C86);
+REGISTER_FUNCTION(test_blank, 93C86_16, 93Cxx, SIZE_93C86, 16, ADDR_SIZE_93C86);
+
+REGISTER_FUNCTION(write, 93C06,    93Cxx, SIZE_93C06, 16, ADDR_SIZE_93C06);
+REGISTER_FUNCTION(write, 93C13,    93Cxx, SIZE_93C13, 16, ADDR_SIZE_93C13);
+REGISTER_FUNCTION(write, 93C14,    93Cxx, SIZE_93C14, 16, ADDR_SIZE_93C14);
+REGISTER_FUNCTION(write, 93C46_8,  93Cxx, SIZE_93C46, 8,  ADDR_SIZE_93C46);
+REGISTER_FUNCTION(write, 93C46_16, 93Cxx, SIZE_93C46, 16, ADDR_SIZE_93C46);
+REGISTER_FUNCTION(write, 93C56_8,  93Cxx, SIZE_93C56, 8,  ADDR_SIZE_93C56);
+REGISTER_FUNCTION(write, 93C56_16, 93Cxx, SIZE_93C56, 16, ADDR_SIZE_93C56);
+REGISTER_FUNCTION(write, 93C66_8,  93Cxx, SIZE_93C66, 8,  ADDR_SIZE_93C66);
+REGISTER_FUNCTION(write, 93C66_16, 93Cxx, SIZE_93C66, 16, ADDR_SIZE_93C66);
+REGISTER_FUNCTION(write, 93C76_8,  93Cxx, SIZE_93C76, 8,  ADDR_SIZE_93C76);
+REGISTER_FUNCTION(write, 93C76_16, 93Cxx, SIZE_93C76, 16, ADDR_SIZE_93C76);
+REGISTER_FUNCTION(write, 93C86_8,  93Cxx, SIZE_93C86, 8,  ADDR_SIZE_93C86);
+REGISTER_FUNCTION(write, 93C86_16, 93Cxx, SIZE_93C86, 16, ADDR_SIZE_93C86);
+
+REGISTER_FUNCTION(erase, 93C06,    93Cxx, SIZE_93C06, 16, ADDR_SIZE_93C06);
+REGISTER_FUNCTION(erase, 93C13,    93Cxx, SIZE_93C13, 16, ADDR_SIZE_93C13);
+REGISTER_FUNCTION(erase, 93C14,    93Cxx, SIZE_93C14, 16, ADDR_SIZE_93C14);
+REGISTER_FUNCTION(erase, 93C46_8,  93Cxx, SIZE_93C46, 8,  ADDR_SIZE_93C46);
+REGISTER_FUNCTION(erase, 93C46_16, 93Cxx, SIZE_93C46, 16, ADDR_SIZE_93C46);
+REGISTER_FUNCTION(erase, 93C56_8,  93Cxx, SIZE_93C56, 8,  ADDR_SIZE_93C56);
+REGISTER_FUNCTION(erase, 93C56_16, 93Cxx, SIZE_93C56, 16, ADDR_SIZE_93C56);
+REGISTER_FUNCTION(erase, 93C66_8,  93Cxx, SIZE_93C66, 8,  ADDR_SIZE_93C66);
+REGISTER_FUNCTION(erase, 93C66_16, 93Cxx, SIZE_93C66, 16, ADDR_SIZE_93C66);
+REGISTER_FUNCTION(erase, 93C76_8,  93Cxx, SIZE_93C76, 8,  ADDR_SIZE_93C76);
+REGISTER_FUNCTION(erase, 93C76_16, 93Cxx, SIZE_93C76, 16, ADDR_SIZE_93C76);
+REGISTER_FUNCTION(erase, 93C86_8,  93Cxx, SIZE_93C86, 8,  ADDR_SIZE_93C86);
+REGISTER_FUNCTION(erase, 93C86_16, 93Cxx, SIZE_93C86, 16, ADDR_SIZE_93C86);
 
 REGISTER_MODULE_BEGIN( 93Cxx )
-
-    register_chip_begin("/Serial EEPROM/93Cxx", "93C46", "93Cxx", C46_SIZE);
-	add_action(MODULE_READ_ACTION, read_9346A);
-	add_action(MODULE_PROG_ACTION, prog_9346A);
-    	add_action(MODULE_ERASE_ACTION, erase_9346A);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C06", "93Cxx", SIZE_93C06);
+	add_action(MODULE_READ_ACTION, read_93C06);
+	add_action(MODULE_VERIFY_ACTION, verify_93C06);
+	add_action(MODULE_TEST_ACTION, test_blank_93C06);
+	add_action(MODULE_PROG_ACTION, write_93C06);
+	add_action(MODULE_ERASE_ACTION, erase_93C06);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx", "93LC46", "93Cxx", C46_SIZE);
-	add_action(MODULE_READ_ACTION, read_9346A);
-	add_action(MODULE_PROG_ACTION, prog_9346A);
-	add_action(MODULE_ERASE_ACTION, erase_9346A);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C13", "93Cxx", SIZE_93C13);
+	add_action(MODULE_READ_ACTION, read_93C13);
+	add_action(MODULE_VERIFY_ACTION, verify_93C13);
+	add_action(MODULE_TEST_ACTION, test_blank_93C13);
+	add_action(MODULE_PROG_ACTION, write_93C13);
+	add_action(MODULE_ERASE_ACTION, erase_93C13);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx", "93C56", "93Cxx", C56_SIZE);
-	add_action(MODULE_READ_ACTION, read_9356);
-	add_action(MODULE_PROG_ACTION, prog_9356);
-	add_action(MODULE_ERASE_ACTION, erase_9356);
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C46 (8bit)", "93Cxx", SIZE_93C46);
+	add_action(MODULE_READ_ACTION, read_93C46_8);
+	add_action(MODULE_VERIFY_ACTION, verify_93C46_8);
+	add_action(MODULE_TEST_ACTION, test_blank_93C46_8);
+	add_action(MODULE_PROG_ACTION, write_93C46_8);
+	add_action(MODULE_ERASE_ACTION, erase_93C46_8);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx", "93C66", "93Cxx", C66_SIZE);
-	add_action(MODULE_READ_ACTION, read_9366);
-	add_action(MODULE_PROG_ACTION, prog_9366);
-	add_action(MODULE_ERASE_ACTION, erase_9366);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C14", "93Cxx", SIZE_93C14);
+	add_action(MODULE_READ_ACTION, read_93C14);
+	add_action(MODULE_VERIFY_ACTION, verify_93C14);
+	add_action(MODULE_TEST_ACTION, test_blank_93C14);
+	add_action(MODULE_PROG_ACTION, write_93C14);
+	add_action(MODULE_ERASE_ACTION, erase_93C14);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C46 (16bit)", "93Cxx", SIZE_93C46);
+	add_action(MODULE_READ_ACTION, read_93C46_16);
+	add_action(MODULE_VERIFY_ACTION, verify_93C46_16);
+	add_action(MODULE_TEST_ACTION, test_blank_93C46_16);
+	add_action(MODULE_PROG_ACTION, write_93C46_16);
+	add_action(MODULE_ERASE_ACTION, erase_93C46_16);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C56 (8bit)", "93Cxx", SIZE_93C56);
+	add_action(MODULE_READ_ACTION, read_93C56_8);
+	add_action(MODULE_VERIFY_ACTION, verify_93C56_8);
+	add_action(MODULE_TEST_ACTION, test_blank_93C56_8);
+	add_action(MODULE_PROG_ACTION, write_93C56_8);
+	add_action(MODULE_ERASE_ACTION, erase_93C56_8);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C56 (16bit)", "93Cxx", SIZE_93C56);
+	add_action(MODULE_READ_ACTION, read_93C56_16);
+	add_action(MODULE_VERIFY_ACTION, verify_93C56_16);
+	add_action(MODULE_TEST_ACTION, test_blank_93C56_16);
+	add_action(MODULE_PROG_ACTION, write_93C56_16);
+	add_action(MODULE_ERASE_ACTION, erase_93C56_16);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C66 (8bit)", "93Cxx", SIZE_93C66);
+	add_action(MODULE_READ_ACTION, read_93C66_8);
+	add_action(MODULE_VERIFY_ACTION, verify_93C66_8);
+	add_action(MODULE_TEST_ACTION, test_blank_93C66_8);
+	add_action(MODULE_PROG_ACTION, write_93C66_8);
+	add_action(MODULE_ERASE_ACTION, erase_93C66_8);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C66 (16bit)", "93Cxx", SIZE_93C66);
+	add_action(MODULE_READ_ACTION, read_93C66_16);
+	add_action(MODULE_VERIFY_ACTION, verify_93C66_16);
+	add_action(MODULE_TEST_ACTION, test_blank_93C66_16);
+	add_action(MODULE_PROG_ACTION, write_93C66_16);
+	add_action(MODULE_ERASE_ACTION, erase_93C66_16);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C76 (8bit)", "93Cxx", SIZE_93C76);
+	add_action(MODULE_READ_ACTION, read_93C76_8);
+	add_action(MODULE_VERIFY_ACTION, verify_93C76_8);
+	add_action(MODULE_TEST_ACTION, test_blank_93C76_8);
+	add_action(MODULE_PROG_ACTION, write_93C76_8);
+	add_action(MODULE_ERASE_ACTION, erase_93C76_8);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C76 (16bit)", "93Cxx", SIZE_93C76);
+	add_action(MODULE_READ_ACTION, read_93C76_16);
+	add_action(MODULE_VERIFY_ACTION, verify_93C76_16);
+	add_action(MODULE_TEST_ACTION, test_blank_93C76_16);
+	add_action(MODULE_PROG_ACTION, write_93C76_16);
+	add_action(MODULE_ERASE_ACTION, erase_93C76_16);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C86 (8bit)", "93Cxx", SIZE_93C86);
+	add_action(MODULE_READ_ACTION, read_93C86_8);
+	add_action(MODULE_VERIFY_ACTION, verify_93C86_8);
+	add_action(MODULE_TEST_ACTION, test_blank_93C86_8);
+	add_action(MODULE_PROG_ACTION, write_93C86_8);
+	add_action(MODULE_ERASE_ACTION, erase_93C86_8);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C86 (16bit)", "93Cxx", SIZE_93C86);
+	add_action(MODULE_READ_ACTION, read_93C86_16);
+	add_action(MODULE_VERIFY_ACTION, verify_93C86_16);
+	add_action(MODULE_TEST_ACTION, test_blank_93C86_16);
+	add_action(MODULE_PROG_ACTION, write_93C86_16);
+	add_action(MODULE_ERASE_ACTION, erase_93C86_16);
     register_chip_end;
 
 REGISTER_MODULE_END

@@ -204,6 +204,8 @@
     REGISTER_FUNCTION_( action##_##registered_name, action##_##exec_name, call_parameters)
 
 #define BYTE_POSITION( value, position )	((value) << ( 8 * (position)))
+#define MSB( i )	(( (i) >> 8) & 0xff)
+#define LSB( i )	((i) & 0xff)
 
 #define KB_SIZE( x )	(1024 * (x))
 #define MB_SIZE( x ) 	(1024 * KB_SIZE(x))
