@@ -2,7 +2,7 @@
 # chips
 def build(bld):
   print('→ building chips')
-  modules_base=["24Cxx","27xx","28xx","93Cxx","mcs48","mcs51","prom"]
+  modules_base=["24Cxx","27xx","28xx","93Cxx","mcs48","mcs51","prom","hub_lpc"]
   for mod in modules_base:
     b=bld(
       features = 'c cshlib',
