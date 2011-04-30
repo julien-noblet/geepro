@@ -28,10 +28,63 @@ MODULE_IMPLEMENTATION
 #define LF004_SIZE	KB_SIZE( 512 )
 #define LF008_SIZE	MB_SIZE( 1 )
 
+/********************************* LOW LEVEL OPERATIONS ******************************************************/
+
+void set_addr_rc_LPC( int row, int column )
+{
+    hw_set_addr( row );
+    hw_sw_vcc(0);
+    hw_us_delay(1);    
+    hw_set_addr( column );
+    hw_sw_vcc(1);
+    hw_us_delay(10);    
+}
+
+void set_addr_LPC( int addr )
+{
+    set_addr_rc_LPC( addr & 0x7ff, (addr >> 11) & 0x7ff );
+}
+
+void set_data_LPC( unsigned char data )
+{
+    hw_set_pgm( 0 );
+    hw_set_data( data );
+    hw_us_delay( 1 );
+    hw_set_pgm( 1 );
+    hw_us_delay( 10 );
+    hw_set_we( 0 );
+}
+
+unsigned char get_data_LPC()
+{
+    unsigned char data;
+
+    hw_set_oe(0);
+    hw_us_delay( 1 );
+    data = hw_get_data();
+    hw_set_oe(1);
+    hw_us_delay( 1 );
+    return data;
+}
+
+/*********************************************************************************************/
 
 void read_LPC(unsigned int dev_size)
 {
+    unsigned int addr;
+    
+    TEST_CONNECTION( VOID )
+    hw_set_vcc( 330 );
 
+    hw_set_pgm( 1 );
+    hw_set_oe( 1 );
+    hw_sw_vcc( 1 );
+    
+    progress_loop(addr, dev_size, "Reading..."){
+	set_addr_LPC( addr );
+	put_buffer( addr, get_data_LPC() );
+    }
+    finish_action();    
 }
 
 /*********************************************************************************************/
