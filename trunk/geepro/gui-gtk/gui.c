@@ -887,10 +887,12 @@ char gui_progress_bar_set(geepro *gep, long value, long max)
 {
     long delta;
     if(gui_progress_bar_exit) return 1;
-    if((value != 0) || (value != max)){
-	delta = max / 100;
-	if(delta < 1) delta = 1;
-        if( value % delta ) return 0;
+    if( value != 1){
+	if((value != 0) || (value != max)){
+	    delta = max / 100;
+	    if(delta < 1) delta = 1;
+    	    if( value % delta ) return 0;
+	}
     }
     gtk_progress_set_value(GTK_PROGRESS(GUI(gep->gui)->progress_bar), value);
     gui_rfsh_gtk();
