@@ -22,18 +22,18 @@
 
 MODULE_IMPLEMENTATION
 
-#define SIZE_2816	2048
-#define SIZE_2832	4096
-#define SIZE_2864	8192
-#define SIZE_28128	16384
-#define SIZE_28256	32768
-#define SIZE_28512	65536
-#define SIZE_28F010	131072
-#define SIZE_28F020	262144
-#define SIZE_28F040	524288
-#define SIZE_28F080	1048576
+#define SIZE_2816	KB_SIZE( 2 )
+#define SIZE_2832	KB_SIZE( 4 ) 
+#define SIZE_2864	KB_SIZE( 8 )
+#define SIZE_28128	KB_SIZE( 16 )
+#define SIZE_28256	KB_SIZE( 32 )
+#define SIZE_28512	KB_SIZE( 64 )
+#define SIZE_28F010	KB_SIZE( 128 )
+#define SIZE_28F020	KB_SIZE( 256 )
+#define SIZE_28F040	KB_SIZE( 512 )
+#define SIZE_28F080	MB_SIZE( 1 )
 
-char read_byte_2816( int addr )
+char read_byte_eeprom( int addr )
 {
     char data;
     set_address( addr );
@@ -43,20 +43,20 @@ char read_byte_2816( int addr )
     return data;
 }
 
-void read_2816_(int size, char ce)
+void read_eeprom_(int size, char ce)
 {
     int addr;
     unsigned char data;
     TEST_CONNECTION( VOID )
     start_action(0, ce);
     progress_loop(addr, size, "Reading data"){
-	data = read_byte_2816( addr );
+	data = read_byte_eeprom( addr );
 	put_buffer(addr, data);
     }    
     finish_action();
 }
 
-char test_2816_(int size, char ce, char silent)
+char test_eeprom_(int size, char ce, char silent)
 {
     int addr;
     unsigned char rdata;
@@ -65,7 +65,7 @@ char test_2816_(int size, char ce, char silent)
     TEST_CONNECTION( 1 )
     start_action(0, ce);
     progress_loop(addr, size, "Test blank"){
-	rdata = read_byte_2816( addr );
+	rdata = read_byte_eeprom( addr );
 	break_if( rdata != 0xff );
     }    
     finish_action();
@@ -80,7 +80,7 @@ char test_2816_(int size, char ce, char silent)
     return rdata != 0xff;
 }
 
-void verify_2816_(int size, char ce)
+void verify_eeprom_(int size, char ce)
 {
     int addr;
     unsigned char rdata, wdata;
@@ -88,7 +88,7 @@ void verify_2816_(int size, char ce)
     
     start_action(0, ce);
     progress_loop(addr, size, "Verifying data"){
-	rdata = read_byte_2816( addr );
+	rdata = read_byte_eeprom( addr );
 	wdata = get_buffer( addr );
 	break_if( rdata != wdata );
     }    
@@ -115,7 +115,7 @@ void signat_read()
     
     TEST_CONNECTION( VOID )
 
-    read_signature( &manufact, &dev_code );
+//    read_signature( &manufact, &dev_code );
 
     sprintf(text, "[IF][TEXT] Manufacturer code = 0x%X%X\nDevice code = 0x%X%X\n%s[/TEXT][BR]OK",
 	to_hex( manufact, 1), to_hex( manufact, 0),
@@ -172,7 +172,7 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
     x = *lb & 0x07;
     if( x != 1 ) return; // missing algorithm choice
     if( *lb & 0x08 )	// test blank
-	if(test_2816_(size, !ce_pgm, 1)) return;
+	if(test_eeprom_(size, !ce_pgm, 1)) return;
     if( !ce_pgm ) hw_pragma( PRAGMA_CE_EQ_PGM ); // if set, ignoring ce() command for programmers like willem, PROG() will be CE
     hw_sw_vcc(1);    
     hw_sw_vpp(1);
@@ -192,7 +192,7 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
     hw_sw_vcc(0);    
 
     if( *lb & 0x10 )
-	verify_2816_( size, !ce_pgm );
+	verify_eeprom_( size, !ce_pgm );
     hw_pragma( 0 );
 */
 }
@@ -200,58 +200,58 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
 /*********************************************************************************************************/
 
 /* 2816 */
-//REGISTER_FUNCTION( read,   2816,  2816_, SIZE_2816, 1 );
-//REGISTER_FUNCTION( verify, 2816,  2816_, SIZE_2816, 1 );
-//REGISTER_FUNCTION( test,   2816,  2816_, SIZE_2816, 1, 0 );
+//REGISTER_FUNCTION( read,   2816,  eeprom_, SIZE_2816, 1 );
+//REGISTER_FUNCTION( verify, 2816,  eeprom_, SIZE_2816, 1 );
+//REGISTER_FUNCTION( test,   2816,  eeprom_, SIZE_2816, 1, 0 );
 //REGISTER_FUNCTION( prog,   2816,  eprom, SIZE_2816, 0, 0 );
 //REGISTER_FUNCTION( erase,  2816,  erase, SIZE_2816, 0, 0 );
 /* 2864 */
-//REGISTER_FUNCTION( read,   2864,  2816_, SIZE_2864, 1 );
-//REGISTER_FUNCTION( verify, 2864,  2816_, SIZE_2864, 1 );
-//REGISTER_FUNCTION( test,   2864,  2816_, SIZE_2864, 1, 0 );
+REGISTER_FUNCTION( read,   2864,  eeprom_, SIZE_2864, 1 );
+//REGISTER_FUNCTION( verify, 2864,  eeprom_, SIZE_2864, 1 );
+//REGISTER_FUNCTION( test,   2864,  eeprom_, SIZE_2864, 1, 0 );
 //REGISTER_FUNCTION( prog,   2864,  eprom, SIZE_2864, 0, 0 );
 //REGISTER_FUNCTION( erase,  2864,  erase, SIZE_2864, 0, 0 );
 /* 28128 */
-//REGISTER_FUNCTION( read,   28128, 2816_, SIZE_28128, 1 );
-//REGISTER_FUNCTION( verify, 28128, 2816_, SIZE_28128, 1 );
-//REGISTER_FUNCTION( test,   28128, 2816_, SIZE_28128, 1, 0 );
+//REGISTER_FUNCTION( read,   28128, eeprom_, SIZE_28128, 1 );
+//REGISTER_FUNCTION( verify, 28128, eeprom_, SIZE_28128, 1 );
+//REGISTER_FUNCTION( test,   28128, eeprom_, SIZE_28128, 1, 0 );
 //REGISTER_FUNCTION( prog,   28128, eprom, SIZE_28128, 0, 0 );
 //REGISTER_FUNCTION( erase,  28128, erase, SIZE_28128, 0, 0 );
 /* 28256 */
-//REGISTER_FUNCTION( read,   28256, 2816_, SIZE_28256, 0 );
-//REGISTER_FUNCTION( verify, 28256, 2816_, SIZE_28256, 0 );
-//REGISTER_FUNCTION( test,   28256, 2816_, SIZE_28256, 0, 0 );
+//REGISTER_FUNCTION( read,   28256, eeprom_, SIZE_28256, 0 );
+//REGISTER_FUNCTION( verify, 28256, eeprom_, SIZE_28256, 0 );
+//REGISTER_FUNCTION( test,   28256, eeprom_, SIZE_28256, 0, 0 );
 //REGISTER_FUNCTION( prog,   28256, eprom, SIZE_28256, 1, 0 );
 //REGISTER_FUNCTION( erase,  28256, erase, SIZE_28256, 0, 0 );
 /* 28512 */
-REGISTER_FUNCTION( read,   28512, 2816_, SIZE_28512, 0 );
-REGISTER_FUNCTION( verify, 28512, 2816_, SIZE_28512, 0 );
-REGISTER_FUNCTION( test,   28512, 2816_, SIZE_28512, 0, 0 );
-REGISTER_FUNCTION( prog,   28512, eprom, SIZE_28512, 1, 1 );
-REGISTER_FUNCTION( erase,  28512, erase, SIZE_28512, 0, 0 );
-REGISTER_FUNCTION( signat,  28512, read, SIZE_28512, 0, 0 );
+//REGISTER_FUNCTION( read,   28512, eeprom_, SIZE_28512, 0 );
+//REGISTER_FUNCTION( verify, 28512, eeprom_, SIZE_28512, 0 );
+//REGISTER_FUNCTION( test,   28512, eeprom_, SIZE_28512, 0, 0 );
+//REGISTER_FUNCTION( prog,   28512, eprom, SIZE_28512, 1, 1 );
+//REGISTER_FUNCTION( erase,  28512, erase, SIZE_28512, 0, 0 );
+//REGISTER_FUNCTION( signat,  28512, read, SIZE_28512, 0, 0 );
 /* 28F010 */
-//REGISTER_FUNCTION( read,   28F010, 2816_, SIZE_28F010, 0 );
-//REGISTER_FUNCTION( verify, 28F010, 2816_, SIZE_28F010, 0 );
-//REGISTER_FUNCTION( test,   28F010, 2816_, SIZE_28F010, 1, 0 );
+//REGISTER_FUNCTION( read,   28F010, eeprom_, SIZE_28F010, 0 );
+//REGISTER_FUNCTION( verify, 28F010, eeprom_, SIZE_28F010, 0 );
+//REGISTER_FUNCTION( test,   28F010, eeprom_, SIZE_28F010, 1, 0 );
 //REGISTER_FUNCTION( prog,   28F010, eprom, SIZE_28F010, 0, 0 );
 //REGISTER_FUNCTION( erase,  28F010, erase, SIZE_28F010, 0, 0 );
 /* 28F020 */
-//REGISTER_FUNCTION( read,   28F020, 2816_, SIZE_28F020, 0 );
-//REGISTER_FUNCTION( verify, 28F020, 2816_, SIZE_28F020, 0 );
-//REGISTER_FUNCTION( test,   28F020, 2816_, SIZE_28F020, 1, 0 );
+//REGISTER_FUNCTION( read,   28F020, eeprom_, SIZE_28F020, 0 );
+//REGISTER_FUNCTION( verify, 28F020, eeprom_, SIZE_28F020, 0 );
+//REGISTER_FUNCTION( test,   28F020, eeprom_, SIZE_28F020, 1, 0 );
 //REGISTER_FUNCTION( prog,   28F020, eprom, SIZE_28F020, 0, 0 );
 //REGISTER_FUNCTION( erase,  28F020, erase, SIZE_28F020, 0, 0 );
 /* 28F040 */
-//REGISTER_FUNCTION( read,   28F040, 2816_, SIZE_28F040, 0 );
-//REGISTER_FUNCTION( verify, 28F040, 2816_, SIZE_28F040, 0 );
-//REGISTER_FUNCTION( test,   28F040, 2816_, SIZE_28F040, 0, 0 );
+//REGISTER_FUNCTION( read,   28F040, eeprom_, SIZE_28F040, 0 );
+//REGISTER_FUNCTION( verify, 28F040, eeprom_, SIZE_28F040, 0 );
+//REGISTER_FUNCTION( test,   28F040, eeprom_, SIZE_28F040, 0, 0 );
 //REGISTER_FUNCTION( prog,   28F040, eprom, SIZE_28F040, 1, 0 );
 //REGISTER_FUNCTION( erase,  28F040, erase, SIZE_28F040, 0, 0 );
 /* 28F080 */
-//REGISTER_FUNCTION( read,   28F080, 2816_, SIZE_28F080, 0 );
-//REGISTER_FUNCTION( verify, 28F080, 2816_, SIZE_28F080, 0 );
-//REGISTER_FUNCTION( test,   28F080, 2816_, SIZE_28F080, 0, 0 );
+//REGISTER_FUNCTION( read,   28F080, eeprom_, SIZE_28F080, 0 );
+//REGISTER_FUNCTION( verify, 28F080, eeprom_, SIZE_28F080, 0 );
+//REGISTER_FUNCTION( test,   28F080, eeprom_, SIZE_28F080, 0, 0 );
 //REGISTER_FUNCTION( prog,   28F080, eprom, SIZE_28F080, 1, 1 );
 //REGISTER_FUNCTION( erase,  28F080, erase, SIZE_28F080, 0, 0 );
 /********************************************************************************************/
@@ -272,13 +272,13 @@ REGISTER_MODULE_BEGIN( 28xx )
 //	add_action(MODULE_TEST_ACTION, test_2864);
 //    register_chip_end;
 /* 28 PIN EPROM */
-//    register_chip_begin("/EEPROM 28xx/28 pin", "2864", "2864_128", SIZE_2864);
-//	add_action(MODULE_READ_ACTION, read_2864);
+    register_chip_begin("/EEPROM 28xx/28 pin", "2864", "2864_128", SIZE_2864);
+	add_action(MODULE_READ_ACTION, read_2864);
 //	add_action(MODULE_PROG_ACTION, prog_2864);
 //	add_action(MODULE_ERASE_ACTION, erase_2864);
 //	add_action(MODULE_VERIFY_ACTION, verify_2864);
 //	add_action(MODULE_TEST_ACTION, test_2864);
-//    register_chip_end;
+    register_chip_end;
 //    register_chip_begin("/EEPROM 28xx/28 pin", "28128", "2864_128", SIZE_28128);
 //	add_action(MODULE_READ_ACTION, read_28128);
 //	add_action(MODULE_PROG_ACTION, prog_28128);
@@ -294,14 +294,14 @@ REGISTER_MODULE_BEGIN( 28xx )
 //	add_action(MODULE_TEST_ACTION, test_28256);
 //    register_chip_end;
 /* 32 PIN EPROM */
-    register_chip_begin("/EEPROM 28xx/32 pin", "28F512", "28512", SIZE_28512);
-	add_action(MODULE_READ_ACTION, read_28512);
-	add_action(MODULE_PROG_ACTION, prog_28512);
-	add_action(MODULE_ERASE_ACTION, erase_28512);
-	add_action(MODULE_VERIFY_ACTION, verify_28512);
-	add_action(MODULE_TEST_ACTION, test_28512);
-	add_action(MODULE_SIGN_ACTION, signat_28512);
-    register_chip_end;
+//    register_chip_begin("/EEPROM 28xx/32 pin", "28F512", "28512", SIZE_28512);
+//	add_action(MODULE_READ_ACTION, read_28512);
+//	add_action(MODULE_PROG_ACTION, prog_28512);
+//	add_action(MODULE_ERASE_ACTION, erase_28512);
+//	add_action(MODULE_VERIFY_ACTION, verify_28512);
+//	add_action(MODULE_TEST_ACTION, test_28512);
+//	add_action(MODULE_SIGN_ACTION, signat_28512);
+//    register_chip_end;
 //    register_chip_begin("/EEPROM 28xx/32 pin", "28F010,28F1000,28F1001", "28F010", SIZE_28F010);
 //	add_action(MODULE_READ_ACTION, read_28F010);
 //	add_action(MODULE_PROG_ACTION, prog_28F010);
