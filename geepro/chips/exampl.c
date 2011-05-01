@@ -31,8 +31,6 @@ void read_exec( /* additional arguments given by REGISTER_FUNCTION */ )
     int count = 100;
     int iterator_var; // set to 0 by makro progress_loop()
 
-    TEST_CONNECTION( VOID ); // tests hardware connection, exits if fault
-    
     progress_loop( iterator_var, count, "Displayed text")
     {
 //	break_if( condition ); -> break loop, and sets ERROR_VAL = condition, if condition differs 0

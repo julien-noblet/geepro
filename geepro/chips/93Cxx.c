@@ -53,8 +53,6 @@ void read_93Cxx(int dev_size, int org, int alen)
     unsigned int data, addr;
     char n = 0;
 
-    TEST_CONNECTION( VOID )
-
     if(org == 16) n = 1;
     alen -= n;
     
@@ -78,8 +76,6 @@ void verify_93Cxx(int dev_size, int org, int alen)
     char text[256];
 
     char n = 0;
-
-    TEST_CONNECTION( VOID )
 
     if(org == 16) n = 1;
     alen -= n;
@@ -115,8 +111,6 @@ void test_blank_93Cxx(int dev_size, int org, int alen)
 
     char n = 0;
 
-    TEST_CONNECTION( VOID )
-
     if(org == 16) n = 1;
     alen -= n;
     
@@ -145,8 +139,6 @@ void write_93Cxx(int dev_size, int org, int alen)
     unsigned long *lb;
     unsigned int data, addr;
     char n = 0;
-
-    TEST_CONNECTION( VOID )
 
     lb = checkbox(
 	"[TITLE]Writing chip[/TITLE][TYPE:QS]"
@@ -179,7 +171,6 @@ void write_93Cxx(int dev_size, int org, int alen)
 void erase_93Cxx(int dev_size, int org, int alen)
 {
     unsigned long *lb;
-    TEST_CONNECTION( VOID )
 
     lb = checkbox(
 	"[TITLE]Erase chip[/TITLE][TYPE:QS]"

@@ -108,8 +108,6 @@ void read_HUB(unsigned int dev_size, unsigned int start)
 {
     unsigned int addr;
 
-    TEST_CONNECTION( VOID )
-
     init_HUB();
     progress_loop(addr, dev_size, "Reading...")
 	put_buffer( addr, read_data_HUB( start + addr ) );
@@ -121,8 +119,6 @@ void verify_HUB(unsigned int dev_size, unsigned int start)
     char text[256];
     unsigned int addr;
     unsigned char rdata = 0, bdata = 0;
-
-    TEST_CONNECTION( VOID )
 
     init_HUB();
     progress_loop(addr, dev_size, "Veryfying..."){
@@ -147,8 +143,6 @@ void test_blank_HUB(unsigned int dev_size, unsigned int start)
     unsigned int addr;
     unsigned char rdata = 0;
 
-    TEST_CONNECTION( VOID )
-
     init_HUB();
     progress_loop(addr, dev_size, "Test Blank..."){
 	rdata = read_data_HUB( start + addr );
@@ -170,7 +164,6 @@ void sign_HUB()
     unsigned char man, id, tbl;
     char chip[256], vendor[256], text[1024];
 
-    TEST_CONNECTION( VOID )
     init_HUB();
 
     write_data_HUB( 0x5555, 0xaa);
@@ -211,7 +204,6 @@ void lock_HUB()
     if( !(*lb & 2) ) return; // Not checked
     if( *lb & 1 ) return;
 
-    TEST_CONNECTION( VOID )
     init_HUB();
 
     // take actual flag
@@ -236,7 +228,6 @@ void erase_HUB(unsigned int dev_size, unsigned int start)
     unsigned long *lb;
     int i;
     
-    TEST_CONNECTION( VOID )
     lb = checkbox(
 	"[TITLE]Erasing chip[/TITLE][TYPE:QS]"
 	"[CB:2:0: Are you sure ? (Tick if Yes)]"
@@ -277,7 +268,6 @@ void prog_HUB(unsigned int dev_size, unsigned int start)
     unsigned char bdata;
     int addr;
     
-    TEST_CONNECTION( VOID )
     lb = checkbox(
 	"[TITLE]Writing chip[/TITLE][TYPE:QS]"
 	"[CB:2:0: Are you sure ? (Tick if Yes)]"

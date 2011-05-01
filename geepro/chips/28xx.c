@@ -47,7 +47,7 @@ void read_eeprom_(int size, char ce)
 {
     int addr;
     unsigned char data;
-    TEST_CONNECTION( VOID )
+
     start_action(0, ce);
     progress_loop(addr, size, "Reading data"){
 	data = read_byte_eeprom( addr );
@@ -62,7 +62,6 @@ char test_eeprom_(int size, char ce, char silent)
     unsigned char rdata;
     char text[256];
     
-    TEST_CONNECTION( 1 )
     start_action(0, ce);
     progress_loop(addr, size, "Test blank"){
 	rdata = read_byte_eeprom( addr );
@@ -113,8 +112,6 @@ void signat_read()
     char manufact = 0, dev_code = 0; 
     char text[256];
     
-    TEST_CONNECTION( VOID )
-
 //    read_signature( &manufact, &dev_code );
 
     sprintf(text, "[IF][TEXT] Manufacturer code = 0x%X%X\nDevice code = 0x%X%X\n%s[/TEXT][BR]OK",
@@ -128,8 +125,6 @@ void signat_read()
 char read_eprom(int addr, char oe_vpp)
 {
     char data;
-
-    TEST_CONNECTION( 0 )
 
     set_address(addr);
     hw_delay(5); // tPHQX + tQXGL
@@ -161,7 +156,6 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
     char text[256];
     char toggle;
     
-    TEST_CONNECTION( VOID )
     lb = checkbox(
 	"[TITLE]Chip burning[/TITLE][TYPE:QS]"
 	"[CB:1:0:Automatic programming]"

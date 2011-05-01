@@ -19,17 +19,6 @@
  *
  */
 
-/*
-    Aby móc odczytywaæ zawarto¶æ PROM serii 74S474 w programatorze WILLEM V 3.1 20-3-2002 
-    nale¿y przeci±æ ¶cie¿kê od wyprowadzenia 28 ZIF i po³±czyæ j± jumperem pomiêdzy istniej±ce 
-    po³±czenie, a VCC ZIF.
-    To umo¿liwi obs³ugê uk³adów 24 PIN.
-    
-    Aby móc odczytywaæ zawarto¶æ wszystkich 74S475, (wyj¶cia OC), nale¿y w liniê danych
-    13..16,17..21 ZIF wstawiæ drabinkê 10k do zasilania.
-    To ma na celu mo¿liwo¶æ obs³ugi uk³adów z wyj¶ciami typu Open Collector
-*/
-
 #include "modules.h"
 
 MODULE_IMPLEMENTATION
@@ -45,7 +34,7 @@ REG_FUNC_BEGIN(read_474)
     hw_set_addr(0);
     hw_set_data(0);
     hw_delay(1000);
-    progress_loop(addr, SIZE_PROM_474, "Odczyt PROM"){
+    progress_loop(addr, SIZE_PROM_474, "Reading..."){
 	hw_set_oe(1);
 	hw_set_ce(1);
 	hw_set_addr(addr | ADDR_MASK_474);	
@@ -64,7 +53,7 @@ REG_FUNC_BEGIN(verify_474)
     hw_set_addr(0);
     hw_set_data(0);
     hw_delay(1000);
-    progress_loop(addr, SIZE_PROM_474, "Weryfikacja PROM"){
+    progress_loop(addr, SIZE_PROM_474, "Veryfying..."){
 	hw_set_oe(1);
 	hw_set_ce(1);
 	hw_set_addr(addr | ADDR_MASK_474);	

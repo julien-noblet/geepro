@@ -127,11 +127,6 @@
     static int ___error___ = 0;\
 
 #define VOID
-#define TEST_CONNECTION( ret ) \
-    if(gui_test_connection(___geep___)){\
-     SET_ERROR;\
-     return ret;\
-    }
 
 #define REG_FUNC_BEGIN(name)	\
     static int name (void *gep___)\

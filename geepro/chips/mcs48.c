@@ -47,7 +47,6 @@ void read_mcs48(int size)
 {
     int addr;
 
-    TEST_CONNECTION( VOID )        
     ce(0, 1);
     oe(1, 1);
     hw_sw_vcc(1);
@@ -68,7 +67,7 @@ void test_blank_mcs48(int size)
 {
     int addr;
     char data, text[256];
-    TEST_CONNECTION( VOID )        
+
     ce(0, 1);
     oe(1, 1);
     hw_sw_vcc(1);
@@ -95,7 +94,7 @@ void verify_mcs48(int size)
     int addr;
     unsigned char rdata, wdata;
     char text[256];
-    TEST_CONNECTION( VOID )        
+
     ce(0, 1);
     oe(1, 1);
     hw_sw_vcc(1);
@@ -133,7 +132,7 @@ void prog_mcs48(int size)
     unsigned int addr;
     unsigned char rdata, wdata;
     char text[256];
-    TEST_CONNECTION( VOID )        
+
     ce(0, 1);
     oe(1, 1);
     hw_sw_vcc(1);
