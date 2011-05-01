@@ -430,4 +430,115 @@ const char *take_signature_name(int data)
     return text;
 }
 
+char chip_id_match(char *m, unsigned int id)
+{
+    unsigned int x;
+    char *t;
+    
+    // skip white characters
+    for( ;*m && *m < 33; m++); 
+    for(t = m; *t && *t > ' '; t++);
+    *t = 0;        
+
+    // check m is a number
+    for(t = m; *t; t++)
+	if( 
+	    (*t < '0' || *t > '9') &&
+	    (*t < 'a' || *t > 'f') &&
+	    (*t < 'A' || *t > 'F') 
+	){
+	    printf("signature database incorrect number: %s\n", m);
+	    return 0;
+	}
+    // comparation to id
+    x = strlen( m ) * 4; // bits
+    x = ~(~0 << x); // create mask
+    id &= x;
+    x = strtol(m, NULL, 16) & x;
+    if( x == id ) return 1;    
+    return 0;
+}
+
+void chip_signature(char *buffer, const char *root, unsigned int man, unsigned int id, char *vendor, char *chip )
+{
+    char tmp[256], *n, *m, found;
+
+    if(root == NULL) return;
+    if( strlen(root) > 255 ) return;
+    sprintf( tmp, "\n%s:", root); // token to search
+
+    found = 0;
+    for(n = buffer; *n;){
+	// looking for root name
+	if((n = strstr(n, tmp)) == NULL) return;
+	n = strchr(n, ':');
+	n++;
+	// take manufacturer id    
+	m = n;
+	if((n = strchr(n, ':')) == NULL) return;        
+	n[0] = 0;
+	n++;
+	if(!chip_id_match(m, man)) continue;    
+	// take chip id    
+	m = n;
+	if((n = strchr(n, ':')) == NULL) return;        
+	n[0] = 0;
+	n++;
+	if(!chip_id_match(m, id)) continue;    
+	found = 1;
+	break;        
+    }    
+    if( !found ) return;
+    m = n;
+    if((n = strchr(n, ':')) == NULL) return;        
+    n[0] = 0;
+    n++;
+    strcpy(vendor, m);
+
+    m = n;
+    if((n = strchr(n, ':')) == NULL) return;        
+    n[0] = 0;
+    n++;
+    strcpy(chip, m);
+// add take comment
+}
+
+void loockup_jedec_signature(const char *root, unsigned int man, unsigned int id, char *vendor, char *chip)
+{
+    const char *path = "./chips/signatures.sig";  // it should be automatically determined in the future 
+    FILE *f;
+    char *buffer;
+    unsigned int bfsize;
+
+    // initial return
+    strcpy(vendor, "Unknown");    
+    strcpy(chip, "Unknown");    
+    
+    if(!(f = fopen( path, "r" ))){
+	printf("{chip.c} loockup_jedec_signature() --> can not open signature database file://%s\n", path );
+	return;
+    }
+
+    fseek(f, 0L, SEEK_END);
+    bfsize = ftell( f );
+    fseek(f, 0L, SEEK_SET);
+    if((buffer = malloc( bfsize + 1)) == NULL){
+	printf("{chip.c} loockup_jedec_signature() --> memory allocation error.\n" );
+	fclose(f);    	
+	return;
+    }
+
+    if(fread(buffer, 1, bfsize, f) != bfsize){
+	printf("{chip.c} loockup_jedec_signature() --> database file read error file://%s\n", path );
+	fclose(f);
+	return;
+    }
+
+    buffer[ bfsize ] = 0;
+    
+    fclose(f);    
+
+    chip_signature( buffer, root, man, id, vendor, chip );
+    free( buffer );    
+}
 

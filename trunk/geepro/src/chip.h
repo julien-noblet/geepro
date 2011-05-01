@@ -120,8 +120,9 @@ extern void chip_add_action(chip_desc *chip, const char *bt_name, const char *bt
 extern int  chip_list_action(chip_desc *chip, int (*cb)(chip_desc *, chip_action *, void *ptr), void *ptr);
 
 /* Info */
+extern const char *take_signature_name(int signature); // obsolete
+extern void loockup_jedec_signature( const char *root_name, unsigned int manufacturer_id, unsigned int chip_id, char *manufacturer_name, char *chip_name );
 
-extern const char *take_signature_name(int signature);
 
 #endif
 
