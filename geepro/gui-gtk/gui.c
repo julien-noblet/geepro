@@ -61,6 +61,13 @@ void gui_action_icon_set()
     gtk_icon_factory_add_default(ifact);
 }
 
+char gui_test_connection(geepro *gep)
+{
+    if(hw_test_conn()) return 0;
+    gui_dialog_box(gep, "[ER][TEXT]Programmer unplugged![/TEXT][BR]OK", NULL, NULL);
+    return -1;
+}
+
 void gui_stat_rfsh(geepro *gep)
 {
     char tmp_str[40];
@@ -249,22 +256,16 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 	);
 	return;
     }
-
-    if((x = ((chip_act_func)ga->action)(ga->root)))
-	gui_dialog_box(
-	    gep, 
-	    "[ER][TEXT]"
-	    "Error ocured during performing action.\n Returned error: %i"
-	    "[/TEXT][BR] OK ", 
-	    x
-	);
+    if( !gui_test_connection( gep ) )
+	x = ((chip_act_func)ga->action)(ga->root);
     else 
-	gui_dialog_box(
-	    gep, 
-	    "[IF][TEXT]"
-	    "Succesfully performed action."
-	    "[/TEXT][BR] OK "
-	);
+	x = -1;
+	
+    if( x ) gui_dialog_box( gep, 
+		"[ER][TEXT]"
+	        "Error ocured during performing action.\n Returned error: %i"
+		"[/TEXT][BR] OK ", x
+	    );
     gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
 }
 
@@ -1180,6 +1181,12 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
     );    
     gui_lookup_tag(fmt, tmp, tmp_size, "[TYPE:", "]");
     if(!strcmp(tmp, "QS")) x = GTK_STOCK_DIALOG_QUESTION;
+    if(!strcmp(tmp, "WN")) x = GTK_STOCK_DIALOG_WARNING;
+    if(!strcmp(tmp, "ER")) x = GTK_STOCK_DIALOG_ERROR;
+    if(!strcmp(tmp, "HL")) x = GTK_STOCK_HELP;
+    if(!strcmp(tmp, "CR")) x = GTK_STOCK_STOP;
+    if(!strcmp(tmp, "IF")) x = GTK_STOCK_DIALOG_INFO;
+    if(!strcmp(tmp, "AU")) x = GTK_STOCK_DIALOG_AUTHENTICATION;
     hbox = gtk_hbox_new(FALSE, 0);
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(wd)->vbox), hbox, TRUE, TRUE, 0);
     if( x ) 

@@ -482,19 +482,20 @@ void chip_signature(char *buffer, const char *root, unsigned int man, unsigned i
 	// take chip id    
 	m = n;
 	if((n = strchr(n, ':')) == NULL) return;        
+	found = 1;
 	n[0] = 0;
 	n++;
 	if(!chip_id_match(m, id)) continue;    
-	found = 1;
+	found = 2;
 	break;        
     }    
-    if( !found ) return;
+    if( found == 0 ) return;
     m = n;
     if((n = strchr(n, ':')) == NULL) return;        
     n[0] = 0;
     n++;
     strcpy(vendor, m);
-
+    if( found < 2) return;
     m = n;
     if((n = strchr(n, ':')) == NULL) return;        
     n[0] = 0;

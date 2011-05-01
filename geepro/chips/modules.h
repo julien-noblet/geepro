@@ -125,16 +125,10 @@
 #define MODULE_IMPLEMENTATION	\
     static geepro *___geep___ = ((void*)0);\
     static int ___error___ = 0;\
-    char test_connection()\
-    {                      \
-	if(hw_test_conn()) return 0;\
-	gui_dialog_box(___geep___, "[ER][TEXT]Programmer unplugged.[/TEXT][BR]OK",NULL, NULL);\
-	return -1;\
-    }
 
 #define VOID
 #define TEST_CONNECTION( ret ) \
-    if(test_connection()){\
+    if(gui_test_connection(___geep___)){\
      SET_ERROR;\
      return ret;\
     }
