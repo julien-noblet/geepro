@@ -196,10 +196,20 @@ void sign_HUB()
     );
     show_message(0, text, NULL, NULL);
 }
-/*
-void lock_HUB(unsigned int dev_size, unsigned int start)
+
+void lock_HUB()
 {
-    unsigned char tbl;
+    unsigned long *lb;
+    int i;
+    
+    lb = checkbox(
+	"[TITLE]Boot Block Lock[/TITLE][TYPE:WN]"
+	"[CB:2:0: Are you ABSOLUTLY sure ? (Tick if Yes)]"
+	"[CB:1:1: Once locked, cannot be unlocked (Untick if Yes)]"
+    );
+    if( !lb ) return; // resignation by button
+    if( !(*lb & 2) ) return; // Not checked
+    if( *lb & 1 ) return;
 
     TEST_CONNECTION( VOID )
     init_HUB();
@@ -207,12 +217,19 @@ void lock_HUB(unsigned int dev_size, unsigned int start)
     // take actual flag
     write_data_HUB( 0x5555, 0xaa);
     write_data_HUB( 0x2aaa, 0x55);    
-    write_data_HUB( 0x5555, 0x90);
-    tbl = read_data_HUB( 2 ) & 1;   // if 0 boot block is locked for writing
+    write_data_HUB( 0x5555, 0x80);
+    write_data_HUB( 0x5555, 0xaa);
+    write_data_HUB( 0x2aaa, 0x55);    
+    write_data_HUB( 0x5555, 0x40);
+
+    progress_loop(i, 50, "Chip erasing...") hw_ms_delay(20);
+
     finish_action();        
     hw_ms_delay(200);
+
+    show_dialog("[IF][TEXT]BOOT BLOCK LOCKED[/TEXT][BR]OK","");
 }
-*/
+
 
 void erase_HUB(unsigned int dev_size, unsigned int start)
 {
@@ -290,7 +307,9 @@ void prog_HUB(unsigned int dev_size, unsigned int start)
 
 
 /*********************************************************************************************/
-REGISTER_FUNCTION( sign,  LF, HUB );
+
+REGISTER_FUNCTION( sign,  HUB_, HUB);
+REGISTER_FUNCTION( lock,  HUB_, HUB);
 
 REGISTER_FUNCTION( read,  LF002, HUB, LF002_SIZE, LF002_START);
 REGISTER_FUNCTION( read,  LF003, HUB, LF003_SIZE, LF003_START);
@@ -319,11 +338,11 @@ REGISTER_FUNCTION( prog,  LF008, HUB, LF008_SIZE, LF008_START);
 
 REGISTER_MODULE_BEGIN(HUB_HUB)
 
-    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF002", "HUB_LPC", LF002_SIZE);
+    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF002, SST49LF020", "HUB_LPC", LF002_SIZE);
 	add_action(MODULE_READ_ACTION, read_LF002);
 	add_action(MODULE_VERIFY_ACTION, verify_LF002);
 	add_action(MODULE_TEST_ACTION, test_blank_LF002);
-	add_action(MODULE_SIGN_ACTION, sign_LF);
+	add_action(MODULE_SIGN_ACTION, sign_HUB_);
 	add_action(MODULE_ERASE_ACTION, erase_LF002);
 	add_action(MODULE_PROG_ACTION, prog_LF002);
     register_chip_end;
@@ -332,16 +351,16 @@ REGISTER_MODULE_BEGIN(HUB_HUB)
 	add_action(MODULE_READ_ACTION, read_LF003);
 	add_action(MODULE_VERIFY_ACTION, verify_LF003);
 	add_action(MODULE_TEST_ACTION, test_blank_LF003);
-	add_action(MODULE_SIGN_ACTION, sign_LF);
+	add_action(MODULE_SIGN_ACTION, sign_HUB_);
 	add_action(MODULE_ERASE_ACTION, erase_LF003);
 	add_action(MODULE_PROG_ACTION, prog_LF003);
     register_chip_end;
 
-    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF004", "HUB_LPC", LF004_SIZE);
+    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF004, SST49LF040", "HUB_LPC", LF004_SIZE);
 	add_action(MODULE_READ_ACTION, read_LF004);
 	add_action(MODULE_VERIFY_ACTION, verify_LF004);
 	add_action(MODULE_TEST_ACTION, test_blank_LF004);
-	add_action(MODULE_SIGN_ACTION, sign_LF);
+	add_action(MODULE_SIGN_ACTION, sign_HUB_);
 	add_action(MODULE_ERASE_ACTION, erase_LF004);
 	add_action(MODULE_PROG_ACTION, prog_LF004);
     register_chip_end;
@@ -350,63 +369,20 @@ REGISTER_MODULE_BEGIN(HUB_HUB)
 	add_action(MODULE_READ_ACTION, read_LF008);
 	add_action(MODULE_VERIFY_ACTION, verify_LF008);
 	add_action(MODULE_TEST_ACTION, test_blank_LF008);
-	add_action(MODULE_SIGN_ACTION, sign_LF);
+	add_action(MODULE_SIGN_ACTION, sign_HUB_);
 	add_action(MODULE_ERASE_ACTION, erase_LF008);
 	add_action(MODULE_PROG_ACTION, prog_LF008);
     register_chip_end;
 
-/*
     register_chip_begin("/HUB LPC/W49Vxxx", "W49V002", "HUB_LPC", LF002_SIZE);
 	add_action(MODULE_READ_ACTION, read_LF002);
 	add_action(MODULE_VERIFY_ACTION, verify_LF002);
 	add_action(MODULE_TEST_ACTION, test_blank_LF002);
-	add_action(MODULE_SIGN_ACTION, sign_LF);
+	add_action(MODULE_SIGN_ACTION, sign_HUB_);
 	add_action(MODULE_ERASE_ACTION, erase_LF002);
 	add_action(MODULE_PROG_ACTION, prog_LF002);
+	add_action(MODULE_LOCKBIT_ACTION, lock_HUB_);	
     register_chip_end;
-*/
 
 REGISTER_MODULE_END
 
-/*
-    lb = checkbox(
-	"[TITLE]Writing chip[/TITLE][TYPE:QS]"
-	"[CB:2:0: Are you sure ? (Tick if Yes)]"
-	"[CB:1:1: Verify after process]"
-    );
-
-    if( !lb ) return; // resignation by button
-    if( !(*lb & 2) ) return; // Not checked
-*/
-
-/*
-    text[0] = 0;
-    if( ERROR_VAL )
-	sprintf(text, "[WN][TEXT] Memory and buffer differ !!!\n Address = 0x%X\nBuffer=0x%X, Device=0x%X[/TEXT][BR]OK", addr, bdata & 0xff, rdata & 0xff);
-    if( rdata >= 0 ){
-	show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory and buffer are consitent[/TEXT][BR]OK", NULL, NULL);    
-	ERROR_VAL = 0;
-    }
-
-
-    text[0] = 0;
-    if( ERROR_VAL )
-	sprintf(text, "[WN][TEXT] Memory is dirty !!!\n Address = 0x%X\nDevice=0x%X[/TEXT][BR]OK", addr, rdata & 0xff);
-    if( rdata >= 0 ){
-	show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory is clean[/TEXT][BR]OK", NULL, NULL);    
-	ERROR_VAL = 0;
-    }
-
-
-
-    lb = checkbox(
-	"[TITLE]Writing chip[/TITLE][TYPE:QS]"
-	"[CB:2:0: Are you sure ? (Tick if Yes)]"
-	"[CB:1:1: Verify after process]"
-    );
-    if( !lb ) return; // resignation by button
-    if( !(*lb & 2) ) return; // Not checked
-
-    if( (*lb & 1) && !ERROR_VAL) 
-	verify_93Cxx( dev_size, org, alen);
-*/

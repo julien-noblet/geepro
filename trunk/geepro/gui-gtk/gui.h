@@ -214,7 +214,7 @@ extern char gui_cmp_pls(geepro*,int a,int b);
 extern void gui_exit(geepro *gep);
 extern void gui_set_statusbar(geepro *gep, char *tmp, char *fmt, ...);
 extern unsigned long *gui_checkbox(geepro *gep, const char *fmt);
-
+extern char gui_test_connection(geepro *);
 
 /* uzywnae przez drivery */
 extern void gui_clk_sqw(gui*, gui_sqw_generator);
