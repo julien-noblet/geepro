@@ -220,6 +220,9 @@
 #define Tb_SIZE( x ) 	(TB_SIZE( x ) * 8)
 #define Pb_SIZE( x ) 	(PB_SIZE( x ) * 8)
 
+#define loockup_signature( root, vend_id, chip_id, ret_vend_name, ret_chip_name)	\
+			loockup_jedec_signature( root, vend_id, chip_id, ret_vend_name, ret_chip_name )
+
 #endif
 
 
