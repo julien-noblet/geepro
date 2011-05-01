@@ -173,7 +173,7 @@ int test_blank_AT89Cx051(int size, char mode)
 {
     int addr = 0;
     int tmp;
-    TEST_CONNECTION( 1 )
+
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -200,7 +200,7 @@ int test_blank_AT89Cx051(int size, char mode)
 void read_AT89Cx051(int size)
 {
     int addr = 0;
-    TEST_CONNECTION(VOID)
+
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -226,7 +226,7 @@ void sign_AT89Cx051(int size)
     int addr = 0;
     int signature = 0;
     char text[256];
-    TEST_CONNECTION(VOID)    
+
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilisation
@@ -260,7 +260,7 @@ void verify_AT89Cx051(int size, char silent)
     int addr = 0;
     char rdata, wdata;
     char text[256];
-    TEST_CONNECTION( VOID )
+
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -293,7 +293,6 @@ void verify_AT89Cx051(int size, char silent)
 
 void erase_AT89Cx051(int size)
 {
-    TEST_CONNECTION(VOID)
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -318,7 +317,7 @@ void write_AT89Cx051(int size)
     int addr = 0;
     char wdata, rdata;
     char text[256];
-    TEST_CONNECTION(VOID)
+
     if(test_blank_AT89Cx051(size, 1)){
        SET_ERROR;
        return;
@@ -377,7 +376,7 @@ void lock_bit_AT89Cx051(int size)
 	"[CB:2:0:LB2 (same as LB1, also verify is disabled)]"
     );
     if(!lb) return;
-    TEST_CONNECTION(VOID)
+
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -448,7 +447,6 @@ void read_AT89C5x(int size)
     int signature;
     addr_state = 0;
 
-    TEST_CONNECTION( VOID )
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -468,8 +466,8 @@ void sign_AT89C5x(int size)
     int addr = 0;
     int signature;
     char text[256];
+
     addr_state = 0;
-    TEST_CONNECTION( VOID )
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -497,7 +495,6 @@ void verify_AT89C5x(int size, char silent)
     addr_state = 0;
     char rdata, wdata;
 
-    TEST_CONNECTION( VOID )
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -529,7 +526,6 @@ void test_blank_AT89C5x(int size, char silent)
     addr_state = 0;
     unsigned char rdata;
 
-    TEST_CONNECTION( VOID )
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -567,7 +563,6 @@ void write_AT89C5x(int size)
     char text[256];
     addr_state = 0;
 
-    TEST_CONNECTION( VOID )
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -610,7 +605,6 @@ void write_AT89C5x(int size)
 
 void erase_AT89C5x(int size)
 { 
-    TEST_CONNECTION(VOID)
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -634,7 +628,7 @@ void lock_bit_AT89C5x(int size)
 	"[CB:4:0:LB3 (same as LB2, also external execution is disabled)]"
     );
     if(!lb) return;
-    TEST_CONNECTION(VOID)
+
     hw_sw_vpp(0);    // VPP OFF
     hw_sw_vcc(1);    // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -754,7 +748,6 @@ void signature_AT90S1200_(int size)
     int addr;
     char text[256];
 
-    TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_SIGNATURE );
 
@@ -781,7 +774,6 @@ void read_flash_AT90S1200_(int size)
 {
     int addr;
 
-    TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_FLASH );
 
@@ -801,7 +793,6 @@ void read_eeprom_AT90S1200_(int size)
 {
     int addr;
 
-    TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_EEPROM );
 
@@ -822,7 +813,6 @@ void verify_flash_AT90S1200_(int size, char silent)
     addr_state = 0;
     char rdata, wdata, k;
 
-    TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_FLASH );
 
@@ -863,7 +853,6 @@ void verify_eeprom_AT90S1200_(int size, char silent)
     addr_state = 0;
     char rdata, wdata;
 
-    TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_EEPROM );
 
@@ -896,7 +885,6 @@ char test_blank_AT90S1200_(int size, char silent)
     addr_state = 0;
     unsigned char rdata;
 
-    TEST_CONNECTION( 0 )
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_FLASH );
 
@@ -926,7 +914,6 @@ char test_blank_AT90S1200_(int size, char silent)
 
 void chiperase_AT90S1200_(int size)
 {
-    TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_CHIP_ERASE );
     AT90S1200_WR_pulse( 0 );
@@ -942,7 +929,6 @@ void write_flash_AT90S1200_(int size)
 
     if(test_blank_AT90S1200_( size, 1)) return;
 
-    TEST_CONNECTION(VOID)
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_WRITE_FLASH );
 
@@ -965,7 +951,6 @@ void write_flash_AT90S1200_(int size)
 void write_eeprom_AT90S1200_(int size)
 {
     int addr;
-    TEST_CONNECTION(VOID)
 
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_WRITE_EEPROM );
@@ -1058,7 +1043,6 @@ void fusebits_AT90S1200_(int size, char mode) // mode=0 - AT90S1200
     char text[512];
     char prev;
 
-    TEST_CONNECTION(VOID)
     fusebits = AT90S1200_load_lb();
     prev = fusebits;
     fusebits = ~fusebits;
@@ -1100,7 +1084,6 @@ void write_i87xx( int size, char mode_p )
     char text[256];
     addr_state = 0;
 
-    TEST_CONNECTION( VOID )
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -1173,7 +1156,7 @@ void lock_i87xx( int size )
     );
     if( !lb ) return;
     if( *lb != 1) return;
-    TEST_CONNECTION(VOID)
+
     hw_sw_vpp(0);    // VPP OFF
     hw_sw_vcc(1);    // VCC ON
     hw_delay(10000); // 10ms for power stabilise
@@ -1197,7 +1180,7 @@ void lock_p87xx( int size )
 	"[CB:4:0:LB3 (same as LB2, also external execution is disabled)]"
     );
     if(!lb) return;
-    TEST_CONNECTION(VOID)
+
     hw_sw_vpp(0);    // VPP OFF
     hw_sw_vcc(1);    // VCC ON
     hw_delay(10000); // 10ms for power stabilise

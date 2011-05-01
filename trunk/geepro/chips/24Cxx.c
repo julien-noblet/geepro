@@ -130,7 +130,6 @@ void read_24Cxx(unsigned int dev_size, char addr_mode)
 {
     int i, data;
 
-    TEST_CONNECTION( VOID )
     init_i2c();
     progress_loop(i, dev_size, "Reading ..."){
 	data = rd_byte_24Cxx(i, addr_mode);
@@ -145,7 +144,6 @@ void verify_24Cxx(unsigned int dev_size, char addr_mode)
     int i, rdata = 0, bdata = 0;
     char text[256];
 
-    TEST_CONNECTION( VOID )
     init_i2c();
     progress_loop(i, dev_size, "Verify ..."){
 	bdata = get_buffer( i );
@@ -167,8 +165,6 @@ void write_24Cxx(int dev_size, char addr_mode, char n)
 {
     int i;
     unsigned long *lb;
-    
-    TEST_CONNECTION( VOID )
     
     lb = checkbox(
 	"[TITLE]Writing chip[/TITLE][TYPE:QS]"

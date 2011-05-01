@@ -62,7 +62,7 @@ void read_2716_(int size, char ce)
 {
     int addr;
     unsigned char data;
-    TEST_CONNECTION( VOID )
+
     start_action(0, ce);
     progress_loop(addr, size, "Reading data"){
 	data = read_byte_2716( addr );
@@ -77,7 +77,6 @@ char test_2716_(int size, char ce, char silent)
     unsigned char rdata;
     char text[256];
     
-    TEST_CONNECTION( 1 )
     start_action(0, ce);
     progress_loop(addr, size, "Test blank"){
 	rdata = read_byte_2716( addr );
@@ -135,7 +134,6 @@ void prog_2716_(int size)
     unsigned char rdata, wdata;
     char text[256];
     
-    TEST_CONNECTION( VOID )
     lb = checkbox(
 	"[TITLE]Chip burning[/TITLE][TYPE:QS]"
 	"[FRAME:Algorithm][RADIO]"
@@ -236,7 +234,6 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
     unsigned long *lb;
     char text[256];
     
-    TEST_CONNECTION( VOID )
     lb = checkbox(
 	"[TITLE]Chip burning[/TITLE][TYPE:QS]"
 	"[FRAME:Algorithm][RADIO]"
