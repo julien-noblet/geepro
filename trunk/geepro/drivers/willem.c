@@ -21,6 +21,8 @@
 
 #include "drivers.h"
 
+static int addr_init_mask = 0x800000;    
+
 /* tabela poszukiwan identyfikatorow kontrolek */
 static const gui_xml_lt willem_lt[] = 
 {
@@ -94,21 +96,25 @@ static int willem_set_vcc_voltage(int voltage){ DEBUG("[DM]Set VCC value: %f\n",
 /* programmer control */
 static int willem_vcc_on()
 {
+    addr_init_mask = 0x800000;    
     return parport_set_bit(PC,PP_16);
 }
 
 static int willem_vcc_off()
 {
+    addr_init_mask = 0x800000;    
     return parport_clr_bit(PC,PP_16);
 }
 
 static int willem_vpp_on()
 {
+    addr_init_mask = 0x800000;    
     return parport_set_bit(PC,PP_01);
 }
 
 static int willem_vpp_off()
 {
+    addr_init_mask = 0x800000;    
     return parport_clr_bit(PC,PP_01);
 }
 
@@ -125,7 +131,7 @@ static int willem_set_par_addr_pin(int addr)
 
     _addr = addr;
     err = parport_set_bit(PC, PP_14); /* przelaczenie multipleksera U7 na D i CLK*/
-    mask = 0x800000;    
+    mask = addr_init_mask;
     err |= parport_clr_bit(PA, PP_03 | PP_02); /* wyzerowanie D0 i D1 -> D i CLK przesuwnika */
     while(mask && !err){
 //	timer_us_delay(TA_01);
@@ -434,7 +440,7 @@ static void willem_set_gui_main(geepro *gep, const char *chip_name, const char *
     willem_if_attr[0].val = chip_name;
     willem_if_attr[1].val = programmer;
     willem_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), shared_drivers_xml_file, "info,notebook", willem_if_attr);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)shared_drivers_xml_file, "info,notebook", willem_if_attr);
     gui_xml_register_event_func(GUI(gep->gui)->xml, willem_event);
 }
 
@@ -462,6 +468,10 @@ static int willem_close(void)
     return parport_cleanup();
 }
 
+static void willem_set_addr_range(int val )
+{
+    addr_init_mask = val;
+}
 
 /**************************************************************************************************************************/
 
@@ -469,7 +479,7 @@ int willem_40_hardware_driver(en_hw_api funct, int val, void *ptr)
 {
     switch(funct){
 	/* ogólne */
-	case HW_NAME:	  DRIVER_NAME(ptr) = "WILLEM 4.0";
+	case HW_NAME:	  DRIVER_NAME(ptr) = "WILLEM 4.0"; return HW_SUCCESS;
 	case HW_IFACE:	  return IFACE_LPT;
 	case HW_GINIT:    return willem_gui_init(ptr, "none", "", "willem_40");
 	case HW_SET_CHIP: return willem_gui_init(ptr, ((geepro *)ptr)->chp->chip_name, ((geepro *)ptr)->chp->chip_family, "willem_40");
@@ -483,6 +493,7 @@ int willem_40_hardware_driver(en_hw_api funct, int val, void *ptr)
 	case HW_SW_VPP:	  if(val == 0) return willem_vpp_off(); else return willem_vpp_on();
 	case HW_PRAGMA:   return willem_set_pragma( val );
 	case HW_SW_DPSW:  return willem_set_dip_sw(val);
+	case HW_SET_ADDR_RANGE: willem_set_addr_range( val ); return HW_SUCCESS;
 	/* funkcje gniazda eprom */
 	case HW_SET_DATA: return willem_set_par_data_pin(val);
 	case HW_SET_ADDR: return willem_set_par_addr_pin(val);
@@ -533,6 +544,7 @@ int willem4_hardware_driver(en_hw_api funct, int val, void *ptr)
 	case HW_SW_VPP:	  if(val == 0) return willem_vpp_off(); else return willem_vpp_on();
 	case HW_PRAGMA:   return willem_set_pragma( val );
 	case HW_SW_DPSW:  return willem_set_dip_sw(val);
+	case HW_SET_ADDR_RANGE: willem_set_addr_range( val ); return HW_SUCCESS;
 	/* funkcje gniazda eprom */
 	case HW_SET_DATA: return willem_set_par_data_pin(val);
 	case HW_SET_ADDR: return willem_set_par_addr_pin(val);
@@ -581,6 +593,7 @@ int willempro2_hardware_driver(en_hw_api funct, int val, void *ptr)
 	case HW_SW_VPP:	  if(val == 0) return willem_vpp_off(); else return willem_vpp_on();
 	case HW_PRAGMA:   return willem_set_pragma( val );
 	case HW_SW_DPSW:  return willem_set_dip_sw(val);
+	case HW_SET_ADDR_RANGE: willem_set_addr_range( val ); return HW_SUCCESS;
 	/* funkcje gniazda eprom */
 	case HW_SET_DATA: return willem_set_par_data_pin(val);
 	case HW_SET_ADDR: return willempro2_set_par_addr_pin(val);

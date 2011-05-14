@@ -52,6 +52,7 @@ typedef enum{
 
     HW_INIT_VALUE_1 = 1024,
 // specyfical for parallel:
+    HW_SET_ADDR_RANGE,
     HW_SET_DATA,
     HW_SET_ADDR,
     HW_INC_ADDR,
@@ -73,6 +74,20 @@ typedef enum{
     HW_GET_SDA,
     HW_SET_PGM,
     HW_GET_SCL,
+// PIC ICSP
+    HW_GET_RB7,
+    HW_SET_RB6,
+// ISP
+    HW_SET_ISP_MOSI,
+    HW_GET_ISP_MISO,
+    HW_SET_ISP_SCK,
+    HW_SET_ISP_RST,
+    HW_SET_ISP_LED,
+// JTAG
+    HW_SET_JTAG_TDI,
+    HW_SET_JTAG_TCK,
+    HW_SET_JTAG_TMS,
+    HW_GET_JTAG_TDO,
 } en_hw_api;
 
 /********************************************************************
@@ -113,6 +128,7 @@ extern hw_driver_type ___hardware_driver___;
 #define hw_pragma( pragma )	___hardware_driver___( HW_PRAGMA, pragma, NULL)		// set pragma
 
 // specyfical for parallel
+#define hw_set_addr_range(val)	___hardware_driver___( HW_SET_ADDR_RANGE,val, NULL)
 #define hw_set_data(val)	___hardware_driver___( HW_SET_DATA, val, NULL)
 #define hw_get_data()		___hardware_driver___( HW_GET_DATA, 0, NULL)
 #define hw_set_addr(val)	___hardware_driver___( HW_SET_ADDR, val, NULL)
@@ -135,6 +151,24 @@ extern hw_driver_type ___hardware_driver___;
 #define hw_set_sda(val)		___hardware_driver___( HW_SET_SDA,  val, NULL)
 #define hw_get_sda()		___hardware_driver___( HW_GET_SDA,  0, NULL)
 #define hw_get_scl()		___hardware_driver___( HW_GET_SCL,  0, NULL)
+
+// ICSP
+#define hw_get_rb7()		___hardware_driver___( HW_GET_RB7,       0, NULL)
+#define hw_set_rb6(val)		___hardware_driver___( HW_SET_RB6,       val, NULL)
+
+// ISP
+#define hw_set_isp_mosi(val)	___hardware_driver___( HW_SET_ISP_MOSI,  val, NULL)
+#define hw_get_isp_miso()	___hardware_driver___( HW_GET_ISP_MISO,  0, NULL)
+#define hw_set_isp_sck(val)	___hardware_driver___( HW_SET_ISP_SCK,   val, NULL)
+#define hw_set_isp_rst(val)	___hardware_driver___( HW_SET_ISP_RST,   val, NULL)
+#define hw_set_isp_led(val)	___hardware_driver___( HW_SET_ISP_LED,   val, NULL)
+
+// JTAG
+#define hw_set_jtag_tdi(val)	___hardware_driver___( HW_SET_JTAG_TDI,  val, NULL)
+#define hw_set_jtag_tck(val)	___hardware_driver___( HW_SET_JTAG_TCK,  val, NULL)
+#define hw_set_jtag_tms(val)	___hardware_driver___( HW_SET_JTAG_TMS,  val, NULL)
+#define hw_get_jtag_tdo()	___hardware_driver___( HW_GET_JTAG_TDO,  0, NULL)
+
 
 #endif
 
