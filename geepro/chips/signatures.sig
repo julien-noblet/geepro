@@ -1,4 +1,4 @@
-# root_name : manufacturer code : chip code ? manufacturer name : chip name :
+# root_name : manufacturer code : chip code : manufacturer name : chip name :
 HUB/LPC:89:ad:Intel:i82802AB 4Mbit:
 HUB/LPC:89:ac:Intel:i82802AC 8Mbit:
 HUB/LPC:bf:57:SST:SST49LF002A:
@@ -16,6 +16,18 @@ HUB/LPC:20:2e:ST:M50FW016:
 
 HUB/LPC:da:32:Winbond:W49V002FA:
 
+FLASH:bf:b4:SST:SST39LF/VF512:
+FLASH:bf:b5:SST:SST39LF/VF010:
+
+FLASH:bf:10:SST:SST29EE020:
+FLASH:bf:12:SST:SST29LE020/VE020:
+
+FLASH:1f:17:Atmel:AT49F010:
+FLASH:1f:d5:Atmel:AT29C010:
+
+FLASH:20:02:SST:M28F512:
+FLASH:89:b8:Intel:28F512:
+FLASH:89:b4:Intel:28F010:
 
 AVR:1e:190:Atmel:AT90S1200 Flash 1kB:
 AVR:1e:191:Atmel:AT90S2313 Flash 2kB:

@@ -184,6 +184,9 @@
 #define MODULE_VERIFY_EEPROM_ACTION 	"geepro-verify-eeprom-action", "Verify EEPROM chip memory with buffer"
 #define MODULE_LOCKBIT_ACTION		"geepro-lockbit-action", "Set lock-bits and fuses"
 
+#define SET_Vcc_VOLTAGE( x )	hw_set_vcc( (int)((x) * 100.00) )
+#define SET_Vpp_VOLTAGE( x )	hw_set_vpp( (int)((x) * 100.00) )
+
 #define REGISTER_FUNCTION_( registered_func, exec_func, call_parameters... )	\
     REG_FUNC_BEGIN( registered_func )	\
 	exec_func(call_parameters);	\
@@ -211,6 +214,34 @@
 
 #define loockup_signature( root, vend_id, chip_id, ret_vend_name, ret_chip_name)	\
 			loockup_jedec_signature( root, vend_id, chip_id, ret_vend_name, ret_chip_name )
+
+
+#define BIT_POS( x )	( 1 << (x) )
+
+#define RANGE_2		BIT_POS( 0 )
+#define RANGE_4		BIT_POS( 1 )
+#define RANGE_8		BIT_POS( 2 )
+#define RANGE_16	BIT_POS( 3 )
+#define RANGE_32	BIT_POS( 4 )
+#define RANGE_64	BIT_POS( 5 )
+#define RANGE_128	BIT_POS( 6 )
+#define RANGE_256	BIT_POS( 7 )
+#define RANGE_512	BIT_POS( 8 )
+#define RANGE_1K	BIT_POS( 9 )
+#define RANGE_2K	BIT_POS( 10 )
+#define RANGE_4K	BIT_POS( 11 )
+#define RANGE_8K	BIT_POS( 12 )
+#define RANGE_16K	BIT_POS( 13 )
+#define RANGE_32K	BIT_POS( 14 )
+#define RANGE_64K	BIT_POS( 15 )
+#define RANGE_128K	BIT_POS( 16 )
+#define RANGE_256K	BIT_POS( 17 )
+#define RANGE_512K	BIT_POS( 18 )
+#define RANGE_1M	BIT_POS( 19 )
+#define RANGE_2M	BIT_POS( 20 )
+#define RANGE_4M	BIT_POS( 21 )
+#define RANGE_8M	BIT_POS( 22 )
+#define RANGE_16M	BIT_POS( 23 )
 
 #endif
 
