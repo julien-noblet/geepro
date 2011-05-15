@@ -74,7 +74,7 @@ void read_2716_(int size, char ce)
 char test_2716_(int size, char ce, char silent)
 {
     int addr;
-    unsigned char rdata;
+    unsigned char rdata = 0;
     char text[256];
     
     start_action(0, ce);
@@ -97,7 +97,7 @@ char test_2716_(int size, char ce, char silent)
 void verify_2716_(int size, char ce)
 {
     int addr;
-    unsigned char rdata, wdata;
+    unsigned char rdata = 0, wdata = 0;
     char text[256];
     
     start_action(0, ce);
@@ -131,7 +131,7 @@ void prog_2716_(int size)
 {
     unsigned long *lb;
     int addr, tries;
-    unsigned char rdata, wdata;
+    unsigned char rdata = 0, wdata = 0;
     char text[256];
     
     lb = checkbox(
@@ -230,7 +230,7 @@ char read_eprom(int addr, char oe_vpp)
 void prog_eprom(int size, char ce_pgm, char oe_vpp)
 {
     int addr, x;
-    unsigned char rdata, wdata;
+    unsigned char rdata = 0, wdata = 0;
     unsigned long *lb;
     char text[256];
     
@@ -336,6 +336,7 @@ REGISTER_FUNCTION( read,   27512, 2716_, SIZE_27512, 0 );
 REGISTER_FUNCTION( verify, 27512, 2716_, SIZE_27512, 0 );
 REGISTER_FUNCTION( test,   27512, 2716_, SIZE_27512, 0, 0 );
 REGISTER_FUNCTION( prog,   27512, eprom, SIZE_27512, 1, 1 );
+//REGISTER_FUNCTION( erase,  27512, eprom, SIZE_27512, 1, 1 );
 /* 27C010 */
 REGISTER_FUNCTION( read,   27C010, 2716_, SIZE_27C010, 0 );
 REGISTER_FUNCTION( verify, 27C010, 2716_, SIZE_27C010, 0 );
@@ -418,6 +419,13 @@ REGISTER_MODULE_BEGIN( 27xx )
 	add_action(MODULE_VERIFY_ACTION, verify_27512);
 	add_action(MODULE_TEST_ACTION, test_27512);
     register_chip_end;
+//    register_chip_begin("/EPROM Electrically Erasable/Winbond", "W27x512", "27512", SIZE_27512);
+//	add_action(MODULE_READ_ACTION, read_27512);
+//	add_action(MODULE_VERIFY_ACTION, verify_27512);
+//	add_action(MODULE_TEST_ACTION, test_27512);
+//	add_action(MODULE_ERASE_ACTION, test_27512);
+//	add_action(MODULE_PROG_ACTION, erase_27512);
+//    register_chip_end;
 /* 32 PIN EPROM */
     register_chip_begin("/EPROM/32 pin", "27C010,27C1000,27C1001", "27C010", SIZE_27C010);
 	add_action(MODULE_READ_ACTION, read_27C010);
