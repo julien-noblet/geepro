@@ -180,7 +180,7 @@
 		<vbox>
 		    <hbox border="0">
 			<jumper name_up="29x" set="0"/>
-			<dipswitch name="Dip switch" len="12" value="0x12b"/>
+			<dipswitch name="Dip switch" len="12" value="0x128"/>
 		    </hbox>
 		</vbox>
 	    </if>
@@ -204,6 +204,7 @@
 		    </hbox>
 		</vbox>
 	    </if>
+
 	    <if family="28F010">
 		<description>EPROM</description>
 		<image src="pixmaps/willem_32pin.png"/>

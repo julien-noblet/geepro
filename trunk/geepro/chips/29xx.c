@@ -22,18 +22,6 @@
 
 MODULE_IMPLEMENTATION
 
-#define SIZE_2816	KB_SIZE(  2  )
-#define SIZE_2832	KB_SIZE(  4  ) 
-#define SIZE_2864	KB_SIZE(  8  )
-#define SIZE_28128	KB_SIZE( 16  )
-#define SIZE_28256	KB_SIZE( 32  )
-#define SIZE_28512	KB_SIZE( 64  )
-#define SIZE_28F010	KB_SIZE( 128 )
-#define SIZE_28F1000	KB_SIZE( 128 )
-#define SIZE_28F020	KB_SIZE( 256 )
-#define SIZE_28F040	KB_SIZE( 512 )
-#define SIZE_28F080	MB_SIZE(  1  )
-
 #define SIZE_29F010	KB_SIZE( 128 )
 #define SIZE_29F020	KB_SIZE( 256 )
 #define SIZE_29F040	KB_SIZE( 512 )
@@ -353,78 +341,24 @@ void write_28xx_flash(unsigned int vpp_req, unsigned int dev_size, unsigned int 
 
 
 /*********************************************************************************************************/
-REGISTER_FUNCTION( read,	2864, flash, SIZE_2864, RANGE_8K );
-REGISTER_FUNCTION( verify, 	2864, flash, SIZE_2864, RANGE_8K );
-REGISTER_FUNCTION( test_blank,  2864, flash, SIZE_2864, RANGE_8K );
-//REGISTER_FUNCTION( sdp,		2864, flash, SIZE_2864, RANGE_8K );
-//REGISTER_FUNCTION( erase,   	2864, 28, SIZE_2864, RANGE_8K );
-//REGISTER_FUNCTION( write,   	2864, 28, 1250, SIZE_2864, RANGE_8K );
 
-REGISTER_FUNCTION( read,	28256, flash, SIZE_28256, RANGE_32K );
-REGISTER_FUNCTION( verify,	28256, flash, SIZE_28256, RANGE_32K );
-REGISTER_FUNCTION( test_blank,	28256, flash, SIZE_28256, RANGE_32K );
-REGISTER_FUNCTION( sign,	28256, 28xx_flash, 1250);
-REGISTER_FUNCTION( erase,	28256, 28xx_flash, 1250, SIZE_28256, RANGE_32K );
-REGISTER_FUNCTION( write,	28256, 28xx_flash, 1250, SIZE_28256, RANGE_32K );
-
-REGISTER_FUNCTION( read,	28512, flash, SIZE_28512, RANGE_64K );
-REGISTER_FUNCTION( verify,	28512, flash, SIZE_28512, RANGE_64K );
-REGISTER_FUNCTION( test_blank,	28512, flash, SIZE_28512, RANGE_64K );
-REGISTER_FUNCTION( sign,	28512, 28xx_flash, 1250);
-REGISTER_FUNCTION( erase,	28512, 28xx_flash, 1250, SIZE_28512, RANGE_64K );
-REGISTER_FUNCTION( write,	28512, 28xx_flash, 1250, SIZE_28512, RANGE_64K );
-
-REGISTER_FUNCTION( read,	28F010, flash, SIZE_28F010, RANGE_128K );
-REGISTER_FUNCTION( verify, 	28F010, flash, SIZE_28F010, RANGE_128K );
-REGISTER_FUNCTION( test_blank, 	28F010, flash, SIZE_28F010, RANGE_128K );
-REGISTER_FUNCTION( sign,   	28F010, 28xx_flash, 1250);
-REGISTER_FUNCTION( erase,   	28F010, 28xx_flash, 1250, SIZE_28F010, RANGE_128K );
-REGISTER_FUNCTION( write,   	28F010, 28xx_flash, 1250, SIZE_28F010, RANGE_128K );
-
-REGISTER_FUNCTION( read,	28F020, flash, SIZE_28F020, RANGE_256K );
-REGISTER_FUNCTION( verify, 	28F020, flash, SIZE_28F020, RANGE_256K );
-REGISTER_FUNCTION( test_blank, 	28F020, flash, SIZE_28F020, RANGE_256K );
-REGISTER_FUNCTION( sign,   	28F020, 28xx_flash, 1250);
-REGISTER_FUNCTION( erase,   	28F020, 28xx_flash, 1250, SIZE_28F020, RANGE_256K );
-REGISTER_FUNCTION( write,   	28F020, 28xx_flash, 1250, SIZE_28F020, RANGE_256K );
-
-REGISTER_FUNCTION( read,	28F040, flash, SIZE_28F040, RANGE_512K );
-REGISTER_FUNCTION( verify, 	28F040, flash, SIZE_28F040, RANGE_512K );
-REGISTER_FUNCTION( test_blank, 	28F040, flash, SIZE_28F040, RANGE_512K );
-REGISTER_FUNCTION( sign,   	28F040, 28xx_flash, 1250);
-REGISTER_FUNCTION( erase,   	28F040, 28xx_flash, 1250, SIZE_28F040, RANGE_512K );
-REGISTER_FUNCTION( write,   	28F040, 28xx_flash, 1250, SIZE_28F040, RANGE_512K );
+//REGISTER_FUNCTION( read,	28F040, flash, SIZE_28F040, RANGE_512K );
+//REGISTER_FUNCTION( verify, 	28F040, flash, SIZE_28F040, RANGE_512K );
+//REGISTER_FUNCTION( test_blank, 	28F040, flash, SIZE_28F040, RANGE_512K );
+//REGISTER_FUNCTION( sign,   	28F040, 28xx_flash, 1250);
+//REGISTER_FUNCTION( erase,   	28F040, 28xx_flash, 1250, SIZE_28F040, RANGE_512K );
+//REGISTER_FUNCTION( write,   	28F040, 28xx_flash, 1250, SIZE_28F040, RANGE_512K );
 
 
-REGISTER_MODULE_BEGIN( 28xx )
-    register_chip_begin("/EEPROM 28Fxx,28Cxx", "M28C64", "2864_128", SIZE_2864);
-	add_action(MODULE_READ_ACTION, read_2864);
-	add_action(MODULE_VERIFY_ACTION, verify_2864);
-	add_action(MODULE_TEST_BLANK_ACTION, test_blank_2864);
-//	add_action(MODULE_ERASE_ACTION, erase_2864);
-//	add_action(MODULE_WRITE_ACTION, write_2864);
-//	add_action(MODULE_LOCKBIT_ACTION, sdp_2864);
-    register_chip_end;
+REGISTER_FUNCTION( read,	49F010, flash, SIZE_49F010, RANGE_128K );
+//REGISTER_FUNCTION( verify, 	49F010, flash, SIZE_49F010, RANGE_128K );
+//REGISTER_FUNCTION( test_blank,49F010, flash, SIZE_49F010, RANGE_128K );
+//REGISTER_FUNCTION( sign,   	49F010, 28xx_flash);
+//REGISTER_FUNCTION( erase,   	49F010, 28xx_flash, SIZE_49F010, RANGE_128K );
+//REGISTER_FUNCTION( write,   	49F010, 28xx_flash, SIZE_49F010, RANGE_128K );
 
-// EEPROM Flash
-    register_chip_begin("/EEPROM 28Fxx,28Cxx", "28F256", "28512", SIZE_28256);
-	add_action(MODULE_READ_ACTION, read_28256);
-	add_action(MODULE_VERIFY_ACTION, verify_28256);
-	add_action(MODULE_TEST_BLANK_ACTION, test_blank_28256);
-	add_action(MODULE_SIGN_ACTION, sign_28256);
-	add_action(MODULE_ERASE_ACTION, erase_28256);
-	add_action(MODULE_WRITE_ACTION, write_28256);
-    register_chip_end;
-
-    register_chip_begin("/EEPROM 28Fxx,28Cxx", "28F512", "28512", SIZE_28512);
-	add_action(MODULE_READ_ACTION, read_28512);
-	add_action(MODULE_VERIFY_ACTION, verify_28512);
-	add_action(MODULE_TEST_BLANK_ACTION, test_blank_28512);
-	add_action(MODULE_SIGN_ACTION, sign_28512);
-	add_action(MODULE_ERASE_ACTION, erase_28512);
-	add_action(MODULE_WRITE_ACTION, write_28512);
-    register_chip_end;
-
+REGISTER_MODULE_BEGIN( 29xx )
+/*
     register_chip_begin("/EEPROM 28Fxx,28Cxx", "28F010, MX28F1000", "28512", SIZE_28F010);
 	add_action(MODULE_READ_ACTION, read_28F010);
 	add_action(MODULE_VERIFY_ACTION, verify_28F010);
@@ -433,25 +367,34 @@ REGISTER_MODULE_BEGIN( 28xx )
 	add_action(MODULE_ERASE_ACTION, erase_28F010); // for macronix is much faster algorithms for erasure/writing, not implemented yet
 	add_action(MODULE_WRITE_ACTION, write_28F010);
     register_chip_end;
+*/
 
-    register_chip_begin("/EEPROM 28Fxx,28Cxx", "28F020, MX28F2000", "28512", SIZE_28F020);
-	add_action(MODULE_READ_ACTION, read_28F020);
-	add_action(MODULE_VERIFY_ACTION, verify_28F020);
-	add_action(MODULE_TEST_BLANK_ACTION, test_blank_28F020);
-	add_action(MODULE_SIGN_ACTION, sign_28F020);
-	add_action(MODULE_ERASE_ACTION, erase_28F020);
-	add_action(MODULE_WRITE_ACTION, write_28F020);
+//    register_chip_begin("/Flash 39SFxx,49Fxx", "39SF512,49F512", "39SF/49F", SIZE_49F512);
+//	add_action(MODULE_READ_ACTION, read_49F512);
+//	add_action(MODULE_SIGN_ACTION, sign_flash);
+//    register_chip_end;
+
+    register_chip_begin("/Flash 39SFxx,49Fxx", "39SF010,49F010", "39SF/49F", SIZE_49F010);
+	add_action(MODULE_READ_ACTION, read_49F010);
+//	add_action(MODULE_SIGN_ACTION, sign_flash);
     register_chip_end;
 
-    register_chip_begin("/EEPROM 28Fxx,28Cxx", "28F040", "28512", SIZE_28F040);
-	add_action(MODULE_READ_ACTION, read_28F040);
-	add_action(MODULE_VERIFY_ACTION, verify_28F040);
-	add_action(MODULE_TEST_BLANK_ACTION, test_blank_28F040);
-	add_action(MODULE_SIGN_ACTION, sign_28F040);
-	add_action(MODULE_ERASE_ACTION, erase_28F040);
-	add_action(MODULE_WRITE_ACTION, write_28F040);
-    register_chip_end;
+//    register_chip_begin("/Flash 39SFxx,49Fxx", "39SF020,49F020", "39SF/49F", SIZE_49F020);
+//	add_action(MODULE_READ_ACTION, read_49F020);
+//	add_action(MODULE_SIGN_ACTION, sign_flash);
+//    register_chip_end;
+
+//    register_chip_begin("/Flash 39SFxx,49Fxx", "39SF040,49F040", "39SF/49F", SIZE_49F040);
+//	add_action(MODULE_READ_ACTION, read_49F040);
+//	add_action(MODULE_SIGN_ACTION, sign_flash);
+//    register_chip_end;
+
+//    register_chip_begin("/EEPROM 28xx/32 pin", "28F080,28F8000,28F8001", "28F080", SIZE_28F080);
+//	add_action(MODULE_READ_ACTION, read_28F080);
+//	add_action(MODULE_PROG_ACTION, prog_28F080);
+//	add_action(MODULE_ERASE_ACTION, erase_28F080);
+//	add_action(MODULE_VERIFY_ACTION, verify_28F080);
+//	add_action(MODULE_TEST_ACTION, test_28F080);
 
 REGISTER_MODULE_END
-
 

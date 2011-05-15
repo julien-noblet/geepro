@@ -172,7 +172,7 @@ void AT89Cx051_put_data(char data)
 int test_blank_AT89Cx051(int size, char mode)
 {
     int addr = 0;
-    int tmp;
+    int tmp = 0;
 
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
@@ -258,7 +258,7 @@ void sign_AT89Cx051(int size)
 void verify_AT89Cx051(int size, char silent)
 {
     int addr = 0;
-    char rdata, wdata;
+    char rdata = 0, wdata = 0;
     char text[256];
 
     hw_sw_vpp(0);   // VPP OFF
@@ -315,7 +315,7 @@ void erase_AT89Cx051(int size)
 void write_AT89Cx051(int size)
 {
     int addr = 0;
-    char wdata, rdata;
+    char wdata = 0, rdata = 0;
     char text[256];
 
     if(test_blank_AT89Cx051(size, 1)){
@@ -493,7 +493,7 @@ void verify_AT89C5x(int size, char silent)
     int addr = 0;
     char text[256];
     addr_state = 0;
-    char rdata, wdata;
+    char rdata = 0, wdata = 0;
 
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
@@ -524,7 +524,7 @@ void test_blank_AT89C5x(int size, char silent)
     int addr = 0;
     char text[256];
     addr_state = 0;
-    unsigned char rdata;
+    unsigned char rdata = 0;
 
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
@@ -559,7 +559,7 @@ void test_blank_AT89C5x(int size, char silent)
 void write_AT89C5x(int size)
 { 
     int addr = 0;
-    unsigned char wdata, rdata;
+    unsigned char wdata = 0, rdata = 0;
     char text[256];
     addr_state = 0;
 
@@ -811,7 +811,7 @@ void verify_flash_AT90S1200_(int size, char silent)
     int addr = 0;
     char text[256];
     addr_state = 0;
-    char rdata, wdata, k;
+    char rdata = 0, wdata = 0, k;
 
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_FLASH );
@@ -851,7 +851,7 @@ void verify_eeprom_AT90S1200_(int size, char silent)
     int addr = 0;
     char text[256];
     addr_state = 0;
-    char rdata, wdata;
+    char rdata = 0, wdata = 0;
 
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_EEPROM );
@@ -883,7 +883,7 @@ char test_blank_AT90S1200_(int size, char silent)
     int addr = 0;
     char text[256];
     addr_state = 0;
-    unsigned char rdata;
+    unsigned char rdata = 0;
 
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_READ_FLASH );
@@ -1080,7 +1080,7 @@ void fusebits_AT90S1200_(int size, char mode) // mode=0 - AT90S1200
 void write_i87xx( int size, char mode_p )
 { 
     int addr = 0, err_counter, rpt, n;
-    unsigned char wdata, rdata;
+    unsigned char wdata = 0, rdata = 0;
     char text[256];
     addr_state = 0;
 

@@ -66,7 +66,7 @@ void read_mcs48(int size)
 void test_blank_mcs48(int size)
 {
     int addr;
-    char data, text[256];
+    char data = 0, text[256];
 
     ce(0, 1);
     oe(1, 1);
@@ -92,7 +92,7 @@ void test_blank_mcs48(int size)
 void verify_mcs48(int size)
 {
     int addr;
-    unsigned char rdata, wdata;
+    unsigned char rdata = 0, wdata = 0;
     char text[256];
 
     ce(0, 1);
@@ -130,7 +130,7 @@ void prog_pulse_mcs48()
 void prog_mcs48(int size)
 {
     unsigned int addr;
-    unsigned char rdata, wdata;
+    unsigned char rdata = 0, wdata = 0;
     char text[256];
 
     ce(0, 1);
