@@ -25,5 +25,6 @@
 
 extern const char *file_load(geepro *gep, char *fname);
 extern const char *file_save(geepro *gep, char *fname);
+extern const char *file_get_time(geepro *gep, long long *time, const char *fname);
 
 #endif

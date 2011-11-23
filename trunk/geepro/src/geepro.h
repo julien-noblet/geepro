@@ -31,13 +31,18 @@
 #define EAUTHORS "Krzysztof Komarnicki krzkomar@wp.pl"
 #define ELICENSE "GPL version 2"
 
+#ifndef __cplusplus__
+typedef unsigned char boolean;
+#endif
+
+
 /* glówna struktura programu */
 typedef struct
 {
     int   argc;		
-    char  forbid; // blokuje akcje 
+    char  forbid; // forbidding action
     char  **argv;
-    iface *ifc;	/* struktura zawierająca kolejki pluginów */
+    iface *ifc;	/* plugins queue */
     void  *gui;
     chip_desc  *chp;
 } geepro;

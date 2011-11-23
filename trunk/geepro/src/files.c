@@ -333,3 +333,16 @@ const char *file_save(geepro *gep, char *fname)
     return file_err_msg(err);
 }
 
+const char *file_get_time(geepro *gep, long long *time, const char *fname)
+{
+    struct stat st;
+
+    if( !fname ) return 0;
+    if( fname[0] == 0) return 0;
+    if(stat(fname, &st)){
+	perror(fname);
+        return "Cannot stat on file";
+    }
+    *time = st.st_mtim.tv_sec * 100 + (st.st_mtim.tv_sec / 1000000);
+    return 0;
+}
