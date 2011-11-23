@@ -29,11 +29,13 @@
 #define GUI_MAX_ACTIONS		16
 
 #define GUI(x)	((gui *)x)
+#define MAX_CB_TABLE	1024
 
 typedef struct _gui_action gui_action;
 
 struct _gui_action
 {
+    char *name;
     void *root;
     void *action;
     void *widget;
@@ -69,7 +71,12 @@ typedef struct
     /* lista wskaznikow do przycisków akcji */
     gui_action *action;
 
+    /* MISC */
+    long long fct;		/* Last loaded file creation/modify time to detect file change during program run */
+    int	 cbtable[MAX_CB_TABLE];	/* checkbox values */
 } gui;
+
+
 
 typedef struct _sqw_gen sqw_gen;
 

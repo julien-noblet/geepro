@@ -129,3 +129,5 @@
 #define TXT_INTERFACE		"Interface:"
 #define TXT_BUFFER		"Buffer"
 #define TXT_EXIT		"bye bye.\n"
+
+#define RELOAD_QUESTION		"Buffer file and disk file are differ.\nReload ?"

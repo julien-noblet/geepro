@@ -40,6 +40,8 @@
 
 #include "icons_xpm.c"
 
+void gui_refresh_button(GtkWidget *wg, geepro *gep);
+
 /***************************************************************************************************/
 void gui_action_icon_set()
 {
@@ -173,6 +175,7 @@ static void gui_load_file(GtkWidget *w, geepro *gep)
 	err = file_load(gep, fname);
 	if(err) 
 	    gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
+	file_get_time(gep, &GUI(gep->gui)->fct, fname);
 	g_free(fname);
     } else
 	gtk_widget_destroy(wg);    
@@ -243,6 +246,30 @@ static void gui_save_file(GtkWidget *w, geepro *gep)
 /***************************************************************************************************************************/
 /* dodawanie przyciskow akcji do paska narzedziowego */
 
+static void gui_test_file( geepro *gep )
+{
+    long long time;
+
+    const char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));    
+
+    if( !fname ) return;
+    if( !fname[0] ) return;
+
+    file_get_time(gep, &time, fname);
+
+    if( GUI(gep->gui)->fct < 0){
+	GUI(gep->gui)->fct = time;
+	return;
+    }
+    
+    if( GUI(gep->gui)->fct != time){
+	if(gui_dialog_box(gep, "[QS][TEXT]"RELOAD_QUESTION"[/TEXT][BR]  NO  [BR]  YES  ", fname) == 2){
+	    gui_refresh_button(NULL, gep);
+	    return;
+	}
+    }
+}
+
 static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 {
     int x;
@@ -256,16 +283,22 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 	);
 	return;
     }
-    if( !gui_test_connection( gep ) )
+// program, compare -> test bin file for changes
+    if( !strcmp(ga->name, "geepro-write-action") ) gui_test_file( gep );
+    if( !strcmp(ga->name, "geepro-write-eeprom-action") ) gui_test_file( gep );
+    if( !strcmp(ga->name, "geepro-verify-action") ) gui_test_file( gep );
+    if( !strcmp(ga->name, "geepro-verify-eeprom-action") ) gui_test_file( gep );
+
+    if( !gui_test_connection( gep ) ){
 	x = ((chip_act_func)ga->action)(ga->root);
-    else 
+    } else 
 	x = -1;
 	
-    if( x ) gui_dialog_box( gep, 
-		"[ER][TEXT]"
-	        "Error ocured during performing action.\n Returned error: %i"
-		"[/TEXT][BR] OK ", x
-	    );
+//    if( x ) gui_dialog_box( gep, 
+//		"[ER][TEXT]"
+//	        "Error ocured during performing action.\n Returned error: %i"
+//		"[/TEXT][BR] OK ", x
+//	    );
     gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
 }
 
@@ -294,7 +327,13 @@ static int gui_add_bt_action(geepro *gep, const char *stock_name, const char *ti
 
     new_tie->root = gep;
     new_tie->action = action;
-    
+
+    if(!(new_tie->name = malloc(strlen(stock_name) + 1))){
+	printf("{gui.c} gui_add_br_action() --> out of memory.\n");
+    } else {
+	strcpy(new_tie->name, stock_name);
+    }    
+
     new_tie->widget = gtk_toolbar_append_item(
 	GTK_TOOLBAR(GUI(gep->gui)->toolbox), 
 	NULL, 
@@ -328,6 +367,7 @@ static void gui_rem_bt_action(gui *g)
     tmp = g->action;
     while( tmp ){
 	x = tmp->next;
+	free( tmp->name );
 	gtk_widget_destroy(tmp->widget);
 	free(tmp);
 	tmp = x;
@@ -620,12 +660,19 @@ void gui_refresh_button(GtkWidget *wg, geepro *gep)
 {
     const char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));
     const char *err;
+
+
     err = file_load(gep, (char *)fname);
-    if(err) 
+    if( err ) 
         gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
     else {
 	gui_dialog_box(gep, "[IF][TEXT]File reloaded[/TEXT][BR]OK");
+	
     }
+
+    err = file_get_time(gep, &GUI(gep->gui)->fct, fname);
+    if( err ) 
+        gui_error_box(gep, "Error get creation time of file :\n%s\n%s", fname, err);    
 }
 
 void gui_menu_setup(geepro *gep)
@@ -633,6 +680,8 @@ void gui_menu_setup(geepro *gep)
     char *tmp;
     GtkWidget *wg0, *wg1, *wg2, *wg3, *wg4;
 
+
+    GUI(gep->gui)->fct = -1;
     gtk_init(&gep->argc, &gep->argv);
     gui_add_images(gep);
 
@@ -917,7 +966,7 @@ char gui_cmp_pls(geepro *gep, int a, int b)
 
 static int gui_dialog_exit = 0;
 
-static void gui_dialog_box_close(GtkWidget *wg, int i)
+static void gui_dialog_box_close(GtkWidget *wg, char *p_i)
 {
     gui_dialog_exit = 1; /* wyjście z petli */
 
@@ -926,8 +975,7 @@ static void gui_dialog_box_close(GtkWidget *wg, int i)
 	 return;
     }
     
-    gui_dialog_exit = i;
-
+    gui_dialog_exit = *p_i;
     gtk_widget_destroy(wg->parent->parent->parent);
 }
 
@@ -939,6 +987,7 @@ int gui_dialog_box(geepro *gp, const char *en, ...)
     char *markup, *title;
     char *fmt, *ft, *ex;
     char flag;
+    char pbuttons[256];
     int button;
     va_list ap;
 
@@ -1012,7 +1061,7 @@ int gui_dialog_box(geepro *gp, const char *en, ...)
     gtk_container_border_width(GTK_CONTAINER(wg0), 3);
     gtk_table_attach(GTK_TABLE(wgtab), wg0, 0,2,1,2 ,GTK_FILL, GTK_FILL, 0,0);
 
-    button = 2;
+    button = 0;
     do{
 	flag = 0;
 	if(!strncmp(ft, "[BR]", 4)) flag = 1;
@@ -1026,10 +1075,12 @@ int gui_dialog_box(geepro *gp, const char *en, ...)
 	
 	if(flag == 1) gtk_box_pack_end(GTK_BOX(wg0), wg1, FALSE, FALSE, 0);
 	if(flag == 2) gtk_box_pack_start(GTK_BOX(wg0), wg1, FALSE, FALSE, 0);
-        gtk_signal_connect(GTK_OBJECT(wg1),"clicked",GTK_SIGNAL_FUNC(gui_dialog_box_close), (void*)button++);
+	pbuttons[ button ] = button + 2;
+        gtk_signal_connect(GTK_OBJECT(wg1),"clicked",GTK_SIGNAL_FUNC(gui_dialog_box_close), (void*)(pbuttons + button) );
+	button++;
 	if(ex) *ex = '[';
 	ft = ex;
-    } while(ex);
+    } while(ex  && (button < 256) );
     
     free(fmt);
     gtk_widget_show_all(wdialog);
@@ -1148,12 +1199,12 @@ char *gui_lookup_tag(const char *fmt, char *tmp, int size, const char *key_begin
 // global
 static unsigned long gui_checkbox_result;
 
-void gui_checkbox_action(GtkWidget *wg, void *value)
+void gui_checkbox_action(GtkWidget *wg, int *value)
 {
     if( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wg)) )
-	gui_checkbox_result |= (unsigned int)value;
+	gui_checkbox_result |= *value;
     else
-	gui_checkbox_result &= ~((unsigned int)value);
+	gui_checkbox_result &= ~(*value);
 }
 
 unsigned long *gui_checkbox(geepro *gep, const char *fmt)
@@ -1164,6 +1215,7 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
     char *tmp;
     int tmp_size;    
     int result = 0, lock;
+    int cnt;
 
     tmp_size = strlen( fmt );
     if(!(tmp = (char *)malloc(tmp_size + 1))){
@@ -1194,7 +1246,8 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
     vbox = gtk_vbox_new(FALSE, 0);
     gtk_box_pack_end(GTK_BOX(hbox), vbox, FALSE, 0, 0);    
     str = (char *)fmt; 
-    while( (str = gui_lookup_tag(str, tmp, tmp_size, "[CB:", "]")) ){
+    cnt = 0;
+    while( (str = gui_lookup_tag(str, tmp, tmp_size, "[CB:", "]")) && (cnt < MAX_CB_TABLE)){
 	sscanf(tmp, " %i ", &result);
 	if((x = strchr(tmp, ':'))) x++;
 	t = *x;
@@ -1204,9 +1257,11 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
 	}
 	r = gtk_check_button_new_with_label( x );
 	gtk_box_pack_start( GTK_BOX(vbox), r, TRUE, TRUE, 2 );
-	gtk_signal_connect(GTK_OBJECT(r), "toggled", GTK_SIGNAL_FUNC(gui_checkbox_action), (void *)result); // ptr as integer
+	GUI(gep->gui)->cbtable[ cnt ] = result;
+	gtk_signal_connect(GTK_OBJECT(r), "toggled", GTK_SIGNAL_FUNC(gui_checkbox_action), (void *)(GUI(gep->gui)->cbtable + cnt)); // ptr as integer
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(r), t == '1');
 	gtk_widget_set_sensitive(GTK_WIDGET(r), !((lock == 0) && (t == '1')));
+	cnt++;
     }
     
     gtk_widget_show_all(GTK_DIALOG(wd)->vbox);
