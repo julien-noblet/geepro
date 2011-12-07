@@ -438,9 +438,13 @@ static GtkWidget *gui_xml_entry(gui_xml *g, xmlNode *cur)
 
 static GtkWidget *gui_xml_image(gui_xml *g, xmlNode *cur)
 {
-    char imagefile[256]="";
-    strncat(imagefile,shared_geepro_dir,256);
-    strncat(imagefile,(char *)xmlGetProp(cur, (unsigned char *)"src"),256-strlen(imagefile));
+    char imagefile[256];
+    unsigned int x = strlen(shared_geepro_dir);
+
+    if( x > 255) x = 255;
+    memset(imagefile, 0, 256);
+    strncat(imagefile, shared_geepro_dir, x);
+    strncat(imagefile, (char *)xmlGetProp(cur, (unsigned char *)"src"), 256 - strlen(imagefile));
     
     return gtk_image_new_from_file(imagefile);
 }
@@ -666,24 +670,24 @@ gui_xml_ev *gui_xml_set_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *i
     return event;
 }
 
-int gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id)
+void gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id, gui_xml_val_str *ret)
 {
-    int ret = -1;
+    if( !ret ) return;
+    ret->ival = -1;
+    ret->sval = NULL;
     gui_xml_ev *event;
     
     if(!(event = gui_xml_event_lookup(g, id, wg))){
 	printf("Error: {gui_xml.c} gui_xml_get_widget_value() ---> event == NULL !\n");
-	return ret;
+	return;
     };
 
     switch(wg){
-	case GUI_XML_CHECK_BUTTON: ret = GTK_TOGGLE_BUTTON(event->widget)->active; break;
-	case GUI_XML_SPIN_BUTTON: ret = gtk_spin_button_get_value(GTK_SPIN_BUTTON(event->widget)); break;
-	case GUI_XML_ENTRY: ret = (int)gtk_entry_get_text(GTK_ENTRY(event->widget)); break;
+	case GUI_XML_CHECK_BUTTON: ret->ival = GTK_TOGGLE_BUTTON(event->widget)->active; break;
+	case GUI_XML_SPIN_BUTTON: ret->ival = gtk_spin_button_get_value(GTK_SPIN_BUTTON(event->widget)); break;
+	case GUI_XML_ENTRY: ret->sval = (char *)gtk_entry_get_text(GTK_ENTRY(event->widget)); break;
 	default: break;
     }
-
-    return ret;
 }
 
 gui_xml_ev *gui_xml_event_lookup(gui_xml *g, const char *id, gui_xml_ev_wg type)

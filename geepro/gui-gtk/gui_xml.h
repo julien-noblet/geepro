@@ -36,6 +36,13 @@ typedef struct{
     const char *val;
 } gui_xml_ifattr;
 
+/*
+    Return value for gui_xml_get_widget_value()
+*/
+typedef struct{
+    int	 ival;
+    char *sval;
+} gui_xml_val_str;
 
 /* 
   typ elementu tablicy przeszukiwania nazw dla gui_xml_trans_id()
@@ -118,7 +125,7 @@ extern gui_xml_ev *gui_xml_set_widget_value(gui_xml *g, gui_xml_ev_wg wg, const 
     pobranie wartosci kontrolki
     jesli brak widgetu lub widget nie posiada wartosci zwraca -1
 */
-extern int gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id);
+extern void gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id, gui_xml_val_str *val);
 
 /*
     zwraca strukture zdarzenia dla kontolki typu wg i danym id
