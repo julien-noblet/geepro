@@ -426,7 +426,7 @@ static int iface_add_module(iface *ifc, void *pf, void *init)
 	return -2;
     }
     tmp->init_module = tmp->handler = pf;
-    tmp->init_module = tmp->init_module = init;
+    tmp->init_module = init;
     tmp->next = NULL;
 
     if(first_run){

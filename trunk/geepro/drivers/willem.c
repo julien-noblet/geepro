@@ -33,7 +33,7 @@ static const gui_xml_lt willem_lt[] =
     {"pin_4", 4},   {"pin_29", 29},
     {"pin_5", 5},   {"pin_28", 28},
     {"pin_6", 6},   {"pin_27", 27},
-    {"pin_7", 7},   {"pin_26", 16},
+    {"pin_7", 7},   {"pin_26", 26},
     {"pin_8", 8},   {"pin_25", 25},
     {"pin_9", 9},   {"pin_24", 24},
     {"pin_10", 10}, {"pin_23", 23},
@@ -351,13 +351,15 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 {
     int pin, tmp, i, mask, z;
     char tmpstr[2];
+    gui_xml_val_str gxvs;
 
     pin = GUI_XML_TRANS_ID(ev, willem_lt);
-
     /* jesli pin adresu */
     if(((pin > 1) && (pin < 13)) || (pin == 23) || ((pin > 24) && (pin < 31))){
 	/* pobiera aktualny adres */
-	tmp = gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "address");
+	gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "address", &gxvs);
+	tmp = gxvs.ival;
+
 	mask = (int)(1 << addr_pin2bit[pin - 1]);
 	if(value)
 	    tmp |= mask;
@@ -372,7 +374,8 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
     /* jesli pin danej */
     if(((pin > 12) && (pin < 16)) || ((pin > 16) && (pin < 22))){
 	/* pobieera aktualna dana */
-	tmp = gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "data");
+	gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "data", &gxvs);
+	tmp = gxvs.ival;
 	mask = (int)(1 << data_pin2bit[pin - 1]);
 	if(value)
 	    tmp |= mask;
@@ -392,7 +395,8 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 	case 32: hw_sw_vcc(value); break;
 	/* pozostale kontrolki */
 	case ADDRESS_SBT: /* Reczne ustawienie adresu za pomoca spin buttona */
-		    tmp = gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "address");
+		    gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "address", &gxvs);
+		    tmp = gxvs.ival;
 		    /* ustawienie przyciskow symb piny */
 		    for(i = 0, mask = 1; i < 18; i++, mask <<= 1){
 			z = tmp & mask;
@@ -401,7 +405,8 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 		    hw_set_addr(tmp);
 		    break;
 	case DATA_SBT: /* Reczne ustawienie danej za pomoca spin buttona */
-		    tmp = gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "data");
+		    gui_xml_get_widget_value(ev->root_parent, GUI_XML_SPIN_BUTTON, "data", &gxvs);
+		    tmp = gxvs.ival;
 		    for(i = 0, mask = 1; i < 8; i++, mask <<= 1){
 			z = tmp & mask;		
 			gui_xml_set_widget_value(ev->root_parent, GUI_XML_CHECK_BUTTON, data_pin_name[i],  &z);
