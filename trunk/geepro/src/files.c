@@ -23,6 +23,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <regex.h>
+#include <dirent.h>
 
 #include  "../intl/lang.h"
 #include "files.h"
@@ -333,6 +335,8 @@ const char *file_save(geepro *gep, char *fname)
     return file_err_msg(err);
 }
 
+//------------------------------------------------------------------------------------------
+
 const char *file_get_time(geepro *gep, long long *time, const char *fname)
 {
     struct stat st;
@@ -346,3 +350,51 @@ const char *file_get_time(geepro *gep, long long *time, const char *fname)
     *time = st.st_mtim.tv_sec * 100 + (st.st_mtim.tv_sec / 1000000);
     return 0;
 }
+
+boolean file_regex_match(const char *str, regex_t *rgx, char *error)
+{
+    char tmp[100];
+    int  ret;
+
+    ret = regexec(rgx, str, 0, NULL, 0);
+
+    switch(ret){
+	case '0': return true;
+	case REG_NOMATCH: return false;
+	default: regerror(ret, rgx, tmp, 100);
+		 sprintf( error, "Regex match failed: %s\n", tmp);
+    }
+    return false;
+}
+
+boolean file_ls(const char *path, const char *regex, char *error, file_ls_callback fcb, void *arg)
+{
+    regex_t rgx;
+    DIR     *dp;
+    struct dirent *ep;
+    boolean tmp;
+
+    if( regcomp(&rgx, regex, 0) ){
+	sprintf( error, "regcomp() failed: Could not compile regex. { files.c -> file_regex_match() }\n");
+	return false;
+    };
+
+    if((dp = opendir( path )) == NULL){
+	sprintf(error, "Could not open the directory");
+	return false;
+    };
+
+    while(( ep = readdir(dp) )){
+	tmp = file_regex_match( ep->d_name, &rgx, error );
+	if( tmp ){ 
+	    if( !fcb( ep->d_name, error, arg ) ) return false;
+	}
+	if( !tmp && error[0] ) return false;
+    }
+
+    closedir( dp );
+    regfree( &rgx );
+    return true;
+}
+
+

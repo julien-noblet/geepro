@@ -32,7 +32,14 @@
 #define ELICENSE "GPL version 2"
 
 #ifndef __cplusplus__
-typedef unsigned char boolean;
+typedef char boolean;
+#define	false 0
+#define true  1
+//typedef enum
+//{
+//    false = 0,
+//    true
+//} boolean;
 #endif
 
 
