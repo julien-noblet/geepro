@@ -82,6 +82,7 @@ struct _chip_desc
     char *chip_family;		/* chip family name eg 27xx */
 
     int  dev_size;		/* allocation size for buffer */
+    long checksum;
     char *buffer;		/* buffer data */
 
     chip_action *actions;	/* action functions */

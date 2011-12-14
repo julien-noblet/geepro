@@ -37,10 +37,12 @@
 #include "../drivers/hwdriver.h"
 #include "../src/iface.h"
 #include "bineditor.h"
-
 #include "icons_xpm.c"
+#include "checksum.h"
 
-void gui_refresh_button(GtkWidget *wg, geepro *gep);
+
+void gui_refresh_button(GtkWidget *, geepro *);
+static void gui_checksum_recalculate( geepro * );
 
 /***************************************************************************************************/
 void gui_action_icon_set()
@@ -70,26 +72,35 @@ char gui_test_connection(geepro *gep)
     return -1;
 }
 
+static void gui_checksum_rfsh(geepro *gep)
+{
+    char tmp_str[40];
+    sprintf(tmp_str, "0x%x", (unsigned int)gep->chp->checksum); 
+    gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->crc_entry), tmp_str);  
+}
+
+static void gui_checksum_recalculate(geepro *gep)
+{
+    if(gep->chp->dev_size == 0) return;
+// to add algorithm selection
+    gep->chp->checksum = checksum_calculate( CHECKSUM_ALG_LRC, gep->chp->dev_size, (unsigned char *)gep->chp->buffer, 0, gep->chp->dev_size - 1, 0, 0, 0, 0);
+    gui_checksum_rfsh( gep );
+}
+
 void gui_stat_rfsh(geepro *gep)
 {
     char tmp_str[40];
 
     if(gep->chp){
 	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), gep->chp->chip_name);
-	sprintf(tmp_str, "0x%x", gep->chp->dev_size); 
+	sprintf(tmp_str, "0x%x", (unsigned int)gep->chp->dev_size); 
 	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->buffer_entry), tmp_str);  
-//	sprintf(tmp_str, "0x%x", gep->chp->checksum); 
-	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->crc_entry), tmp_str);  
+	gui_checksum_rfsh( gep );
     } else {
 	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), "--------");
 	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->buffer_entry), tmp_str);  
 	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->crc_entry), tmp_str);  
     }
-//  - dopisac odswiezenie status bar
-//    GUI(gep->gui)->pict_view = (GUI(gep->gui)->pcb) ? GUI(gep->gui)->pict_willem : GUI(gep->gui)->pict_pcb;
-//    gui_draw_dip_switch(gep);
-//    gui_draw_pict(gep);
-//    gui_viewer_rfsh(gep);
 }
 
 static int gui_exit_program(GtkWidget *wg, geepro *gep, geepro *gep1)
@@ -108,6 +119,14 @@ static int gui_exit_program(GtkWidget *wg, geepro *gep, geepro *gep1)
 void gui_exit(geepro *gep)
 {
     gui_exit_program(NULL, gep, gep);
+}
+
+static void gui_load_error_msg(geepro *gep, const char *fname, const char *err)
+{
+    if(err[0] != '!') 
+	gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
+    else
+	gui_dialog_box(gep, "[WN][TEXT]%s[/TEXT][BR]OK", err + 1); 
 }
 
 static void gui_load_file(GtkWidget *w, geepro *gep)
@@ -173,12 +192,13 @@ static void gui_load_file(GtkWidget *w, geepro *gep)
 	gtk_editable_set_position(GTK_EDITABLE(GUI(gep->gui)->file_entry), -1);
 	gtk_widget_destroy(wg);    
 	err = file_load(gep, fname);
-	if(err) 
-	    gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
+	if(err)
+	    gui_load_error_msg(gep, fname, err);
 	file_get_time(gep, &GUI(gep->gui)->fct, fname);
 	g_free(fname);
     } else
 	gtk_widget_destroy(wg);    
+    gui_checksum_recalculate( gep );
 }
 
 static void gui_save_file(GtkWidget *w, geepro *gep)
@@ -300,6 +320,7 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 //		"[/TEXT][BR] OK ", x
 //	    );
     gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
+    gui_checksum_recalculate( gep );
 }
 
 static int gui_add_bt_action(geepro *gep, const char *stock_name, const char *tip, chip_act_func action)
@@ -665,7 +686,7 @@ void gui_refresh_button(GtkWidget *wg, geepro *gep)
 
     err = file_load(gep, (char *)fname);
     if( err ) 
-        gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
+	    gui_load_error_msg(gep, fname, err);
     else {
 	gui_dialog_box(gep, "[IF][TEXT]File reloaded[/TEXT][BR]OK");
 	
@@ -674,6 +695,7 @@ void gui_refresh_button(GtkWidget *wg, geepro *gep)
     err = file_get_time(gep, &GUI(gep->gui)->fct, fname);
     if( err ) 
         gui_error_box(gep, "Error get creation time of file :\n%s\n%s", fname, err);    
+    gui_checksum_recalculate( gep );
 }
 
 void gui_menu_setup(geepro *gep)
@@ -789,14 +811,20 @@ void gui_menu_setup(geepro *gep)
     gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,1,2, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->buffer_entry = wg1;
+
     /* Suma CRC */    
     wg1 = gtk_label_new(CHECKSUM_LB);
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,2,3, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
     gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,2,3, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->crc_entry = wg1;
+    wg4 = gtk_hbox_new(FALSE, 0);
+    gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,2,3, GTK_FILL | GTK_EXPAND, 0, 10,0);
+    gtk_container_add(GTK_CONTAINER(wg4), wg1);
+// Checksum algorithm selection to add in the future
+//    wg1 = gtk_button_new();
+//    gtk_box_pack_end(GTK_BOX(wg4), wg1, 0 ,0, 0);    
 
     /* Nazwa pliku */    
     wg1 = gtk_label_new(FILE_LB);
