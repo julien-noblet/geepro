@@ -27,7 +27,7 @@ int jtag_byteblaster_api(en_hw_api func, int val, void *ptr)
 {
     switch(func)
     {
-	case HW_IFACE: return IFACE_LPT;
+	case HW_IFACE: return IFACE_RS232;
 	case HW_TEST : return 1;
 	case HW_NAME : DRIVER_NAME(ptr) = "JTAG byteblaster - dummy";
 	default: return 0;

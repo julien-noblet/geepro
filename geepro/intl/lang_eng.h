@@ -126,7 +126,7 @@
 #define CHIP_DESCRIPTION	"Chip description"
 #define TXT_MISSING		"missing"
 #define TXT_PROGRAMMER		"Programmer:"
-#define TXT_INTERFACE		"Interface:"
+#define TXT_INTERFACE		"Device:"
 #define TXT_BUFFER		"Buffer"
 #define TXT_EXIT		"bye bye.\n"
 

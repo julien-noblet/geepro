@@ -31,6 +31,8 @@
 #define EAUTHORS "Krzysztof Komarnicki krzkomar@wp.pl"
 #define ELICENSE "GPL version 2"
 
+#define SYSTEM_DEVICE_PATH "/dev/"
+
 #ifndef __cplusplus__
 typedef char boolean;
 #define	false 0

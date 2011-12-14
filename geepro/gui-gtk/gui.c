@@ -510,6 +510,7 @@ static void gui_build_iface_menu(iface *ifc, int cl, char *name, char *dev, GtkW
 
 static int gui_iface_sel(GtkWidget *wg, geepro *gep)
 {
+    char tmp[256];
     char *name = gtk_combo_box_get_active_text(GTK_COMBO_BOX(wg));
 
     if(!name) return 0;
@@ -523,6 +524,8 @@ static int gui_iface_sel(GtkWidget *wg, geepro *gep)
     gep->ifc->ifc_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
     gui_stat_rfsh(gep);
     test_hw(NULL, gep);
+    sprintf(tmp,"%i", gep->ifc->ifc_sel);
+    if(GUI(gep->gui)->gui_run) store_set(&store, "LAST_SELECTED_IFACE", tmp);
     return 0;
 }
 
@@ -563,8 +566,6 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     /* usuniecie listy interfejsów*/
     gtk_widget_destroy(GUI(gep->gui)->iface);
 
-
-    gep->ifc->ifc_sel = 0;
     hw_destroy(gep);
     ___hardware_driver___ = api;
     gep->ifc->cl = hw_get_iface();
@@ -877,11 +878,6 @@ void gui_run(geepro *gep)
     /* inicjowanie domyślnego plugina sterownika programatora */
     gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->prog_combox), "changed");
     // default combox setting
-    tmp = NULL;
-    if(!store_get(&store, "LAST_SELECTED_PROGRAMMER", &tmp)){ // 0 - OK
-	if( tmp ) gtk_combo_box_set_active(GTK_COMBO_BOX(GUI(gep->gui)->prog_combox), strtol(tmp, NULL, 0));
-	free(tmp);
-    }
     tmp = NULL;
     if(!store_get(&store, "LAST_CHIP_SELECTED", &tmp)){
 	if( tmp ) gui_chip_select(gep, tmp);
