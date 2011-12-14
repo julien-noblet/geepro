@@ -30,6 +30,8 @@
 #include "iface.h"
 #include "../drivers/hwdriver.h"
 #include "chip.h"
+#include "main.h"
+#include "files.h"
 
 #include "../intl/lang.h"
 
@@ -392,21 +394,83 @@ void iface_driver_allow(iface *ifc, const char *list)
     ifc->plg_list = (char*)list;
 }
 
-/* do porway jak będzie config, puki co atrapa  */
+static char *iface_get_iface_wildcard( int type)
+{
+    switch (type) {
+	case IFACE_LPT: return "^parport[[:digit:]]*$";
+	case IFACE_USB: return "^usb[[:digit:]]*$";
+	case IFACE_RS232: return "^ttyS[[:digit:]]*$";
+    }
+    
+    return NULL;
+}
+
+typedef struct 
+{
+    iface *ifc;
+    int   type;    
+} iface_tmp_arg;
+
+static boolean iface_callback_list(const char *fname, const char *error, void *arg)
+{
+    char tmp[4096];
+    
+    if( (strlen(fname) + strlen(SYSTEM_DEVICE_PATH)) > 4094) return false;
+    
+    iface_tmp_arg *targ = (iface_tmp_arg *)arg;
+    
+    sprintf(tmp, "%s%s", SYSTEM_DEVICE_PATH, fname);
+    
+    iface_add(targ->ifc, targ->type, (char *)fname, tmp);
+    return true;
+}
+
+static void iface_add_list(iface *ifc, int iface_type)
+{
+    char error[256];
+    char *regex = iface_get_iface_wildcard( iface_type );
+    iface_tmp_arg tmp;
+    
+    tmp.ifc = ifc;
+    tmp.type = iface_type;
+    error[0] = 0;
+        
+    if(!file_ls(SYSTEM_DEVICE_PATH, regex, error, iface_callback_list, &tmp)){
+	fprintf(stderr, "[ERROR]%s\n",error);
+    }
+
+}
+
 int iface_load_config(iface *ifc, void *cfg)
 {
-    ifc->prog_sel = 0;
+    char *tmp;
     ifc->ifc_sel = 0;
     ifc->cl = IFACE_LPT;
 
-    iface_add(ifc, IFACE_LPT, "LPT 1", "/dev/parport0");
-    iface_add(ifc, IFACE_LPT, "LPT 2", "/dev/parport0");
-    iface_add(ifc, IFACE_LPT, "LPT 3", "/dev/parport01234"); 
-    iface_add(ifc, IFACE_USB, "USB 1", "/dev/null");
-    iface_add(ifc, IFACE_USB, "USB 2", "/dev/null");
-    iface_add(ifc, IFACE_USB, "USB 3", "/dev/null"); 
+    ifc->prog_sel = 0;    
+    tmp = NULL;
+    if(!store_get(&store, "LAST_SELECTED_PROGRAMMER", &tmp)){
+	if( tmp ){
+	    ifc->prog_sel = strtol(tmp, NULL, 0);
+	    free(tmp);
+	}
+    }
+    tmp = NULL;
+    if(!store_get(&store, "LAST_SELECTED_IFACE", &tmp)){
+	if( tmp ){
+	    ifc->ifc_sel = strtol(tmp, NULL, 0);
+	    free(tmp);
+	}
+    }
+
+// interface to choose
+    iface_add_list( ifc, IFACE_LPT);
+    iface_add_list( ifc, IFACE_USB);
+    iface_add_list( ifc, IFACE_RS232);
+//exit(0);
     return 0;
 }
+
 
 /******************************************************************************************************************/
 

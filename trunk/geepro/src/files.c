@@ -356,10 +356,10 @@ boolean file_regex_match(const char *str, regex_t *rgx, char *error)
     char tmp[100];
     int  ret;
 
+    error[0] = 0;
     ret = regexec(rgx, str, 0, NULL, 0);
-
     switch(ret){
-	case '0': return true;
+	case 0: return true;
 	case REG_NOMATCH: return false;
 	default: regerror(ret, rgx, tmp, 100);
 		 sprintf( error, "Regex match failed: %s\n", tmp);
@@ -374,7 +374,7 @@ boolean file_ls(const char *path, const char *regex, char *error, file_ls_callba
     struct dirent *ep;
     boolean tmp;
 
-    if( regcomp(&rgx, regex, 0) ){
+    if( regcomp(&rgx, regex, REG_EXTENDED | REG_NOSUB) ){
 	sprintf( error, "regcomp() failed: Could not compile regex. { files.c -> file_regex_match() }\n");
 	return false;
     };
