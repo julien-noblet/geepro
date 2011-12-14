@@ -45,7 +45,7 @@
 #define FR_NB_03_TITLE		"Algorythm"
 #define FR_NB_04_TITLE		"Programmer"
 #define SIZE_HEX_LB		"Memory size (hex)"
-#define CHECKSUM_LB		"Control sum"
+#define CHECKSUM_LB		"Control sum (LRC)"
 #define SHIFT_LB		"Address offset"
 #define ALGO_NORMAL_LB		"Normal"
 #define ALGO_FAST_LB		"Fast"

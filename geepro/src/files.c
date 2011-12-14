@@ -41,12 +41,18 @@ const char *file_err_msg(int err)
     if( err == -4) return "Checksum error";
     if( err == -5) return "Unsupported format type 3 or 5.";
     if( err == -6) return "File save error.";
+    if( err == -100) return "!File is shorter than buffer. Rest of the buffer was filled by 0xff.";
+    if( err == -101) return "!File is greater than buffer. Rest of the file was cutted.";
     return "some error";
 }
 
 int file_load_bin(FILE *f, int size, char *buffer)
 {
-    if(fread(buffer, 1, size, f) != size) return -5;
+    unsigned long sz = fread(buffer, 1, size, f);
+    if( sz != size){
+        if(sz < size) return -100;
+        return -101;
+    }
     return 0;
 }
 
