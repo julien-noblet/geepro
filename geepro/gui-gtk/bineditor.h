@@ -26,16 +26,18 @@
 #ifndef __GUI_BINEDITOR_H__
 #define __GUI_BINEDITOR_H__
 #include <gtk/gtk.h>
-#include <gtk/gtkbox.h>
 
 G_BEGIN_DECLS
 
-#define GUI_BINEDITOR(obj)		(GTK_CHECK_CAST((obj), GUI_TYPE_BINEDITOR, GuiBineditor))
-#define GUI_BINEDITOR_CLASS(klass)	(GTK_CHECK_CLASS_CAST((klass), GUI_TYPE_BINEDITOR, GuiBineditorClass))
-#define GUI_IS_BINEDITOR(obj)		(GTK_CHECK_TYPE((obj), GUI_TYPE_BINEDITOR))
-#define GUI_TYPE_BINEDITOR		(gui_bineditor_get_type())
+#define GUI_TYPE_BINEDITOR		( gui_bineditor_get_type() )
+#define GUI_BINEDITOR(obj)		( G_TYPE_CHECK_INSTANCE_CAST((obj), GUI_TYPE_BINEDITOR, GuiBineditor) )
+#define GUI_BINEDITOR_CLASS(klass)	( G_TYPE_CHECK_CLASS_CAST((klass), GUI_TYPE_BINEDITOR, GuiBineditorClass) )
+#define GUI_IS_BINEDITOR(obj)		( G_TYPE_CHECK_INSTANCE_TYPE((obj), GUI_TYPE_BINEDITOR) )
+#define GUI_IS_BINEDITOR_CLASS(klass)	( G_TYPE_CHECK_CLASS_TYPE((klass), GUI_BINEDITOR) )
+#define GUI_BINEDITOR_GET_CLASS(obj)	( G_TYPE_INSTANCE_GET_CLASS((obj), GUI_BINEDITOR, GuiBineditorClass) )
 
 typedef struct _GuiBineditor 		GuiBineditor;
+typedef struct _GuiBineditorPrivate	GuiBineditorPrivate;
 typedef struct _GuiBineditorClass 	GuiBineditorClass;
 
 typedef enum
@@ -54,22 +56,20 @@ typedef enum
 typedef enum
 {
     GUI_BINEDITOR_COLOR_TEXT_NORMAL,	/* text */
-    GUI_BINEDITOR_COLOR_TEXT_MARKED,	/* text na pozycji markera */
-    GUI_BINEDITOR_COLOR_MARKED_BG,	/* tlo tekstu na pozycji markera */
-    GUI_BINEDITOR_COLOR_TEXT_DESC,	/* text opisu siatki */
-    GUI_BINEDITOR_COLOR_GRID,		/* kolor siatki */
-    GUI_BINEDITOR_COLOR_GRID_BG,	/* tlo pod siatka */
-    GUI_BINEDITOR_COLOR_DESC_BG,	/* kolor belki opisowej */
-    GUI_BINEDITOR_COLOR_UD,		/* kolor prostokatu rysowanego w miejscu znaku spoza zakresu */
-    GUI_BINEDITOR_COLOR_HL,		/* kolor podswietlenia */
-    GUI_BINEDITOR_COLOR_HL_MRK,		/* kolor podswietlenia na markerze*/
+    GUI_BINEDITOR_COLOR_TEXT_MARKED,	/* text on marker position */
+    GUI_BINEDITOR_COLOR_MARKED_BG,	/* text background on marker position */
+    GUI_BINEDITOR_COLOR_TEXT_DESC,	/* grid description */
+    GUI_BINEDITOR_COLOR_GRID,		/* grid */
+    GUI_BINEDITOR_COLOR_GRID_BG,	/* grid background */
+    GUI_BINEDITOR_COLOR_DESC_BG,	/* description background */
+    GUI_BINEDITOR_COLOR_UD,		/* color of the solid block drawed on character over range */
+    GUI_BINEDITOR_COLOR_HL,		/* highlight color */
+    GUI_BINEDITOR_COLOR_HL_MRK,		/* highlight color on marker */
     GUI_BINEDITOR_COLOR_LAST
 } GuiBineditorColors;
 
-struct _GuiBineditor
+struct _GuiBineditorPrivate
 {
-    /* <private> */
-    GtkBox container;
     /* key values */
     int key_left;
     int key_right;
@@ -113,6 +113,7 @@ struct _GuiBineditor
     GtkWidget *chksum;
     GtkWidget *calc;
     GtkWidget *statusbar;
+    GtkWidget *vbox;
     char clear_sens;
     char print_sens;
     char find_sens;
@@ -126,12 +127,19 @@ struct _GuiBineditor
     int edit_hex_cursor; // cursor position in hex grid
     GtkWidget *info_addr; 
     GtkWidget *info_mark;
-    /* <public> */
+// dostep publ dorobic
     GtkAdjustment  *adj;
     int buffer_size;
     unsigned char *buffer;
     void *user_ptr1;
     void *user_ptr2;    
+};
+
+struct _GuiBineditor
+{
+    /*<private>*/
+    GtkBox parent;
+    GuiBineditorPrivate *priv;
 };
 
 struct _GuiBineditorClass
@@ -142,13 +150,14 @@ struct _GuiBineditorClass
     void (*bineditor) (GuiBineditor *be);
 };
 
+GType hui_bineditor_get_type	(void) G_GNUC_CONST;
 GtkWidget *gui_bineditor_new(GtkWindow *parent);
 void gui_bineditor_set_buffer(GuiBineditor *be, int bfsize, unsigned char *buffer);
 void gui_bineditor_set_properties(GuiBineditor *be, GuiBineditorProperties prop);
 void gui_bineditor_set_colors(GuiBineditor *be, GuiBineditorColors color, float r, float g, float b);
 void gui_bineditor_redraw(GuiBineditor *be);
 void gui_bineditor_connect_statusbar(GuiBineditor *be, GtkWidget *sb);
-GtkType gui_bineditor_get_type(void);
+GType gui_bineditor_get_type(void);
 
 G_END_DECLS
 

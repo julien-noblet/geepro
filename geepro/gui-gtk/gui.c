@@ -325,7 +325,6 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 
 static int gui_add_bt_action(geepro *gep, const char *stock_name, const char *tip, chip_act_func action)
 {
-    GtkWidget *tx;
     gui_action *tmp, *new_tie;
     
     if(!(new_tie = malloc(sizeof(gui_action)))){
@@ -334,17 +333,6 @@ static int gui_add_bt_action(geepro *gep, const char *stock_name, const char *ti
     }
     
     new_tie->next = NULL;
-
-    tx = gtk_image_new_from_stock(
-	stock_name, 
-	gtk_toolbar_get_icon_size(GTK_TOOLBAR(GUI(gep->gui)->toolbox))
-    );    
-
-    if(!tx){
-	printf("Warn: action button error.\n");
-	free(new_tie);
-	return -1;
-    }
 
     new_tie->root = gep;
     new_tie->action = action;
@@ -355,21 +343,10 @@ static int gui_add_bt_action(geepro *gep, const char *stock_name, const char *ti
 	strcpy(new_tie->name, stock_name);
     }    
 
-    new_tie->widget = gtk_toolbar_append_item(
-	GTK_TOOLBAR(GUI(gep->gui)->toolbox), 
-	NULL, 
-	tip, 
-	NULL, 
-	tx, 
-	GTK_SIGNAL_FUNC(gui_invoke_action), 
-	new_tie
-    );
-
-    if(!new_tie->widget){
-	printf("Warn: action button error.\n");
-	free(new_tie);
-	return -1;
-    }
+    new_tie->widget = gtk_tool_button_new_from_stock( stock_name );
+    g_signal_connect(G_OBJECT(new_tie->widget), "clicked", G_CALLBACK(gui_invoke_action), new_tie);
+    gtk_tool_item_set_tooltip_text( new_tie->widget, tip );
+    gtk_toolbar_insert(GTK_TOOLBAR(GUI(gep->gui)->toolbox), new_tie->widget, 4);
     
     if(!GUI(gep->gui)->action){
 	GUI(gep->gui)->action = new_tie;
@@ -420,7 +397,7 @@ static void gui_chip_free(geepro *gep)
 
 /***************************************************************************************************************************/
 
-static void gui_chip_select(geepro *gep, char *name)
+static void gui_chip_select(geepro *gep, const char *name)
 {
     chip_desc *tmp, *old_chp;
     chip_plugins *plg = gep->ifc->plugins;
@@ -474,13 +451,13 @@ static void gui_chip_select(geepro *gep, char *name)
 
 static void gui_device_sel(GtkWidget *wg, geepro *gep) 
 { 
-    char *name = NULL;
+    const char *name = NULL;
     
     /* jesli nie mozna pobrac nazwy ukladu to wyjdz */
-    if(!GTK_BIN(wg)->child) return;
-    if(!GTK_IS_LABEL(GTK_BIN(wg)->child)) return;
+    if( !gtk_bin_get_child(GTK_BIN(wg)) ) return;
+    if(!GTK_IS_LABEL(gtk_bin_get_child(GTK_BIN(wg)))) return;
     /* pobierz nazwe wybranego ukladu */
-    gtk_label_get(GTK_LABEL(GTK_BIN(wg)->child), &name);
+    name = gtk_label_get_text( GTK_LABEL(gtk_bin_get_child(GTK_BIN(wg))) );
 
     store_set(&store, "LAST_CHIP_SELECTED", name);
     gui_chip_select(gep, name);
@@ -503,7 +480,7 @@ static void *gui_submenu_add(void *op, char *name, void *gep)
     GtkWidget *p, *grp;
     
     grp = gtk_menu_item_new_with_label(name);
-    gtk_menu_bar_append(GTK_MENU(op), grp);
+    gtk_menu_shell_append(GTK_MENU_SHELL(op), grp);
     p = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(grp), p);
     return p;
@@ -513,8 +490,8 @@ static void gui_menu_chip_add(chip_plugins *plg, void *sm, void *gep)
 {
     GtkWidget *tt;
     tt = gtk_menu_item_new_with_label(plg->menu_sel->chip_name);
-    gtk_menu_append(GTK_MENU(sm), tt);
-    gtk_signal_connect(GTK_OBJECT(tt), "activate", GTK_SIGNAL_FUNC(gui_device_sel), gep);
+    gtk_menu_shell_append(GTK_MENU_SHELL(sm), tt);
+    g_signal_connect(G_OBJECT(tt), "activate", G_CALLBACK(gui_device_sel), gep);
 }
 
 static void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep)
@@ -526,13 +503,13 @@ static void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep
 
 static void gui_build_iface_menu(iface *ifc, int cl, char *name, char *dev, GtkWidget *wg)
 {
-    gtk_combo_box_append_text(GTK_COMBO_BOX(wg), name);
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg), name);
 }
 
 static int gui_iface_sel(GtkWidget *wg, geepro *gep)
 {
     char tmp[256];
-    char *name = gtk_combo_box_get_active_text(GTK_COMBO_BOX(wg));
+    char *name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(wg));
 
     if(!name) return 0;
     gep->forbid = 0;
@@ -554,10 +531,10 @@ static GtkWidget *gui_iface_list(geepro *gep)
 {
     GtkWidget *combox;
 
-    combox = gtk_combo_box_new_text();
+    combox = gtk_combo_box_text_new();
     iface_search(gep->ifc, gep->ifc->cl, (iface_cb)gui_build_iface_menu, GTK_COMBO_BOX(combox));
     gtk_combo_box_set_active(GTK_COMBO_BOX(combox), gep->ifc->ifc_sel);
-    gtk_signal_connect(GTK_OBJECT(combox), "changed", GTK_SIGNAL_FUNC(gui_iface_sel), gep);
+    g_signal_connect(G_OBJECT(combox), "changed", G_CALLBACK(gui_iface_sel), gep);
     return combox;
 }
 
@@ -574,7 +551,7 @@ static void gui_add_iface_combox(geepro *gep)
 static void gui_prog_sel(GtkWidget *wg, geepro *gep)
 {
     char tmp[256];
-    char *name = gtk_combo_box_get_active_text(GTK_COMBO_BOX(wg));
+    char *name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(wg));
     iface_prg_api api;    
 
     if(!name) return;
@@ -598,7 +575,7 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     hw_gui_init(gep);
 
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
-    gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->iface), "changed");    
+    g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->iface), "changed");    
     sprintf(tmp,"%i", gtk_combo_box_get_active(GTK_COMBO_BOX(wg)));
     if(GUI(gep->gui)->gui_run) store_set(&store, "LAST_SELECTED_PROGRAMMER", tmp);
 }
@@ -606,7 +583,7 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
 
 static void gui_build_prg_menu(iface *ifc, char *name, GtkWidget *wg)
 {
-    gtk_combo_box_append_text(GTK_COMBO_BOX(wg), name);
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg), name);
 }
 
 
@@ -614,12 +591,12 @@ static GtkWidget *gui_prog_list(geepro *gep)
 {
     GtkWidget *combox;
 
-    combox = gtk_combo_box_new_text();
+    combox = gtk_combo_box_text_new();
 
     iface_list_prg(gep->ifc, (iface_prg_func)gui_build_prg_menu, GTK_COMBO_BOX(combox));
 
     gtk_combo_box_set_active(GTK_COMBO_BOX(combox), gep->ifc->prog_sel);
-    gtk_signal_connect(GTK_OBJECT(combox), "changed", GTK_SIGNAL_FUNC(gui_prog_sel), gep);
+    g_signal_connect(G_OBJECT(combox), "changed", G_CALLBACK(gui_prog_sel), gep);
     GUI(gep->gui)->prog_combox = combox;
 
     return combox;
@@ -631,6 +608,11 @@ static void gui_config(GtkWidget *wg, geepro *gep)
     printf("config\n");
 }
 
+static void gui_help(GtkWidget *wg, geepro *gep)
+{
+    printf("help\n");
+}
+
 static void gui_set_default(geepro *gep)
 {
     gtk_widget_show_all(GUI(gep->gui)->wmain);
@@ -639,17 +621,17 @@ static void gui_set_default(geepro *gep)
 
 #define GUI_STATUSBAR_ID_BUFFER 1
 
-void gui_set_statusbar(geepro *gep, char *tmp, char *str, ...)
-{	
-    va_list v;
-    
-    va_start(v, str);
-    vsprintf(tmp, str, v);
-    va_end(v);
+//void gui_set_statusbar(geepro *gep, char *tmp, char *str, ...)
+//{	
+//    va_list v;
+//    
+//    va_start(v, str);
+//    vsprintf(tmp, str, v);
+//    va_end(v);
 
-    gtk_statusbar_pop(GUI(gep->gui)->status_bar, GUI_STATUSBAR_ID_BUFFER);
-    gtk_statusbar_push(GUI(gep->gui)->status_bar, GUI_STATUSBAR_ID_BUFFER, tmp);
-}
+//    gtk_statusbar_pop(GUI(gep->gui)->status_bar, GUI_STATUSBAR_ID_BUFFER);
+//    gtk_statusbar_push(GUI(gep->gui)->status_bar, GUI_STATUSBAR_ID_BUFFER, tmp);
+//}
 
 /***********************************************************************************************************************/
 /* dodaje ikonki do listy ikon i obrazkow aplikacji */
@@ -702,6 +684,7 @@ void gui_menu_setup(geepro *gep)
 {
     char *tmp;
     GtkWidget *wg0, *wg1, *wg2, *wg3, *wg4;
+    GtkToolItem *ti0;
 
 
     GUI(gep->gui)->fct = -1;
@@ -710,10 +693,10 @@ void gui_menu_setup(geepro *gep)
 
     GUI(gep->gui)->action = NULL;
     GUI(gep->gui)->wmain = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_signal_connect(GTK_OBJECT(GUI(gep->gui)->wmain), "delete_event", GTK_SIGNAL_FUNC(gui_exit_program), gep);
-    gtk_container_border_width(GTK_CONTAINER(GUI(gep->gui)->wmain), 1);
+    g_signal_connect(G_OBJECT(GUI(gep->gui)->wmain), "delete_event", G_CALLBACK(gui_exit_program), gep);
+    gtk_container_set_border_width(GTK_CONTAINER(GUI(gep->gui)->wmain), 1);
     gtk_window_set_title(GTK_WINDOW(GUI(gep->gui)->wmain), EPROGRAM_NAME " ver " EVERSION);
-    gtk_widget_set_usize(GUI(gep->gui)->wmain, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
+    gtk_widget_set_size_request(GUI(gep->gui)->wmain, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
     gtk_widget_realize(GUI(gep->gui)->wmain);
 
     wg0 = gtk_vbox_new(FALSE, 0);    
@@ -725,48 +708,65 @@ void gui_menu_setup(geepro *gep)
 
 /* menu File */
     wg2 = gtk_menu_item_new_with_label(MB_FILE);
-    gtk_menu_bar_append(GTK_MENU_BAR(wg1), wg2);
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
     wg3 = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(wg2), wg3);
     /* load file */
     wg2 = gtk_menu_item_new_with_label(MB_LOAD_BIN_FILE);
-    gtk_menu_append(GTK_MENU(wg3), wg2);    
-    gtk_signal_connect(GTK_OBJECT(wg2), "activate", GTK_SIGNAL_FUNC(gui_load_file), gep);
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
+    g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_load_file), gep);
     /* save file */
     wg2 = gtk_menu_item_new_with_label(MB_SAVE_BIN_FILE);
-    gtk_menu_append(GTK_MENU(wg3), wg2);    
-    gtk_signal_connect(GTK_OBJECT(wg2), "activate", GTK_SIGNAL_FUNC(gui_save_file), gep);
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
+    g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_save_file), gep);
     /* spacer */
     wg2 = gtk_menu_item_new();
-    gtk_menu_append(GTK_MENU(wg3), wg2);    
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
     /* about */
     wg2 = gtk_menu_item_new_with_label(MB_ABOUT_FILE);
-    gtk_menu_append(GTK_MENU(wg3), wg2);    
-    gtk_signal_connect(GTK_OBJECT(wg2), "activate", GTK_SIGNAL_FUNC(gui_about), gep);
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
+    g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_about), gep);
     /* exit */
     wg2 = gtk_menu_item_new_with_label(MB_EXIT_FILE);
-    gtk_menu_append(GTK_MENU(wg3), wg2);    
-    gtk_signal_connect(GTK_OBJECT(wg2), "activate", GTK_SIGNAL_FUNC(gui_exit_program), gep);
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
+    g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_exit_program), gep);
 
 /* Menu device */
     wg2 = gtk_menu_item_new_with_label(MB_DEVICE);    
-    gtk_menu_bar_append(GTK_MENU_BAR(wg1), wg2);
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
     wg3 = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(wg2), wg3);
     GUI(gep->gui)->mb_dev = wg3;
 
 /* toolbar */
-    wg1 = gtk_toolbar_new(TOOLBAR_PARAMS);
+    wg1 = gtk_toolbar_new();
+    gtk_toolbar_set_style(GTK_TOOLBAR(wg1), GTK_TOOLBAR_ICONS);
     gtk_box_pack_start(GTK_BOX(wg0), wg1, FALSE, FALSE, 0);
     GUI(gep->gui)->toolbox = wg1;
-    /* stale pozycje paska */
-    wg2 = gtk_image_new_from_stock(GTK_STOCK_OPEN, GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_toolbar_append_item(GTK_TOOLBAR(wg1), NULL, OPEN_FILE_TIP, NULL, wg2, GTK_SIGNAL_FUNC(gui_load_file), gep);
-    wg2 = gtk_image_new_from_stock(GTK_STOCK_SAVE, GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_toolbar_append_item(GTK_TOOLBAR(wg1), NULL, SAVE_FILE_TIP, NULL, wg2, GTK_SIGNAL_FUNC(gui_save_file), gep);
-    wg2 = gtk_image_new_from_stock(GTK_STOCK_PREFERENCES, GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_toolbar_append_item(GTK_TOOLBAR(wg1), NULL, PROPERTIES_TIP, NULL, wg2, GTK_SIGNAL_FUNC(gui_config), gep);
-    gtk_toolbar_append_space(GTK_TOOLBAR(wg1));
+
+    // static toolbar items
+    ti0 = gtk_tool_button_new_from_stock(GTK_STOCK_OPEN);
+    g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_load_file), gep);
+    gtk_tool_item_set_tooltip_text( ti0, OPEN_FILE_TIP);
+    gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
+    ti0 = gtk_tool_button_new_from_stock(GTK_STOCK_SAVE);
+    g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_save_file), gep);
+    gtk_tool_item_set_tooltip_text( ti0, SAVE_FILE_TIP);
+    gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
+    ti0 = gtk_tool_button_new_from_stock( GTK_STOCK_PREFERENCES );
+    g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_config), gep);
+    gtk_tool_item_set_tooltip_text( ti0, CONFIG_TIP);
+    gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
+    ti0 = gtk_separator_tool_item_new();
+    gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
+// help icon
+    ti0 = gtk_tool_button_new_from_stock( GTK_STOCK_HELP );
+    gtk_widget_set_halign(GTK_WIDGET(ti0), GTK_ALIGN_END );
+
+    g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_help), gep);
+    gtk_tool_item_set_tooltip_text( ti0, HELP_TIP);
+    gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
+
 
 /* Notebook */
     wg1 = gtk_notebook_new();
@@ -774,10 +774,10 @@ void gui_menu_setup(geepro *gep)
     gtk_container_add(GTK_CONTAINER(wg0), wg1);
     GUI(gep->gui)->notebook = wg1;
 /* Status bar */
-    wg2 = gtk_statusbar_new();
-    gtk_statusbar_set_has_resize_grip(GTK_STATUSBAR(wg2), FALSE);
-    gtk_box_pack_start(GTK_BOX(wg0), wg2, FALSE, FALSE, 0);
-    GUI(gep->gui)->status_bar = wg2;
+//    wg2 = gtk_statusbar_new();
+//    gtk_statusbar_set_has_resize_grip(GTK_STATUSBAR(wg2), FALSE);
+//    gtk_box_pack_start(GTK_BOX(wg0), wg2, FALSE, FALSE, 0);
+//    GUI(gep->gui)->status_bar = wg2;
 
 /* ------------------------------------------- strony NOTEBOOKA ----------------------------------------------------------- */
 /* ======================================== */
@@ -789,18 +789,18 @@ void gui_menu_setup(geepro *gep)
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg2, wg3);
 /* Ramka ukladu */
     wg1 = gtk_frame_new(MB_DEVICE);
-    gtk_container_border_width(GTK_CONTAINER(wg1), 3);
+    gtk_container_set_border_width(GTK_CONTAINER(wg1), 3);
     gtk_table_attach_defaults(GTK_TABLE(wg2), wg1,  0, 1, 0, 1);
     /* tabela pakujaca opis ukladu i bufor */
     wg3 = gtk_table_new( 2, 6, FALSE);
-    gtk_container_border_width(GTK_CONTAINER(wg3), 3);
+    gtk_container_set_border_width(GTK_CONTAINER(wg3), 3);
     gtk_container_add(GTK_CONTAINER(wg1), wg3);
     /* Nazwa wybranego ukladu */    
     wg1 = gtk_label_new(DEVICE_ENTRY_LB);
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,0,1, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
-    gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
+    gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,0,1, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->dev_entry = wg1;
     /* Rozmiar bufora/pamieci */    
@@ -808,7 +808,7 @@ void gui_menu_setup(geepro *gep)
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,1,2, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
-    gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
+    gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,1,2, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->buffer_entry = wg1;
 
@@ -817,7 +817,7 @@ void gui_menu_setup(geepro *gep)
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,2,3, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
-    gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
+    gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     GUI(gep->gui)->crc_entry = wg1;
     wg4 = gtk_hbox_new(FALSE, 0);
     gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,2,3, GTK_FILL | GTK_EXPAND, 0, 10,0);
@@ -831,7 +831,7 @@ void gui_menu_setup(geepro *gep)
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,3,4, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
-    gtk_entry_set_editable(GTK_ENTRY(wg1), FALSE);
+    gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     GUI(gep->gui)->file_entry = wg1;
     tmp = NULL;
     if(!store_get(&store, "LAST_OPENED_FILE", &tmp)){
@@ -849,7 +849,7 @@ void gui_menu_setup(geepro *gep)
     gtk_container_add(GTK_CONTAINER(wg1), wg4);
     //gtk_widget_set_tooltip_text(wg1, "Reload");
     //gtk_tooltips_set_tip (gtk_toolbar_get_tooltips(wg1), wg1, "Reload", NULL);
-    gtk_signal_connect(GTK_OBJECT(wg1), "pressed", GTK_SIGNAL_FUNC(gui_refresh_button), gep);
+    g_signal_connect(G_OBJECT(wg1), "pressed", G_CALLBACK(gui_refresh_button), gep);
 
     /* opis ukladu */
     wg1 = gtk_frame_new(CHIP_DESCRIPTION);
@@ -861,7 +861,7 @@ void gui_menu_setup(geepro *gep)
 /* Ramka programatora */
     /* opcje programatora */
     wg1 = gtk_frame_new(FR_NB_04_TITLE);
-    gtk_container_border_width(GTK_CONTAINER(wg1), 3);
+    gtk_container_set_border_width(GTK_CONTAINER(wg1), 3);
     gtk_table_attach(GTK_TABLE(wg2), wg1,  0, 1, 1, 2,  GTK_FILL | GTK_EXPAND,0, 0,0);
     wg3 = gtk_table_new(3, 4, FALSE);
     GUI(gep->gui)->table = wg3;
@@ -873,7 +873,7 @@ void gui_menu_setup(geepro *gep)
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach( GTK_TABLE(wg3), wg1, 0, 2, 1, 2,  GTK_FILL, 0, 5, 5);
     wg1 = gtk_button_new_with_label("Test Connection");
-    gtk_signal_connect(GTK_OBJECT(wg1), "clicked", GTK_SIGNAL_FUNC(test_hw), gep);
+    g_signal_connect(G_OBJECT(wg1), "clicked", G_CALLBACK(test_hw), gep);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  3, 4, 2, 3,  GTK_FILL, 0 , 5, 5);
     gtk_table_attach(GTK_TABLE(wg3), wg1 = gui_prog_list(gep),  2, 4, 0, 1, GTK_FILL | GTK_EXPAND, 0, 5, 5);
     gui_add_iface_combox(gep);
@@ -904,7 +904,7 @@ void gui_run(geepro *gep)
     gtk_widget_show_all(GUI(gep->gui)->wmain);
     test_uid(gep);
     /* inicjowanie domyślnego plugina sterownika programatora */
-    gtk_signal_emit_by_name(GTK_OBJECT(GUI(gep->gui)->prog_combox), "changed");
+    g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->prog_combox), "changed");
     // default combox setting
     tmp = NULL;
     if(!store_get(&store, "LAST_CHIP_SELECTED", &tmp)){
@@ -932,7 +932,7 @@ static char gui_progress_bar_exit = 0;
 
 void gui_progress_break(geepro *gep)
 {
-    gui_progress_bar_exit=1;
+    gui_progress_bar_exit = 1;
 }
 
 void gui_progress_bar_init(geepro *gep, char *title, long range)
@@ -945,10 +945,11 @@ void gui_progress_bar_init(geepro *gep, char *title, long range)
     gtk_window_set_resizable(GTK_WINDOW(wg0), FALSE);
     gtk_window_set_modal(GTK_WINDOW(wg0), TRUE);
     gtk_window_set_transient_for(GTK_WINDOW(wg0), GTK_WINDOW(GUI(gep->gui)->wmain));
-    gtk_signal_connect(GTK_OBJECT(wg0), "destroy", GTK_SIGNAL_FUNC(gui_progress_break), NULL);
+    g_signal_connect(G_OBJECT(wg0), "destroy", G_CALLBACK(gui_progress_break), NULL);
     gtk_window_set_title(GTK_WINDOW(wg0), title);
 
-    wg1 = gtk_progress_bar_new_with_adjustment( GTK_ADJUSTMENT(gtk_adjustment_new(0, 0, range, 1, 0, 0)));
+    wg1 = gtk_progress_bar_new();
+
     gtk_container_add(GTK_CONTAINER(wg0), wg1);
     GUI(gep->gui)->progress_bar = wg1;
     gui_rfsh_gtk();
@@ -960,7 +961,7 @@ void gui_progress_bar_init(geepro *gep, char *title, long range)
 char gui_progress_bar_set(geepro *gep, long value, long max)
 {
     long delta;
-    if(gui_progress_bar_exit) return 1;
+    if( gui_progress_bar_exit ) return 1;
     if( value != 1){
 	if((value != 0) || (value != max)){
 	    delta = max / 100;
@@ -968,7 +969,7 @@ char gui_progress_bar_set(geepro *gep, long value, long max)
     	    if( value % delta ) return 0;
 	}
     }
-    gtk_progress_set_value(GTK_PROGRESS(GUI(gep->gui)->progress_bar), value);
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(GUI(gep->gui)->progress_bar), value / max);
     gui_rfsh_gtk();
     return 0;
 }
@@ -1000,7 +1001,14 @@ static void gui_dialog_box_close(GtkWidget *wg, char *p_i)
     }
     
     gui_dialog_exit = *p_i;
-    gtk_widget_destroy(wg->parent->parent->parent);
+//    gtk_widget_destroy(wg->parent->parent->parent);
+    gtk_widget_destroy(
+	gtk_widget_get_parent(
+	    gtk_widget_get_parent(
+		gtk_widget_get_parent(wg)
+	    )
+	)	
+    );
 }
 
 /* do poprawy na gtk_dialog */
@@ -1054,9 +1062,9 @@ int gui_dialog_box(geepro *gp, const char *en, ...)
     wdialog = gtk_window_new(GTK_WINDOW_DIALOG);
     gtk_window_set_position(GTK_WINDOW(wdialog), GTK_WIN_POS_CENTER_ON_PARENT);
     gtk_window_set_resizable(GTK_WINDOW(wdialog), FALSE);
-    gtk_signal_connect(GTK_OBJECT(wdialog),"delete_event",GTK_SIGNAL_FUNC(gui_dialog_box_close), NULL);
+    g_signal_connect(G_OBJECT(wdialog),"delete_event",G_CALLBACK(gui_dialog_box_close), NULL);
     gtk_window_set_title(GTK_WINDOW(wdialog), title);
-    gtk_container_border_width(GTK_CONTAINER(wdialog), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(wdialog), 10);
     gtk_window_set_modal(GTK_WINDOW(wdialog), TRUE);
     gtk_window_set_transient_for(GTK_WINDOW(wdialog), GTK_WINDOW(GUI(gp->gui)->wmain));
 
@@ -1082,7 +1090,7 @@ int gui_dialog_box(geepro *gp, const char *en, ...)
     ft = strchr(ex + 1, ']') + 1; /* koniec klamerki */
 
     wg0 = gtk_hbox_new(FALSE, 0);
-    gtk_container_border_width(GTK_CONTAINER(wg0), 3);
+    gtk_container_set_border_width(GTK_CONTAINER(wg0), 3);
     gtk_table_attach(GTK_TABLE(wgtab), wg0, 0,2,1,2 ,GTK_FILL, GTK_FILL, 0,0);
 
     button = 0;
@@ -1100,7 +1108,7 @@ int gui_dialog_box(geepro *gp, const char *en, ...)
 	if(flag == 1) gtk_box_pack_end(GTK_BOX(wg0), wg1, FALSE, FALSE, 0);
 	if(flag == 2) gtk_box_pack_start(GTK_BOX(wg0), wg1, FALSE, FALSE, 0);
 	pbuttons[ button ] = button + 2;
-        gtk_signal_connect(GTK_OBJECT(wg1),"clicked",GTK_SIGNAL_FUNC(gui_dialog_box_close), (void*)(pbuttons + button) );
+        g_signal_connect(G_OBJECT(wg1),"clicked",G_CALLBACK(gui_dialog_box_close), (void*)(pbuttons + button) );
 	button++;
 	if(ex) *ex = '[';
 	ft = ex;
@@ -1151,10 +1159,10 @@ void gui_clk_sqw(gui *g, gui_sqw_generator gen)
 	GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT, 
 	NULL);
     
-    gtk_container_border_width(GTK_CONTAINER(wgm), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(wgm), 10);
 
     wg0 = gtk_table_new(2, 5, FALSE);    
-    gtk_container_add(GTK_CONTAINER(GTK_DIALOG(wgm)->vbox), wg0);
+    gtk_container_add(GTK_CONTAINER(  gtk_dialog_get_content_area(GTK_DIALOG(wgm))  ), wg0);
 
     wg1 = gtk_label_new("Period [us]:");    
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
@@ -1173,30 +1181,30 @@ void gui_clk_sqw(gui *g, gui_sqw_generator gen)
     wg1 = gtk_spin_button_new(adj, 1, 0);
     sqg.wper = wg1;
     gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 0,1,  GTK_FILL | GTK_EXPAND,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_period), &sqg);
+    g_signal_connect(G_OBJECT(adj),"value_changed",G_CALLBACK(gui_test_set_period), &sqg);
 
     adj = GTK_ADJUSTMENT(gtk_adjustment_new(50, 0.0, 100, 1, 0, 0));
     wg1 = gtk_spin_button_new(adj, 1, 0);
     sqg.wdut = wg1;
     gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 1,2,  GTK_FILL | GTK_EXPAND,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_duty), &sqg);
+    g_signal_connect(G_OBJECT(adj),"value_changed",G_CALLBACK(gui_test_set_duty), &sqg);
 
     adj = GTK_ADJUSTMENT(gtk_adjustment_new(1, 0.0, 60, 1, 0, 0));
     wg1 = gtk_spin_button_new(adj, 1, 0);
     sqg.wlen = wg1;
     gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 2,3,  GTK_FILL | GTK_EXPAND,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_length), &sqg);
+    g_signal_connect(G_OBJECT(adj),"value_changed",G_CALLBACK(gui_test_set_length), &sqg);
 
     adj = GTK_ADJUSTMENT(gtk_adjustment_new(0, 0.0, 0xffffffff, 1, 0, 0));
     wg1 = gtk_spin_button_new(adj, 1, 0);
     sqg.wseq = wg1;
     gtk_table_attach(GTK_TABLE(wg0), wg1, 1,2, 3,4,  GTK_FILL | GTK_EXPAND,0,  0,0);
-    gtk_signal_connect(GTK_OBJECT(adj),"value_changed",GTK_SIGNAL_FUNC(gui_test_set_sequence), &sqg);
+    g_signal_connect(G_OBJECT(adj),"value_changed",G_CALLBACK(gui_test_set_sequence), &sqg);
 
     gtk_widget_show_all(wgm);
 
     while(gtk_dialog_run(GTK_DIALOG(wgm)) == GTK_RESPONSE_ACCEPT){
-	gtk_widget_hide_all(wgm);
+	gtk_widget_hide(wgm);
 	sqg.generator(&sqg);
 	gtk_widget_show_all(wgm);
     }
@@ -1264,7 +1272,7 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
     if(!strcmp(tmp, "IF")) x = GTK_STOCK_DIALOG_INFO;
     if(!strcmp(tmp, "AU")) x = GTK_STOCK_DIALOG_AUTHENTICATION;
     hbox = gtk_hbox_new(FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(wd)->vbox), hbox, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(   gtk_dialog_get_content_area(GTK_DIALOG(wd))  ), hbox, TRUE, TRUE, 0);
     if( x ) 
 	gtk_box_pack_start(GTK_BOX(hbox), gtk_image_new_from_stock( x, GTK_ICON_SIZE_DIALOG), FALSE, FALSE, 10 );
     vbox = gtk_vbox_new(FALSE, 0);
@@ -1282,13 +1290,13 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
 	r = gtk_check_button_new_with_label( x );
 	gtk_box_pack_start( GTK_BOX(vbox), r, TRUE, TRUE, 2 );
 	GUI(gep->gui)->cbtable[ cnt ] = result;
-	gtk_signal_connect(GTK_OBJECT(r), "toggled", GTK_SIGNAL_FUNC(gui_checkbox_action), (void *)(GUI(gep->gui)->cbtable + cnt)); // ptr as integer
+	g_signal_connect(G_OBJECT(r), "toggled", G_CALLBACK(gui_checkbox_action), (void *)(GUI(gep->gui)->cbtable + cnt)); // ptr as integer
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(r), t == '1');
 	gtk_widget_set_sensitive(GTK_WIDGET(r), !((lock == 0) && (t == '1')));
 	cnt++;
     }
     
-    gtk_widget_show_all(GTK_DIALOG(wd)->vbox);
+    gtk_widget_show_all(gtk_dialog_get_content_area(GTK_DIALOG(wd)));
     result = gtk_dialog_run(GTK_DIALOG(wd));    
     gtk_widget_destroy(GTK_WIDGET(wd));
     free(tmp);

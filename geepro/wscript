@@ -24,10 +24,10 @@ def configure(conf):
   conf.env.LIB_C       = 'c'
   conf.env.LIB_Dl      = 'dl'
   conf.env.LINKFLAGS_DL = ['-rdynamic']
-  conf.check_cfg(package='gtk+-2.0'  , atleast_version='0.0.0')
+  conf.check_cfg(package='gtk+-3.0'  , atleast_version='0.0.0')
   conf.check_cfg(package='cairo'     , atleast_version='0.0.0')
   conf.check_cfg(package='libxml-2.0', atleast_version='0.0.0')
-  conf.check_cfg(package='gtk+-2.0'  , args='--cflags --libs')
+  conf.check_cfg(package='gtk+-3.0'  , args='--cflags --libs')
   conf.check_cfg(package='cairo'     , args='--cflags --libs')
   conf.check_cfg(package='libxml-2.0', args='--cflags --libs')
 
@@ -63,6 +63,6 @@ def build(bld):
     features     = 'cxx cprogram',
     add_objects  = ['maincode',"main.o"],
     use          = ['gui-gtk'],
-    uselib       = ['GTK+-2.0','CAIRO','LIBXML-2.0','DL'],
+    uselib       = ['GTK+-3.0','CAIRO','LIBXML-2.0','DL'],
     target       = bld.env.APPNAME,
   )

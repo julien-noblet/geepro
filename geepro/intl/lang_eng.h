@@ -59,6 +59,8 @@
 #define FILE_LB			"Current file"
 #define TEST_BUTTON_LB		"Connecting test"
 
+#define CONFIG_TIP		"Configuration"
+#define HELP_TIP		"Help"
 #define OPEN_FILE_TIP		"Open file"
 #define SAVE_FILE_TIP		"Write to file"
 #define CLEAR_BUFFER_TIP	"Clear buffer"
@@ -131,3 +133,11 @@
 #define TXT_EXIT		"bye bye.\n"
 
 #define RELOAD_QUESTION		"Buffer file and disk file are differ.\nReload ?"
+
+#define TIP_BE_CLEAR_BUFFER	"Clear buffer"
+#define TIP_BE_FIND_STRING	"Find string"
+#define TIP_BE_CHECKSUM		"Compute & insert checksum"
+#define TIP_BE_JUMP_TO_MARKER	"Jump to marker"
+#define TIP_BE_REDO_JUMP	"Redo jump" 
+#define TIP_BE_PRINT		"Print"
+
