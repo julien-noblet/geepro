@@ -51,7 +51,7 @@ static void gui_xml_gtk_event_handler(GtkWidget *wg, gui_xml_ev *gx)
     switch(gx->type){
 	case GUI_XML_BUTTON: val = 1; break;
 	case GUI_XML_SPIN_BUTTON: val = gtk_spin_button_get_value(GTK_SPIN_BUTTON(gx->widget)); break;
-	case GUI_XML_CHECK_BUTTON: val = GTK_TOGGLE_BUTTON(gx->widget)->active; break;
+	case GUI_XML_CHECK_BUTTON: val = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(gx->widget)); break;
 	case GUI_XML_ENTRY: val = 0; sval = gtk_entry_get_text(GTK_ENTRY(gx->widget)); break;
     }
 
@@ -113,7 +113,7 @@ static void gui_xml_signal_register(gui_xml *g, GtkWidget *wg, char *id, const c
     /* rejestracja sygnalu */
     if(id && signal){
 
-	gtk_signal_connect(GTK_OBJECT(wg), signal, GTK_SIGNAL_FUNC(gui_xml_gtk_event_handler), tmp);
+	g_signal_connect(G_OBJECT(wg), signal, G_CALLBACK(gui_xml_gtk_event_handler), tmp);
     }
 }
 
@@ -391,7 +391,7 @@ static GtkWidget *gui_xml_spinbutton(gui_xml *g, xmlNode *cur)
     if(arg){ 
 	int xx=0, yy=0;
 	sscanf(arg, "%i, %i", &xx, &yy);
-	gtk_widget_set_usize(GTK_WIDGET(tmp1), xx, yy);
+	gtk_widget_set_size_request(GTK_WIDGET(tmp1), xx, yy);
     }
 
     arg = (char *)xmlGetProp(cur, (unsigned char *)"sensitive");
@@ -422,7 +422,7 @@ static GtkWidget *gui_xml_entry(gui_xml *g, xmlNode *cur)
     arg = (char *)xmlGetProp(cur, (unsigned char *)"editable");
     if(arg){ 
 	if(!strcmp(arg, "false"))
-	    gtk_entry_set_editable(GTK_ENTRY(tmp), 0);
+	    gtk_editable_set_editable(GTK_EDITABLE(tmp), 0);
     }
     
     arg = (char *)xmlGetProp(cur, (unsigned char *)"size");
@@ -683,7 +683,7 @@ void gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id, gui_
     };
 
     switch(wg){
-	case GUI_XML_CHECK_BUTTON: ret->ival = GTK_TOGGLE_BUTTON(event->widget)->active; break;
+	case GUI_XML_CHECK_BUTTON: ret->ival = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(event->widget)); break;
 	case GUI_XML_SPIN_BUTTON: ret->ival = gtk_spin_button_get_value(GTK_SPIN_BUTTON(event->widget)); break;
 	case GUI_XML_ENTRY: ret->sval = (char *)gtk_entry_get_text(GTK_ENTRY(event->widget)); break;
 	default: break;

@@ -59,7 +59,7 @@ typedef struct
     void *crc_entry;    /* pole sumy CRC */
     void *file_entry;    /* pole sumy CRC */
     void *chip_desc;    /* pole opisu ukladu */
-    void *status_bar;   /* pasek statusu u dolu okna */
+//    void *status_bar;   /* pasek statusu u dolu okna */
 
     void *bineditor;	/* edytor binarny bufora */
     int icon_size;	/* zarejestrowany rozmiar suwaków jumperów i przelaczników  */

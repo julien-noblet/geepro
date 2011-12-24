@@ -132,7 +132,7 @@ int chip_register_chip(chip_plugins *plg, chip_desc *new_chip)
     return 0;
 }
 
-chip_desc *chip_lookup_chip(chip_plugins *plg, char *name)
+chip_desc *chip_lookup_chip(chip_plugins *plg, const char *name)
 {
     if(!name){
 	printf("[ERR] chip_lookup_chip() ---> name == NULL !\n");

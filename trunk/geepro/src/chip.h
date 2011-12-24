@@ -98,7 +98,7 @@ extern void chip_rmv_qe(chip_plugins *plg);
 /* rejestrowanie/ wyrejestrowywanie ukladów */
 extern int chip_register_chip(chip_plugins *plg, chip_desc *new_chip);
 extern int chip_unregister_chip(chip_plugins *plg, char *name);
-extern chip_desc *chip_lookup_chip(chip_plugins *plg, char *name);
+extern chip_desc *chip_lookup_chip(chip_plugins *plg, const char *name);
 extern void chip_destroy(chip_plugins *plg);
 
 /* pobieranie i ustawianie bieżącego układu */
