@@ -470,7 +470,20 @@ static void gui_rfsh_gtk(void)
 
 static void gui_about(GtkWidget *wg, geepro *gep)
 { 
-    gui_dialog_box(gep, "[IF][TEXT]"ABOUT"[/TEXT][BR]  OK  "); 
+    GtkWidget *a;
+    a = gtk_about_dialog_new();
+    
+    gtk_about_dialog_set_program_name( GTK_ABOUT_DIALOG( a ), EPROGRAM_NAME );    
+    gtk_about_dialog_set_version( GTK_ABOUT_DIALOG( a ), EVERSION );    
+    gtk_about_dialog_set_license_type( GTK_ABOUT_DIALOG( a ), GTK_LICENSE_GPL_2_0 );    
+    gtk_about_dialog_set_website( GTK_ABOUT_DIALOG( a ), "http://"ESRCURL );    
+    gtk_about_dialog_set_authors( GTK_ABOUT_DIALOG( a ), (const char *[])EAUTHORS );
+    gtk_about_dialog_set_logo( GTK_ABOUT_DIALOG( a ), NULL );
+
+    gtk_dialog_run( GTK_DIALOG(a) );    
+    gtk_widget_destroy( a );
+    
+    
 }
 
 /************************************************************************************************************************/
@@ -608,11 +621,6 @@ static void gui_config(GtkWidget *wg, geepro *gep)
     printf("config\n");
 }
 
-static void gui_help(GtkWidget *wg, geepro *gep)
-{
-    printf("help\n");
-}
-
 static void gui_set_default(geepro *gep)
 {
     gtk_widget_show_all(GUI(gep->gui)->wmain);
@@ -680,6 +688,11 @@ void gui_refresh_button(GtkWidget *wg, geepro *gep)
     gui_checksum_recalculate( gep );
 }
 
+void gui_help(geepro *gep)
+{
+printf("Help\n");
+}
+
 void gui_menu_setup(geepro *gep)
 {
     char *tmp;
@@ -693,6 +706,7 @@ void gui_menu_setup(geepro *gep)
 
     GUI(gep->gui)->action = NULL;
     GUI(gep->gui)->wmain = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_default_icon_name("geepro-logo");
     g_signal_connect(G_OBJECT(GUI(gep->gui)->wmain), "delete_event", G_CALLBACK(gui_exit_program), gep);
     gtk_container_set_border_width(GTK_CONTAINER(GUI(gep->gui)->wmain), 1);
     gtk_window_set_title(GTK_WINDOW(GUI(gep->gui)->wmain), EPROGRAM_NAME " ver " EVERSION);
@@ -722,10 +736,6 @@ void gui_menu_setup(geepro *gep)
     /* spacer */
     wg2 = gtk_menu_item_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
-    /* about */
-    wg2 = gtk_menu_item_new_with_label(MB_ABOUT_FILE);
-    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
-    g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_about), gep);
     /* exit */
     wg2 = gtk_menu_item_new_with_label(MB_EXIT_FILE);
     gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
@@ -737,6 +747,24 @@ void gui_menu_setup(geepro *gep)
     wg3 = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(wg2), wg3);
     GUI(gep->gui)->mb_dev = wg3;
+
+/* Menu Help */
+    wg2 = gtk_menu_item_new_with_label( MB_HELP );    
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
+    wg3 = gtk_menu_new();
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(wg2), wg3);
+    /* help */
+    wg2 = gtk_menu_item_new_with_label(MB_DOCUMENTATION);
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
+    g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_help), gep);
+    /* spacer */
+    wg2 = gtk_menu_item_new();
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
+    /* about */
+    wg2 = gtk_menu_item_new_with_label(MB_ABOUT_FILE);
+    gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
+    g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_about), gep);
+
 
 /* toolbar */
     wg1 = gtk_toolbar_new();
@@ -759,25 +787,12 @@ void gui_menu_setup(geepro *gep)
     gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
     ti0 = gtk_separator_tool_item_new();
     gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
-// help icon
-    ti0 = gtk_tool_button_new_from_stock( GTK_STOCK_HELP );
-    gtk_widget_set_halign(GTK_WIDGET(ti0), GTK_ALIGN_END );
-
-    g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_help), gep);
-    gtk_tool_item_set_tooltip_text( ti0, HELP_TIP);
-    gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
-
 
 /* Notebook */
     wg1 = gtk_notebook_new();
     gtk_notebook_set_tab_pos(GTK_NOTEBOOK(wg1), GTK_POS_TOP);
     gtk_container_add(GTK_CONTAINER(wg0), wg1);
     GUI(gep->gui)->notebook = wg1;
-/* Status bar */
-//    wg2 = gtk_statusbar_new();
-//    gtk_statusbar_set_has_resize_grip(GTK_STATUSBAR(wg2), FALSE);
-//    gtk_box_pack_start(GTK_BOX(wg0), wg2, FALSE, FALSE, 0);
-//    GUI(gep->gui)->status_bar = wg2;
 
 /* ------------------------------------------- strony NOTEBOOKA ----------------------------------------------------------- */
 /* ======================================== */
@@ -822,9 +837,6 @@ void gui_menu_setup(geepro *gep)
     wg4 = gtk_hbox_new(FALSE, 0);
     gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,2,3, GTK_FILL | GTK_EXPAND, 0, 10,0);
     gtk_container_add(GTK_CONTAINER(wg4), wg1);
-// Checksum algorithm selection to add in the future
-//    wg1 = gtk_button_new();
-//    gtk_box_pack_end(GTK_BOX(wg4), wg1, 0 ,0, 0);    
 
     /* Nazwa pliku */    
     wg1 = gtk_label_new(FILE_LB);
@@ -897,10 +909,11 @@ void gui_run(geepro *gep)
 {
     char *tmp;
     GUI(gep->gui)->gui_run = 0;
+
     gui_action_icon_set();
+
     gtk_notebook_set_current_page(GTK_NOTEBOOK(GUI(gep->gui)->notebook), 0);
     gui_device_menu_create(gep->ifc->plugins, GUI(gep->gui)->mb_dev, gep);
-    gtk_window_set_icon_name(GTK_WINDOW(GUI(gep->gui)->wmain),"geepro-logo");
     gtk_widget_show_all(GUI(gep->gui)->wmain);
     test_uid(gep);
     /* inicjowanie domyślnego plugina sterownika programatora */

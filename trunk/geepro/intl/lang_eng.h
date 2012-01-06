@@ -21,11 +21,12 @@
 
 #define ABOUT EPROGRAM_NAME" - integrated circuit programmer\n"\
 	    "ver: " EVERSION "\n"\
-	    "release date: " ERELDATE \
+	    "URL: " ESRCURL "\n"\
 	    "\nAuthors: \n "\
 	    EAUTHORS "\n"\
 	    "License:\n"\
-	    ELICENSE
+	    ELICENSE\
+//	    "release date: " ERELDATE
 
 #define MEMORY_ALLOCATION_ERROR_CHIP_QUEUE "Memory allocation error in function register_chip()\n"
 
@@ -114,6 +115,8 @@
 #define MB_READ_ACTION		"Read-out chip"
 #define MB_OPTIONS		"Options"
 #define MB_DEVICE		"Chip"
+#define MB_HELP			"Help"
+#define MB_DOCUMENTATION	"Documentation"
 
 #define ABOUT_TITLE		"About program"
 #define BUTTON_OK		"OK"
