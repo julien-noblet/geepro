@@ -49,7 +49,7 @@ void gui_action_icon_set()
 {
     GtkIconFactory *ifact = gtk_icon_factory_new();
 
-    gtk_icon_factory_add(ifact, "geepro-logo", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( LOGO_ICON )));
+//    gtk_icon_factory_add(ifact, "geepro-logo", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( LOGO_ICON )));
     gtk_icon_factory_add(ifact, "geepro-read-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( READ_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-read-eeprom-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( READ_EEPROM_ACTION_ICON )));
     gtk_icon_factory_add(ifact, "geepro-sign-action", gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( SIGN_ACTION_ICON )));
@@ -346,7 +346,7 @@ static int gui_add_bt_action(geepro *gep, const char *stock_name, const char *ti
     new_tie->widget = gtk_tool_button_new_from_stock( stock_name );
     g_signal_connect(G_OBJECT(new_tie->widget), "clicked", G_CALLBACK(gui_invoke_action), new_tie);
     gtk_tool_item_set_tooltip_text( new_tie->widget, tip );
-    gtk_toolbar_insert(GTK_TOOLBAR(GUI(gep->gui)->toolbox), new_tie->widget, 4);
+    gtk_toolbar_insert(GTK_TOOLBAR(GUI(gep->gui)->toolbox), new_tie->widget, -1);
     
     if(!GUI(gep->gui)->action){
 	GUI(gep->gui)->action = new_tie;
@@ -706,7 +706,7 @@ void gui_menu_setup(geepro *gep)
 
     GUI(gep->gui)->action = NULL;
     GUI(gep->gui)->wmain = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_default_icon_name("geepro-logo");
+    gtk_window_set_icon(GTK_WINDOW(GUI(gep->gui)->wmain), gdk_pixbuf_new_from_xpm_data( LOGO_ICON ));
     g_signal_connect(G_OBJECT(GUI(gep->gui)->wmain), "delete_event", G_CALLBACK(gui_exit_program), gep);
     gtk_container_set_border_width(GTK_CONTAINER(GUI(gep->gui)->wmain), 1);
     gtk_window_set_title(GTK_WINDOW(GUI(gep->gui)->wmain), EPROGRAM_NAME " ver " EVERSION);
