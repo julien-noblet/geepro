@@ -27,8 +27,9 @@
 /* Informacje o wersji */
 #define EPROGRAM_NAME "Geepro"
 #define ERELDATE "1 Feb 2020"
-#define EVERSION "0.0.2 pre"
-#define EAUTHORS "Krzysztof Komarnicki krzkomar@wp.pl"
+#define EVERSION "0.1.0"
+#define EAUTHORS { "Krzysztof Komarnicki krzkomar@wp.pl", NULL }
+#define ESRCURL	 "sourceforge.net/projects/geepro"
 #define ELICENSE "GPL version 2"
 
 #define SYSTEM_DEVICE_PATH "/dev/"

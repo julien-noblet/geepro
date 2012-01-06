@@ -286,7 +286,7 @@ static void gui_bineditor_checksum(GtkWidget *wg, GuiBineditor *be)
 	GTK_STOCK_OK, GTK_RESPONSE_ACCEPT, NULL
     );
 
-    /* tabelka pakujaca */
+    /* pack table */
     tab = gtk_table_new(5, 5, FALSE);
     gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), tab);
     gtk_container_set_border_width(GTK_CONTAINER(tab), 10);
@@ -343,7 +343,7 @@ static void gui_bineditor_checksum(GtkWidget *wg, GuiBineditor *be)
     gtk_table_attach(GTK_TABLE(tab), wg0, 1,5, 3,4, GTK_FILL | GTK_EXPAND,0, 0,10);
     wgg[CHKSUM_ALGO_CBX] = wg0;    
 
-    /* wybor algorytmu */
+    /* algorithm selection */
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg0), CHECKSUM_ALGO_LRC);
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg0), CHECKSUM_ALGO_CRC16);
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg0), CHECKSUM_ALGO_CRC32);
@@ -381,7 +381,7 @@ static void gui_bineditor_checksum(GtkWidget *wg, GuiBineditor *be)
 
 /******************************************************************************************************************/
 #ifndef NO_PRINTER_SUPPORT
-/* rysowanie wydruku */
+/* draw printing */
 static void gui_bineditor_draw_page(GtkPrintOperation *op, GtkPrintContext *cx, int page_nr, GuiBineditor *be)
 {
     cairo_t *cr = gtk_print_context_get_cairo_context(cx);
@@ -640,7 +640,7 @@ static void gui_bineditor_search(GuiBineditor *be, const char *find, const char 
 		gui_bineditor_emit_signal(be);
 	    }
 	}
-/* finalizacja */
+
 	if(addr == -1){
 	    wg = gtk_dialog_new_with_buttons(NULL, GTK_WINDOW(be->priv->wmain), GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, 
 		GTK_STOCK_OK, 1,
@@ -788,47 +788,6 @@ static void gui_bineditor_find_string(GtkWidget *wg, GuiBineditor *be)
 }
 
 /******************************************************************************************************************/
-/*
-static void gui_bineditor_editor(GuiBineditor *be, int addr)
-{
-    GtkWidget *dlg, *wg0;
-    char tmp[8];
-    const char *text;
-    int len = 0, i;
-    char *rpl;
-    
-    g_return_if_fail(be->priv->buffer != NULL);
-    g_return_if_fail(be->priv->buffer_size != 0);
-    g_return_if_fail(addr < be->priv->buffer_size);    
-    dlg = gtk_dialog_new_with_buttons("Edit cell", GTK_WINDOW(be->priv->wmain), GTK_DIALOG_MODAL, 
-	GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
-	GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT, NULL
-    );
-
-    wg0 = gtk_entry_new();
-    gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dlg)->vbox), wg0);
-    sprintf(tmp,"0x%02X", be->priv->buffer[addr]);
-    gtk_entry_set_text(GTK_ENTRY(wg0), tmp);
-
-    gtk_widget_show_all(dlg);
-    if(gtk_dialog_run(GTK_DIALOG(dlg)) == GTK_RESPONSE_ACCEPT){
-	text = gtk_entry_get_text(GTK_ENTRY(wg0));
-	g_return_if_fail(text != NULL);
-	rpl = NULL;
-	if(*text) rpl = gui_str_to_memory(be, text, &len);
-	g_return_if_fail(rpl != NULL);
-
-	for(i = 0; (i < len) && ((i + addr) < be->priv->buffer_size); i++)
-						be->priv->buffer[i + addr] = rpl[i];
-
-	if(rpl) free(rpl);
-	if(len) gui_bineditor_emit_signal(be);
-    }
-    gtk_widget_destroy(dlg);
-
-}
-*/
-/******************************************************************************************************************/
 static void gui_bineditor_jump_marker(GtkWidget *wg, GuiBineditor *be)
 {
     be->priv->address_mark_redo = gtk_adjustment_get_value(be->priv->adj);
@@ -864,7 +823,6 @@ static void gui_bineditor_clear_clc(GtkWidget *wg, GtkWidget **wgg)
     clear_guard = 0;
 }
 
-/* cos nie chce ustawiac */
 static void gui_bineditor_clear_cli(GtkWidget *wg, GtkWidget **wgg)
 {
     int s,e;
@@ -901,7 +859,6 @@ static void gui_bineditor_clear_buffer(GtkWidget *bt, GuiBineditor *be)
 {
     static GtkWidget *wgg[6];
     GtkWidget *wg0, *wg1, *wg2;
-//    GObject *adj;
     GtkAdjustment *adj;
         
     if(!be->priv->buffer) return;
@@ -988,29 +945,28 @@ static char gui_dig2hex(char i){
 
 static int gui_bineditor_get_grid_addr(GuiBineditor *be, int xi, int yi, char *ascii_grid)
 {
-    int x, y, xa, address;
-    
-    x = xi - be->priv->grid_start; xa = xi - be->priv->ascii_start;
-    y = yi - be->priv->grid_top;
+    int x, y, xa, address, start_addr;
+
+    x  = xi - be->priv->grid_start;  // horizontal position relative to start of hex grid
+    xa = xi - be->priv->ascii_start; // horizontal position relative to start of ascii grid  
+    y  = yi - be->priv->grid_top;    // vertical position common for hex and ascii grid
     *ascii_grid = 0;
-    
-    /* nie dotyczy pola komorek hex to wyjdz */
+    start_addr = gtk_adjustment_get_value(be->priv->adj) / be->priv->grid_cols;
+    start_addr *= be->priv->grid_cols;
+
+    // Compute grid cell index
+    // if cursor is over hex grid or is away grid fields
     if(x < 0 || y < 0 || xi > be->priv->grid_end || !be->priv->cell_width || !be->priv->cell_height){
 	if(xa < 0 || y < 0 || xi > be->priv->ascii_end || !be->priv->cell_width || !be->priv->cell_height) return -1;
-	
-	xa /= be->priv->ascii_space;
-	y /= be->priv->cell_height + 1; 
-
-	address = y * be->priv->grid_cols + xa + gtk_adjustment_get_value(be->priv->adj);
+	x = xa / be->priv->ascii_space;
 	*ascii_grid = 1;
-
-	return address;
+    } else {
+	x /= be->priv->cell_width;
     }
-
-    x /= be->priv->cell_width;
     y /= be->priv->cell_height + 1; 
 
-    address = y * be->priv->grid_cols + x + gtk_adjustment_get_value(be->priv->adj);
+    address = y * be->priv->grid_cols + x + start_addr;
+
     return address;
 }
 
@@ -1052,7 +1008,6 @@ static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBinedito
     int address;
     char ascii = 0;
 
-//    if((ev->button != 1) && (ev->button != 3)) return;
     if(!be->priv->buffer || !be->priv->buffer_size) return;
     address = gui_bineditor_get_grid_addr(be, ev->x, ev->y, &ascii);
     if(address < 0) return;
@@ -1100,11 +1055,6 @@ static void gui_bineditor_hint(GtkWidget *wg, GdkEventMotion *ev, GuiBineditor *
     }
     be->priv->address_old_hint = address;
     offs = address - be->priv->address_mark;
-//    gui_bineditor_statusbar(be, tmp, " Address: 0x%x;   Data hex: 0x%x   Data dec: %i  Data ASCII: '%c'  |"
-//    " Mark address: 0x%x  Mark offset hex: %c0x%x, dec: %i",
-//	address, data, data, ((data > 0x1f) && (data < 0x80)) ? data : '.',
-//	be->priv->address_mark, offs < 0 ? '-':' ', abs(offs), offs
-//    );
 
     sprintf(tmp, " %x:%x(%i) ", address, data & 0xff, data & 0xff);
     gtk_label_set_text(GTK_LABEL(be->priv->info_addr), tmp);
@@ -1130,41 +1080,22 @@ static void gui_bineditor_enter(GtkWidget *wg, GdkEventCrossing *ev, GuiBinedito
     gdk_cursor_unref(cursor);
 }
 
-//static void gui_bineditor_scroll(GtkWidget *wg, GdkEventScroll *ev, GuiBineditor *be)
-//{
-//printf("aaa\n");
-//return;
-//    int adj = gtk_adjustment_get_value(be->priv->adj);
-//    
-//    if( ev->direction == GDK_SCROLL_UP ){
-//	adj -= be->priv->grid_cols;
-//	if(adj < 0) adj = 0;
-//    }
-//    if( ev->direction == GDK_SCROLL_DOWN ){
-//	adj += be->priv->grid_cols;
-//	if(adj >= be->priv->buffer_size) adj = be->priv->buffer_size - be->priv->grid_cols;
-//    }
-//    adj = (adj / be->priv->grid_cols) * be->priv->grid_cols;
-//    gtk_adjustment_set_value(be->priv->adj, adj);
-/*
-    int x = gtk_adjustment_get_value(be->priv->adj);
-    
-    if(ev->direction == GDK_SCROLL_UP) x -= be->priv->grid_cols * 2;
-    if(ev->direction == GDK_SCROLL_DOWN) x += be->priv->grid_cols * 2;
-
-    x = x - (x % be->priv->grid_cols);
-
-    if( be->priv->adj->upper - x <= be->priv->adj->page_size )
-	x = be->priv->adj->upper - be->priv->adj->page_size;	
-    
-    gtk_adjustment_set_value(be->priv->adj, x);
-*/
-
-//}
-
 static void gui_bineditor_slider(GtkAdjustment *wig, GuiBineditor *wg, GuiBineditor *be)
 {
     gtk_widget_queue_draw(wg->priv->drawing_area);
+}
+
+static void gui_bineditor_scroll(GtkWidget *wg, GdkEventScroll *ev, GuiBineditor *be)
+{
+    gdouble inc = gtk_adjustment_get_step_increment( GTK_ADJUSTMENT(be->priv->adj) );
+    gdouble val = gtk_adjustment_get_value( GTK_ADJUSTMENT(be->priv->adj) );
+
+    switch( ev->direction ){
+	case GDK_SCROLL_UP:   val -= inc; break; 
+	case GDK_SCROLL_DOWN: val += inc; break;
+	default: return;
+    }
+    gtk_adjustment_set_value( GTK_ADJUSTMENT(be->priv->adj), val );
 }
 
 static  void gui_cairo_line(cairo_t *cr, int x0, int y0, int x1, int y1)
@@ -1197,27 +1128,27 @@ static void gui_bineditor_set_hl(cairo_t *cr, GuiBineditor *be, char mrk, char n
 	cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_HL));
 }
 
-/* poprawic dla wydruku */
+/* must be corrected for printing */
 static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, char print)
 {
     char tmp[16], rg, mrk, hl=0;
     int i, j,kx, ky, xc, yc, cx, zx, xam, addr, xa, z, max_addr, xx, yy, n, pagesize, bl_pos;
     
-    /* obliczenie pozycji i parametrow wyswietlania w zalezniosci od rozmiarow okna */
-#define nx	2	/* ilosc znakow w celi */
-#define border	4	/* piksele otaczajace znak */
-#define fx	6 	/* szerokosc fontu */
-#define fy	10	/* wysokosc fontu */
-#define ac	8 	/* ilosc cyfr adresu */
-#define ry	26	/* szerokosc belki */
-#define underln_pos 3   /* pozycja pod znakiem */
+    /* computing position and parameters for display */
+#define nx	2	/* characters per cell */
+#define border	4	/* pixels sorrounding character */
+#define fx	6 	/* font width */
+#define fy	10	/* font height */
+#define ac	8 	/* digit counts for address */
+#define ry	26	/* bar width */
+#define underln_pos 3   /* position for underline below character*/
 
     kx = fx + border;
     ky = fy + border;
-    /* szerokosc pola adresu */
+    /* width of the address field */
     zx = (ac + 2) * kx;
     cx = nx * kx;
-    /* ilosci cel */
+    /* cell count */
     xc = (((vxx - zx - 2*kx) / kx) / 3);
     yc = (vyy - ry) / (ky + 1);
     xam = (vxx + zx + kx + xc * (cx - kx)) / 2;
@@ -1244,28 +1175,28 @@ static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, 
     addr = gtk_adjustment_get_value(be->priv->adj) / xc;
     addr *= xc;
 
-    /* ustawienie parametrów fontu */
+    /* setting font parameters */
     cairo_select_font_face(cr, "Georgia", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(cr, 12);
 
-    /* czyszczenie ekranu */
+    /* clear screen */
     cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_GRID_BG));
     cairo_rectangle(cr, 0, 0, vxx, vyy);
     cairo_fill(cr);
     cairo_stroke(cr);    
-    /* górna belka */
+    /* upper bar */
     cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_DESC_BG));
     cairo_rectangle(cr, 0, 0, vxx, ky + 5);
     cairo_fill(cr);
     cairo_stroke(cr);    
 
-    /* narysowanie siatki */
+    /* drawing grid */
     cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_GRID));    
     for(i = 0, yy = ry + ky; i < yc; i++, yy += ky + 1) gui_cairo_line(cr, 0, yy, vxx, yy);
     for(i = 0, xx = zx; i < xc + 1; i++, xx += cx ) gui_cairo_line(cr, xx, 0, xx, vyy);
     cairo_stroke(cr);
 
-    /* opis belki */
+    /* bar description */
     cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_TEXT_DESC));    
     for(i = 0, xx = zx; i < xc; i++, xx += cx)
 	gui_cairo_outtext(cr, tmp, xx + 1 , 4 + fy, "%c%c", gui_dig2hex(i / 16), gui_dig2hex(i % 16));
@@ -1273,7 +1204,7 @@ static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, 
     gui_cairo_outtext(cr, tmp, xam , 4 + fy, "ASCII");
     cairo_stroke(cr);
 
-    /* wypelnienie cel */
+    /* filling cells */
     cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_TEXT_NORMAL));    
     for(j = 0, yy = ry + fy; (j < yc) && (addr < max_addr); j++, yy += ky + 1){
 	for(z = 0; z < 8; z++) 
@@ -1399,7 +1330,7 @@ static void gui_bineditor_keystroke(GtkWidget *wg, GdkEventKey *ev, GuiBineditor
 {
     int key = ev->keyval;
     int adj;
-    
+
     if( be->priv->edit_hex == 0 ) return; // ignore if edit mode not active
     
     if(key == be->priv->key_left) gui_bineditor_cursor_decrement( be, 1 ); 
@@ -1429,6 +1360,7 @@ static void gui_bineditor_keystroke(GtkWidget *wg, GdkEventKey *ev, GuiBineditor
 //	if(be->priv->address_hl_start >= be->priv->buffer_size) be->priv->address_hl_start = be->priv->buffer_size - 1;
 //      be->priv->address_hl_end = be->priv->address_hl_start;
     }
+
     if(key == be->priv->key_tab){	
         be->priv->edit_hex ^= 0x03; 
         if(be->priv->edit_hex == 2) be->priv->edit_hex_cursor = 0; 
@@ -1472,16 +1404,9 @@ static void gui_bineditor_focus_in(GtkWidget *wg, GdkEventKey *ev, GuiBineditor 
     gtk_widget_set_sensitive(be->priv->chksum, TRUE);    
 }
 
-
-static void gui_bineditor_scroll(GtkWidget *wg, GdkEventKey *ev, GuiBineditor *be)
-{
-printf(">>scroll\n");
-}
-
 static void gui_bineditor_init(GuiBineditor *be)
 {
     GtkWidget *wg0, *wg1, *wg2;
-printf(">>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nBINEDITOR INIT\n");
 
     be->priv = G_TYPE_INSTANCE_GET_PRIVATE (be, GUI_TYPE_BINEDITOR, GuiBineditorPrivate);
     
@@ -1654,8 +1579,8 @@ void gui_bineditor_set_buffer(GuiBineditor *be, int bfsize, unsigned char *buffe
     gtk_widget_set_sensitive(be->priv->print, bfsize);
 #endif
     gtk_widget_set_sensitive(be->priv->chksum, bfsize);
-/* powinno się teraz calosc przerysowac */
-    be->priv->rfsh = 0; /* wymus przerysowanie calosci */
+/* now everything to redraw */
+    be->priv->rfsh = 0; 
     gtk_widget_queue_draw(be->priv->drawing_area);
 }
 
