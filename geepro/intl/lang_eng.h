@@ -19,15 +19,6 @@
  *
  */
 
-#define ABOUT EPROGRAM_NAME" - integrated circuit programmer\n"\
-	    "ver: " EVERSION "\n"\
-	    "URL: " ESRCURL "\n"\
-	    "\nAuthors: \n "\
-	    EAUTHORS "\n"\
-	    "License:\n"\
-	    ELICENSE\
-//	    "release date: " ERELDATE
-
 #define MEMORY_ALLOCATION_ERROR_CHIP_QUEUE "Memory allocation error in function register_chip()\n"
 
 #define STS_CHIP_DUMP		"Memory chip read complete"
@@ -100,10 +91,9 @@
 
 
 #define MB_FILE			"File"
-#define MB_LOAD_BIN_FILE	"Open BIN"
-#define MB_SAVE_BIN_FILE	"Write BIN"
-#define MB_LOAD_HEX_FILE	"Open HEX"
-#define MB_SAVE_HEX_FILE	"Write HEX"
+#define MB_LOAD_FILE		"Open file"
+#define MB_LOAD_FILE_AT		"Insert file"
+#define MB_SAVE_FILE		"Write file"
 #define MB_ABOUT_FILE		"About program"
 #define MB_EXIT_FILE		"Exit"
 #define MB_ACTION		"Action"
@@ -143,4 +133,8 @@
 #define TIP_BE_JUMP_TO_MARKER	"Jump to marker"
 #define TIP_BE_REDO_JUMP	"Redo jump" 
 #define TIP_BE_PRINT		"Print"
+
+#define DLG_INS_FILE_BUFFER_OFFSET	"Insert to buffer at:"
+#define DLG_INS_FILE_SIZE		"Bytes count:"
+#define DLG_INS_FILE_OFFSET		"File offset:"
 
