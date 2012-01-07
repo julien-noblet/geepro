@@ -172,26 +172,31 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
 	    GTK_RESPONSE_ACCEPT, NULL
 	);
     // file filters
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "hex");
-    gtk_file_filter_add_pattern(filter, "*.hex");
-    gtk_file_filter_add_pattern(filter, "*.HEX");
-    gtk_file_filter_add_pattern(filter, "*.Hex");    
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+    if(!flag){
+	filter = gtk_file_filter_new();
+	gtk_file_filter_set_name(filter, "hex");
+	gtk_file_filter_add_pattern(filter, "*.hex");
+	gtk_file_filter_add_pattern(filter, "*.HEX");
+	gtk_file_filter_add_pattern(filter, "*.Hex");    
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+
+	filter = gtk_file_filter_new();
+	gtk_file_filter_set_name(filter, "srec");
+	gtk_file_filter_add_pattern(filter, "*.srec");
+	gtk_file_filter_add_pattern(filter, "*.SREC");
+	gtk_file_filter_add_pattern(filter, "*.Srec");
+	gtk_file_filter_add_pattern(filter, "*.s19");
+	gtk_file_filter_add_pattern(filter, "*.S19");
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+    }
+
     filter = gtk_file_filter_new();
     gtk_file_filter_set_name(filter, "bin");
     gtk_file_filter_add_pattern(filter, "*.bin");
     gtk_file_filter_add_pattern(filter, "*.BIN");
     gtk_file_filter_add_pattern(filter, "*.Bin");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "srec");
-    gtk_file_filter_add_pattern(filter, "*.srec");
-    gtk_file_filter_add_pattern(filter, "*.SREC");
-    gtk_file_filter_add_pattern(filter, "*.Srec");
-    gtk_file_filter_add_pattern(filter, "*.s19");
-    gtk_file_filter_add_pattern(filter, "*.S19");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
+
     filter = gtk_file_filter_new();
     gtk_file_filter_set_name(filter, "ALL");
     gtk_file_filter_add_pattern(filter, "*.*");
@@ -268,6 +273,10 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
 	    gtk_widget_show_all( ca );
     
 	    result = gtk_dialog_run(GTK_DIALOG( wgi ) );
+	    offset = gtk_spin_button_get_value(GTK_SPIN_BUTTON( sb.sb0 ));
+	    size = gtk_spin_button_get_value(GTK_SPIN_BUTTON( sb.sb1 ));
+	    fofs = gtk_spin_button_get_value(GTK_SPIN_BUTTON( sb.sb2 ));
+
 	    gtk_widget_destroy( wgi );
 	    if( result != GTK_RESPONSE_ACCEPT ){
 		g_free( fname );
@@ -283,6 +292,7 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
     } else
 	gtk_widget_destroy(wg);    
     gui_checksum_recalculate( gep );
+    gtk_widget_queue_draw( GUI(gep->gui)->wmain );
 }
 
 static void gui_load_file(GtkWidget *w, geepro *gep)

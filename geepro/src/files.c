@@ -46,9 +46,20 @@ const char *file_err_msg(int err)
     return "some error";
 }
 
-int file_load_bin(FILE *f, int size, char *buffer)
+int file_load_bin(FILE *f, int size, char *buffer, long file_offset, long buffer_offset, long bytes_count )
 {
-    unsigned long sz = fread(buffer, 1, size, f);
+    unsigned long sz;
+    
+    if(file_offset < 0){
+	file_offset = 0;
+	buffer_offset = 0;
+	bytes_count = 0;
+    } else {
+	fseek( f, file_offset, SEEK_SET);
+	size = bytes_count;
+    }
+    
+    sz = fread(buffer + buffer_offset, 1, size, f);
     if( sz != size){
         if(sz < size) return -100;
         return -101;
@@ -188,20 +199,30 @@ const char *file_load(geepro *gep, const char *fname, long file_offset, long buf
 {
     FILE *f;
     int err = 0, x=0;
-if( file_offset >= -1) return NULL; // temporary to ignore insert
+    
     if(!gep->chp) return "No chip memory size specified.";    
-    memset(gep->chp->buffer, 0xff, gep->chp->dev_size); // set buffer by 0xff
+    
+    if( file_offset < 0 )
+	memset(gep->chp->buffer, 0xff, gep->chp->dev_size); // set buffer by 0xff
+
     if(!(f = fopen(fname , "r-"))) return "Open file error.";
-    if((x = file_test_extension(f, fname, "hex")) == 2) 
-	err = file_load_hex(f, gep->chp->dev_size, gep->chp->buffer);
-    else
-      if((x = file_test_extension(f, fname, "srec")) == 2) 
-	err = file_load_srec(f, gep->chp->dev_size, gep->chp->buffer);
-    else
-      if((x = file_test_extension(f, fname, "s19")) == 2) 
-	err = file_load_srec(f, gep->chp->dev_size, gep->chp->buffer);
-    else
-      if(x == 1) err = file_load_bin(f, gep->chp->dev_size, gep->chp->buffer);
+
+    if( file_offset >= 0){
+        err = file_load_bin(f, gep->chp->dev_size, gep->chp->buffer, file_offset, buffer_offset, bytes_count);
+        x = 2;
+    } else {
+	if((x = file_test_extension(f, fname, "hex")) == 2) 
+	    err = file_load_hex(f, gep->chp->dev_size, gep->chp->buffer);
+	else
+    	    if((x = file_test_extension(f, fname, "srec")) == 2) 
+		err = file_load_srec(f, gep->chp->dev_size, gep->chp->buffer);
+	else
+    	    if((x = file_test_extension(f, fname, "s19")) == 2) 
+		err = file_load_srec(f, gep->chp->dev_size, gep->chp->buffer);
+	else
+    	    if(x == 1) 
+    		err = file_load_bin(f, gep->chp->dev_size, gep->chp->buffer, -1, -1, -1);
+    }
     if(x == 0) return "Filename error."; // no fname or NULL
     if(err == -10) err = 0; // end of HEX file, normal termination
 
