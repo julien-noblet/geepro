@@ -184,11 +184,11 @@ int file_test_extension(FILE *f, const char *fname, const char *ext)
     return 2;
 }
 
-const char *file_load(geepro *gep, char *fname)
+const char *file_load(geepro *gep, const char *fname, long file_offset, long buffer_offset, long bytes_count )
 {
     FILE *f;
     int err = 0, x=0;
-
+if( file_offset >= -1) return NULL; // temporary to ignore insert
     if(!gep->chp) return "No chip memory size specified.";    
     memset(gep->chp->buffer, 0xff, gep->chp->dev_size); // set buffer by 0xff
     if(!(f = fopen(fname , "r-"))) return "Open file error.";
@@ -314,7 +314,7 @@ int file_save_hex(FILE *f, int size, char *buffer)
     return 0;
 }
 
-const char *file_save(geepro *gep, char *fname)
+const char *file_save(geepro *gep, const char *fname)
 {
     FILE *f;
     int err = 0, x=0, size = gep->chp->dev_size;
@@ -339,6 +339,20 @@ const char *file_save(geepro *gep, char *fname)
 
     fclose(f);    
     return file_err_msg(err);
+}
+
+long file_length(const char *fname)
+{
+    FILE *f;
+    long l;
+    
+    f = fopen( fname , "r");
+    if( f == NULL ) return -1;
+    fseek(f, 0L, SEEK_END);
+    l = ftell( f );
+    fclose(f);
+    
+    return l;
 }
 
 //------------------------------------------------------------------------------------------
