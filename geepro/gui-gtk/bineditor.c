@@ -1008,9 +1008,15 @@ static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBinedito
     int address;
     char ascii = 0;
 
+
+    if( gtk_widget_is_focus(wg) == FALSE ){
+	gtk_widget_grab_focus( wg );
+    }
+
     if(!be->priv->buffer || !be->priv->buffer_size) return;
     address = gui_bineditor_get_grid_addr(be, ev->x, ev->y, &ascii);
     if(address < 0) return;
+
 
     if(ev->button == 3){
 	be->priv->address_mark = address;
