@@ -2,7 +2,7 @@
 # src
 def build(bld):
   print('→ building src')
-  sources=['buffer.c', 'chip.c', 'dummy.c', 'files.c', 'iface.c', 'parport.c', 'timer.c', "storings.c", "protocols.c"]
+  sources=['buffer.cpp', 'chip.cpp', 'dummy.cpp', 'storings.cpp', 'iface.cpp', 'files.cpp', 'parport.cpp', 'timer.cpp', 'protocols.cpp']
   bld(
     features     = 'c', 
     source       = sources,

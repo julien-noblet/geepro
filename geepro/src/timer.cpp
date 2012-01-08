@@ -38,7 +38,7 @@ static void timer_idle(void *ptr){};
 static void *__timer_call_ptr__=NULL;
 static void (*__timer_call__)(void *) = timer_idle;
 
-int set_priority(int policy, int priority, schd *sch)
+int set_priority(int policy, unsigned int priority, schd *sch)
 {
     sch->schd_param.sched_priority = (priority == MAX_PRIORITY) ? sch->high_priority :
 				(priority == MIN_PRIORITY) ? sch->low_priority : priority;
