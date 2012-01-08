@@ -1018,15 +1018,13 @@ static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBinedito
     if(address < 0) return;
 
 
-    if(ev->button == 3){
+    if(ev->button == 2){
 	be->priv->address_mark = address;
         gtk_widget_queue_draw(be->priv->drawing_area);
 	return;
     }
 
-    if(ev->button != 1) return;
-
-    if( ev->button == 1){
+    if( ev->button == 3){
 	if(be->priv->edit_hex == 0){
 	    be->priv->edit_hex = ascii ? 2 : 1;
 	    be->priv->edit_hex_cursor = 0;
@@ -1038,7 +1036,45 @@ static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBinedito
 	}
 	gtk_widget_queue_draw(be->priv->drawing_area);
     }
+// copy to clipboard marking
+    if(ev->button == 1){
+	if(be->priv->edit_hex == 1){ // cancel editing mode
+	    gui_bineditor_exit_edit( be );
+	}
+	if(be->priv->clpb == 0){
+	    be->priv->clpb_ascii = ( ev->x > be->priv->ascii_start );
+	    be->priv->clpb = 1;
+	    be->priv->clpb_start = address;
+	    be->priv->clpb_end = address;
+	} else {
+	    be->priv->clpb = 0;
+	    be->priv->clpb_start = -1;
+	    be->priv->clpb_end = -1;
+	}
+	gtk_widget_queue_draw(be->priv->drawing_area);
+    }
 }
+
+static void gui_bineditor_mbutton_free(GtkWidget *wg, GdkEventButton *ev, GuiBineditor *be)
+{
+    int address;
+    char ascii = 0;
+
+    if(!be->priv->buffer || !be->priv->buffer_size) return;
+    address = gui_bineditor_get_grid_addr(be, ev->x, ev->y, &ascii);
+    if(address < 0) return;
+
+//gtk_widget_queue_draw(be->priv->drawing_area);
+// copy to clipboard marking
+    if(ev->button == 1){
+	if(be->priv->clpb == 1){
+	    be->priv->clpb = 2;
+	    be->priv->clpb_end = address;	    
+	}
+	gtk_widget_queue_draw(be->priv->drawing_area);
+    }
+}
+
 
 static void gui_bineditor_hint(GtkWidget *wg, GdkEventMotion *ev, GuiBineditor *be)
 {
@@ -1046,13 +1082,20 @@ static void gui_bineditor_hint(GtkWidget *wg, GdkEventMotion *ev, GuiBineditor *
     int address;
     int data, offs;
     char ascii = 0;
-    
+
     if(!be->priv->buffer || !be->priv->buffer_size) return;
     address = gui_bineditor_get_grid_addr(be, ev->x, ev->y, &ascii);
+
     if(address < 0){
 	gui_bineditor_statusbar(be, tmp, "");
         return;
     }
+
+    if(be->priv->clpb == 1){
+	be->priv->clpb_end = address;
+	gtk_widget_queue_draw(be->priv->drawing_area);
+    }
+
     data = be->priv->buffer[address];
     if(be->priv->address_old_hint == address) return;
     if(address >= be->priv->buffer_size){
@@ -1137,7 +1180,7 @@ static void gui_bineditor_set_hl(cairo_t *cr, GuiBineditor *be, char mrk, char n
 /* must be corrected for printing */
 static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, char print)
 {
-    char tmp[16], rg, mrk, hl=0;
+    char tmp[16], rg, mrk, hl=0, cpbl=0, cpbla = 0, cpblh = 0;
     int i, j,kx, ky, xc, yc, cx, zx, xam, addr, xa, z, max_addr, xx, yy, n, pagesize, bl_pos;
     
     /* computing position and parameters for display */
@@ -1220,7 +1263,12 @@ static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, 
 	    n = 0;
 	    if(be->priv->buffer) n = be->priv->buffer[addr];
 	    mrk = be->priv->address_mark == addr;
-	    hl  = (addr >= be->priv->address_hl_start) && (addr <= be->priv->address_hl_end);
+	    hl   = (addr >= be->priv->address_hl_start) && (addr <= be->priv->address_hl_end);
+	    cpbl = ((addr >= be->priv->clpb_start) && (addr <= (be->priv->clpb_end))) && be->priv->clpb;
+
+	    cpblh = cpbl && !be->priv->clpb_ascii; // for hex field 
+	    cpbla = cpbl && be->priv->clpb_ascii;  // for ascii field
+
 	    bl_pos = (be->priv->edit_hex_cursor & 1) * (fx + 2);
 	    if(mrk){
 		cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_MARKED_BG));
@@ -1234,11 +1282,11 @@ static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, 
 
 	    rg = (n > 0x1f) && (n < 0x80);
 
-	    if(hl){
+	    if(hl || cpblh || cpbla){ // highlight for hex field
 		gui_bineditor_set_hl( cr, be, mrk, 1);
-		if( be->priv->edit_hex != 2)
+		if( (be->priv->edit_hex != 2) && cpblh) // highlight for hex
 	    	    cairo_rectangle(cr, xx, yy - fy, cx, ky - 1);
-		if( be->priv->edit_hex != 1)
+		if( (be->priv->edit_hex != 1) && cpbla) // highlight for ascii
 	    	    cairo_rectangle(cr, xa, yy - fy, kx - 1, ky - 1);
 		cairo_fill(cr);
 		cairo_stroke(cr);
@@ -1248,7 +1296,7 @@ static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, 
 	    gui_cairo_outtext(cr, tmp, xx + 1, yy , "%c%c", gui_dig2hex(n / 16), gui_dig2hex(n % 16));
 
 	    if(!rg){
-		if((!mrk && !hl) || (( be->priv->edit_hex == 1) && hl)){
+		if((!mrk && !hl && !cpbla) || (( be->priv->edit_hex == 1) && (hl || cpbla ))){ // highlight for ascii
 		    cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_UD));
 	    	    cairo_rectangle(cr, xa, yy - fy, kx - 1, ky - 1);
 		    cairo_fill(cr);
@@ -1257,7 +1305,7 @@ static void gui_bineditor_draw(cairo_t *cr, GuiBineditor *be, int vxx, int vyy, 
 	    } else
 		gui_cairo_outtext(cr, tmp, xa, yy, "%c", n);
 	    
-	    if(mrk || !rg || hl){
+	    if(mrk || !rg || hl ){
 		cairo_set_source_rgb(cr, GET_COLOR(be, GUI_BINEDITOR_COLOR_TEXT_NORMAL));
 		cairo_stroke(cr);
 	    }
@@ -1332,13 +1380,100 @@ static void gui_bineditor_edit(GuiBineditor *be, int key)
     gui_bineditor_cursor_increment( be, 1 );
 }
 
+static char *gui_bineditor_get_text_from_clpb( GuiBineditor *be )
+{
+    int length = (be->priv->clpb_end - be->priv->clpb_start) + 1;
+    int slength, i, x;
+    char *text = NULL;
+    
+    if(length < 0) return NULL;
+    slength = length;
+    if( !be->priv->clpb_ascii ) slength *= 5; // 0x00, <= 5 characters
+    slength++; // for '\0'
+    if(!(text = malloc( slength ))) return NULL;
+    for( i = 0; i < length; i++){
+        x = i + be->priv->clpb_start;
+	if( x < be->priv->buffer_size ){
+	    x = be->priv->buffer[ x ];
+	    if( be->priv->clpb_ascii )
+    		text[i] = x;
+    	    else {
+		sprintf(text + i * 5, "0x%x%x,", (x >> 4) & 0x0f, x & 0x0f);
+    	    }
+	}
+    }
+    text[slength] = 0;
+    return text;
+}
+
+static void gui_bineditor_hex2ascii(GuiBineditor *be, gchar *txt)
+{
+//!! TO DO
+
+
+//    be->priv->edit_hex = 2;
+}
+
+static void gui_bineditor_clipboard_insert(GuiBineditor *be, gchar *txt)
+{
+    long len, i;
+        
+    if(be->priv->edit_hex == 0) return; // must be in edit mode to insert
+    if( (be->priv->address_hl_start < 0) || (be->priv->buffer_size <= 0 )) return;
+    if( (be->priv->address_hl_start >= be->priv->buffer_size)) return;
+    len = strlen(txt); // bytes count to insert
+    if( (be->priv->address_hl_start + len) >= be->priv->buffer_size ) len = be->priv->buffer_size - be->priv->address_hl_start;
+
+    if(be->priv->edit_hex & 1) gui_bineditor_hex2ascii(be, txt);
+
+    // ascii field insert
+    if(be->priv->edit_hex & 2){
+	for(i = 0; i < len; i++) 
+	    be->priv->buffer[be->priv->address_hl_start + i] = txt[ i ];
+	gtk_widget_queue_draw(be->priv->drawing_area);
+	gui_bineditor_exit_edit( be );
+    }
+}
+
+static void gui_bineditor_clipboard(GuiBineditor *be, gint c)
+{
+    gchar *text = NULL;
+    
+    switch( c ){
+	case 'C' :
+        case 'c' : text = gui_bineditor_get_text_from_clpb( be );
+		   gtk_clipboard_set_text( be->priv->clipb, text, -1 );
+    		   break;
+	case 'V' :
+	case 'v' : if( gtk_clipboard_wait_is_text_available( be->priv->clipb ) ){
+	             text = gtk_clipboard_wait_for_text( be->priv->clipb );
+	             gui_bineditor_clipboard_insert( be, text );
+		   };
+		   break;
+	case 'X' :
+	case 'x' :;
+    };
+
+    if( text ) g_free( text );
+}
+
 static void gui_bineditor_keystroke(GtkWidget *wg, GdkEventKey *ev, GuiBineditor *be)
 {
     int key = ev->keyval;
     int adj;
 
+    if( key == GDK_KEY_Control_L ){
+	be->priv->key_ctrl = ev->type == GDK_KEY_PRESS;
+	return;	
+    }
+
+    if( be->priv->key_ctrl ){
+	gui_bineditor_clipboard(be, key);
+	return;
+    }
+
+    if( ev->type == GDK_KEY_RELEASE ) return;
     if( be->priv->edit_hex == 0 ) return; // ignore if edit mode not active
-    
     if(key == be->priv->key_left) gui_bineditor_cursor_decrement( be, 1 ); 
     if(key == be->priv->key_right) gui_bineditor_cursor_increment( be, 1 ); 
     if(key == be->priv->key_up) gui_bineditor_cursor_decrement( be, be->priv->grid_cols ); 
@@ -1419,6 +1554,8 @@ static void gui_bineditor_init(GuiBineditor *be)
     g_return_if_fail(be != NULL);
     g_return_if_fail(GUI_IS_BINEDITOR(be));
 
+    be->priv->atom = gdk_atom_intern("PRIMARY", FALSE);
+    be->priv->clipb = gtk_clipboard_get( be->priv->atom );
     be->priv->edit_hex = 0;
     be->priv->address_mark = 0;
     be->priv->address_mark_redo = 0;
@@ -1549,16 +1686,19 @@ static void gui_bineditor_init(GuiBineditor *be)
     gtk_widget_set_can_focus(be->priv->drawing_area, TRUE);
     gtk_widget_set_events(be->priv->drawing_area, 
 	GDK_SCROLL_MASK | GDK_BUTTON_MOTION_MASK | GDK_POINTER_MOTION_MASK
-	| GDK_LEAVE_NOTIFY_MASK | GDK_ENTER_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK
+	| GDK_LEAVE_NOTIFY_MASK | GDK_ENTER_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK 
+	| GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_RELEASE_MASK
     );
     
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"draw",G_CALLBACK(gui_bineditor_draw_sig), be);
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"scroll_event",G_CALLBACK(gui_bineditor_scroll), be);
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"button_press_event",G_CALLBACK(gui_bineditor_mbutton), be);
+    g_signal_connect(G_OBJECT(be->priv->drawing_area),"button_release_event",G_CALLBACK(gui_bineditor_mbutton_free), be);
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"motion_notify_event",G_CALLBACK(gui_bineditor_hint), be);
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"leave_notify_event",G_CALLBACK(gui_bineditor_leave), be);
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"enter_notify_event",G_CALLBACK(gui_bineditor_enter), be);
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"key_press_event",G_CALLBACK(gui_bineditor_keystroke), be);
+    g_signal_connect(G_OBJECT(be->priv->drawing_area),"key_release_event",G_CALLBACK(gui_bineditor_keystroke), be);
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"focus_out_event",G_CALLBACK(gui_bineditor_focus_out), be);
     g_signal_connect(G_OBJECT(be->priv->drawing_area),"focus_in_event",G_CALLBACK(gui_bineditor_focus_in), be);
     gtk_box_pack_end(GTK_BOX(wg1), be->priv->drawing_area, TRUE, TRUE, 1);
