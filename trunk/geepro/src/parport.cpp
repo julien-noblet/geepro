@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdarg.h>
+
 #include "parport.h"
 
 #define PARPORT_VERSION	"lib parport version 0.0.3\n"

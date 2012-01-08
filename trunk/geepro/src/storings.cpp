@@ -6,7 +6,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "storings.h"
+
+extern "C" {
+    #include "storings.h"
+}
 
 int store_constr(store_str *st, const char *path, const char *fname)
 {
@@ -19,7 +22,7 @@ int store_constr(store_str *st, const char *path, const char *fname)
     st->fval = 0;
     // rozwinięcie katalogu domowego jesli jes w sciezce
     home = getenv("HOME"); // scieżka katalogu domowego
-    if((x = strchr(path, '~'))){
+    if((x = strchr((char *)path, '~'))){
 	tmp = (char *)malloc(strlen(path) + strlen(home) + 1);
 	sprintf(tmp,"%s%s", home, x + 1);
     }        
@@ -55,7 +58,7 @@ void store_destr(store_str *st)
 
 static char *store_buffer(FILE *f)
 {
-    int len;
+    unsigned int len;
     char *tmp;
     // get file size
     fseek(f, 0L, SEEK_END);
@@ -72,7 +75,7 @@ static char *store_lookup(const char *buffer, const char *k)
 {
     char tmp[256];
     sprintf(tmp, "$%s=", k);
-    return strstr(buffer, tmp);
+    return strstr((char *)buffer, tmp);
 }
 
 int store_get(store_str *st, const char *key, char **val)

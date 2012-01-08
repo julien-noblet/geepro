@@ -27,11 +27,13 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include "iface.h"
-#include "../drivers/hwdriver.h"
-#include "chip.h"
-#include "main.h"
-#include "files.h"
+extern "C" {
+    #include "iface.h"
+    #include "../drivers/hwdriver.h"
+    #include "chip.h"
+    #include "main.h"
+    #include "files.h"
+}
 
 #include "../intl/lang.h"
 
@@ -125,7 +127,7 @@ char *iface_get_dev(iface *ifc, char *name)
     for(tmp = ifc->qe; tmp; tmp = tmp->next) 
 	    if(!strcmp(tmp->name, name)) return tmp->dev;
 
-    return "/dev/null";
+    return (char *)"/dev/null";
 }
 
 int iface_select_iface(iface *ifc, char *name)
@@ -368,7 +370,7 @@ void iface_rmv_modules(iface *ifc)
 {
     modules *m = ifc->plugins->mdl;
     while(m->first_modl){
-	m->modl = m->first_modl->next;
+	m->modl = (mod_list *)m->first_modl->next;
 	dlclose(m->first_modl->handler);	
 	free(m->first_modl);
 	m->first_modl = m->modl;
@@ -394,7 +396,7 @@ void iface_driver_allow(iface *ifc, const char *list)
     ifc->plg_list = (char*)list;
 }
 
-static char *iface_get_iface_wildcard( int type)
+static const char *iface_get_iface_wildcard( int type)
 {
     switch (type) {
 	case IFACE_LPT: return "^parport[[:digit:]]*$";
@@ -428,7 +430,7 @@ static boolean iface_callback_list(const char *fname, const char *error, void *a
 static void iface_add_list(iface *ifc, int iface_type)
 {
     char error[256];
-    char *regex = iface_get_iface_wildcard( iface_type );
+    const char *regex = iface_get_iface_wildcard( iface_type );
     iface_tmp_arg tmp;
     
     tmp.ifc = ifc;
@@ -489,8 +491,8 @@ static int iface_add_module(iface *ifc, void *pf, void *init)
 	printf("{iface.c} iface_add_module() --> memory allocation error !\n");
 	return -2;
     }
-    tmp->init_module = tmp->handler = pf;
-    tmp->init_module = init;
+//    tmp->init_module = tmp->handler = pf;
+    tmp->init_module = (int (*)(chip_plugins*))init;
     tmp->next = NULL;
 
     if(first_run){
@@ -500,7 +502,7 @@ static int iface_add_module(iface *ifc, void *pf, void *init)
     }
     
     for(ifc->plugins->mdl->modl = ifc->plugins->mdl->first_modl; 
-	ifc->plugins->mdl->modl->next; ifc->plugins->mdl->modl = ifc->plugins->mdl->modl->next);
+	ifc->plugins->mdl->modl->next; ifc->plugins->mdl->modl = (mod_list *)ifc->plugins->mdl->modl->next);
 
     ifc->plugins->mdl->modl->next = tmp;
     return 0;
@@ -561,7 +563,7 @@ static int iface_add_mod_file(iface *ifc, const char *pth, const char *name, con
     }
 
     /* dodanie pluginu do kolejki */
-    if(iface_add_module(ifc, pf, init)){
+    if(iface_add_module(ifc, pf, (void *)init)){
 	printf("Error: " IFACE_MODULE_INIT_FUNC_NAME "()\n");
 	dlclose(pf);
 	return -2;

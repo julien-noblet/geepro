@@ -23,7 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+extern "C" {
 #include "chip.h"
+}
 #include "../intl/lang.h"
 
 static int __plugins__ = 0;    /* zmienna gloabalna pilnująca zainicjowania kolejek */
@@ -35,7 +37,7 @@ void chip_add_action(chip_desc *chip, const char *bt_name, const char *bt_tip, c
 {
     chip_action *new_tie, *tmp; 
     
-    if(!(new_tie = malloc(sizeof(chip_action)))){
+    if(!(new_tie = (chip_action *)malloc(sizeof(chip_action)))){
 	printf("{chip.c} chip_add_action() ---> out of memory.\n");
 	return;
     }
@@ -256,7 +258,7 @@ void chip_rm_path(chip_plugins *plg)
     
     MSG_1DEBUG("{chip.c} MENU: Kasowanie kolejki...\n");
     while(qe){
-	tmp = qe->next;	free(qe->name);	free(qe); qe = tmp;
+	tmp = (chip_menu_qe*)qe->next;	free(qe->name);	free(qe); qe = (chip_menu_qe*)tmp;
     }
     MSG_1DEBUG("{chip.c} MENU: OK\n");
     plg->menu_qe = NULL;
@@ -383,10 +385,10 @@ void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void *, char
     char *tmp, t;
     void *p,*op;
 
-    chip_add_path(plg, "/", wg);
+    chip_add_path(plg, (char *)"/", wg);
     for(chp = plg->chip_qe; chp; chp = chp->next ){
 	tmp = chp->chip_path + 1;
-	op = chip_find_path(plg, "/");
+	op = chip_find_path(plg, (char *)"/");
 	for(;*tmp; tmp++){
 	    for(; *tmp!='/' && *tmp; tmp++);
 	    t = *tmp;
@@ -413,7 +415,7 @@ const char *take_signature_name(int data)
 //    char b0 = (data >>  0) & 0xff;
     char b1 = (data >>  8) & 0xff;
     char b2 = (data >> 16) & 0xff;
-    char *text = "Unknown signature";
+    const char *text = "Unknown signature";
     switch(data & 0xff){
 	case 0x1e : switch(b1){
                       case 0x51: text = (b2 == 5) ? "Vendor: ATMEL\nCHIP: AT89C51\nVPP = 5V" : "Vendor: ATMEL\nCHIP: AT89C51\nVPP=12.5V"; break;
@@ -523,7 +525,7 @@ void loockup_jedec_signature(const char *root, unsigned int man, unsigned int id
     fseek(f, 0L, SEEK_END);
     bfsize = ftell( f );
     fseek(f, 0L, SEEK_SET);
-    if((buffer = malloc( bfsize + 1)) == NULL){
+    if((buffer = (char *)malloc( bfsize + 1)) == NULL){
 	printf("{chip.c} loockup_jedec_signature() --> memory allocation error.\n" );
 	fclose(f);    	
 	return;

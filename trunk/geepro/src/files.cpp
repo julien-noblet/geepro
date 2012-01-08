@@ -27,8 +27,10 @@
 #include <dirent.h>
 
 #include  "../intl/lang.h"
-#include "files.h"
 
+extern "C" {
+    #include "files.h"
+}
 
 #define SAVE_HEXRECSIZE 32
 #define DEBUG printf
@@ -46,7 +48,7 @@ const char *file_err_msg(int err)
     return "some error";
 }
 
-int file_load_bin(FILE *f, int size, char *buffer, long file_offset, long buffer_offset, long bytes_count )
+int file_load_bin(FILE *f, unsigned int size, char *buffer, long file_offset, long buffer_offset, long bytes_count )
 {
     unsigned long sz;
     
@@ -85,7 +87,7 @@ int get_byte(FILE *f) // gets to hex char from file and assembly to byte, if err
     return a*16 + b;    
 }
 
-int file_load_hex_line(FILE *f, int size, char *buffer, int *offset)
+int file_load_hex_line(FILE *f, unsigned int size, char *buffer, int *offset)
 {
     unsigned int byte_count, byte_addrh, byte_addrl, addr, type, data, i, addrext = 0;
     unsigned char sum = 0;
@@ -134,7 +136,8 @@ int file_load_hex(FILE *f, int size, char *buffer)
 
 int file_load_srec_line(FILE *f, int size, char *buffer, int *offset)
 {
-    unsigned int byte_count, addr, type, data, i, addrpole, x;
+    int data;
+    unsigned int byte_count, addr, type, i, addrpole, x;
     unsigned char sum = 0;
     char tmp[520];
 
@@ -232,12 +235,11 @@ const char *file_load(geepro *gep, const char *fname, long file_offset, long buf
 
 /*************************************************************************************/
 
-int file_save_bin(FILE *f, int size, char *buffer)
+int file_save_bin(FILE *f, unsigned int size, char *buffer)
 {
     if(fwrite(buffer, 1, size, f) != size) return -1;
     return 0;
 }
-
 
 char file_hex(char c)
 {

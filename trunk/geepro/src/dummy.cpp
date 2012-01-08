@@ -21,16 +21,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+extern "C" {
 #include "dummy.h"
 #include "../drivers/hwdriver.h"
 #include "iface.h"
+}
 
 int dummy_hardware_driver(en_hw_api funct, int val, void *ptr)
 {
     printf("Dummy module\n");
     switch(funct){
 	/* ogólne */
-	case HW_NAME:	  *(char **)ptr = "Dummy prog";
+	case HW_NAME:	  *(char **)ptr = (char *)"Dummy prog";
 	case HW_IFACE:	  return IFACE_USB;
 	case HW_GINIT:    return 0;
 	case HW_TEST:	  return 1; /* zawsze obecny */
