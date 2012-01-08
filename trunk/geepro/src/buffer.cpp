@@ -22,7 +22,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "buffer.h"
+extern "C" {
+    #include "buffer.h"
+}
 #include "../intl/lang.h"
 #include "main.h"
 #include "../gui-gtk/gui.h"

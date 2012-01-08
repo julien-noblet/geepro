@@ -4,7 +4,7 @@ def build(bld):
   print('→ building src')
   sources=['buffer.cpp', 'chip.cpp', 'dummy.cpp', 'storings.cpp', 'iface.cpp', 'files.cpp', 'parport.cpp', 'timer.cpp', 'protocols.cpp']
   bld(
-    features     = 'c', 
+    features     = 'cxx', 
     source       = sources,
     includes     = '# ../intl',
     target       = 'maincode'
