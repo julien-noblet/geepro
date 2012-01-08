@@ -70,6 +70,8 @@ typedef enum
 
 struct _GuiBineditorPrivate
 {
+    GdkAtom atom;
+    GtkClipboard *clipb;
     /* key values */
     int key_left;
     int key_right;
@@ -80,6 +82,7 @@ struct _GuiBineditorPrivate
     int key_pgup;
     int key_pgdn;
     int key_tab;
+    int key_ctrl;
     /* */
     float colors[GUI_BINEDITOR_COLOR_LAST * 3];
     GtkWidget *wmain;
@@ -123,10 +126,15 @@ struct _GuiBineditorPrivate
     int statusbar_id;
     /* hex editor */
     char edit_hex;		  // flag: bit0 -> hex grid, bit 1 -> ascii grid
-    unsigned int edit_hex_start;  // initial address
+//    unsigned int edit_hex_start;  // initial address
     int edit_hex_cursor; // cursor position in hex grid
     GtkWidget *info_addr; 
     GtkWidget *info_mark;
+// clipboard marking
+    gint     clpb;
+    gboolean clpb_ascii;
+    unsigned long clpb_start;
+    unsigned long clpb_end;
 // dostep publ dorobic
     GtkAdjustment  *adj;
     int buffer_size;
