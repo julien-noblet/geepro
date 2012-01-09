@@ -153,7 +153,6 @@ int main(int argc, char **argv)
 //    signal(SIGINT, kill_me);
     
     gui_run(&geep);
-
     iface_destroy(geep.ifc);
     store_destr(&store);
     return 0;

@@ -491,10 +491,9 @@ static int iface_add_module(iface *ifc, void *pf, void *init)
 	printf("{iface.c} iface_add_module() --> memory allocation error !\n");
 	return -2;
     }
-//    tmp->init_module = tmp->handler = pf;
+    tmp->handler = pf;
     tmp->init_module = (int (*)(chip_plugins*))init;
     tmp->next = NULL;
-
     if(first_run){
 	first_run = 0;
 	ifc->plugins->mdl->modl = ifc->plugins->mdl->first_modl = tmp;
