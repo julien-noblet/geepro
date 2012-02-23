@@ -212,7 +212,7 @@ extern void gui_menu_setup(geepro*);
 */
 extern int  gui_dialog_box(geepro*, const char *fmt, ...);
 extern void gui_progress_break(geepro*);
-extern void gui_progress_bar_init(geepro*,char *title, long range);
+extern void gui_progress_bar_init(geepro*,const char *title, long range);
 extern char gui_progress_bar_set(geepro*,long value, long max);
 extern void gui_progress_bar_free(geepro*);
 extern void gui_run(geepro *);

@@ -69,21 +69,12 @@ int test_uid(geepro *gep)
 
 char test_hw(void *wg, geepro *gep)
 {
-    char ex;
-
-//    for(;;)
+    for(;;)
 	if(hw_test_conn()){
-//    	    if(stop)
         	gui_dialog_box(gep,"[IF][TEXT]\n     Hardware present [/TEXT][BR]  OK  ");
-    	    ex = 0;		    	    
-//	    break;
+	    break;
 	}else{
-//	    if(stop)
-//    		gui_dialog_box(gep, "Error !!!","\n hardware error :  Check Power and\n connections");
-//	    else
 		if(gui_dialog_box(gep,"[ER][TEXT]\n hardware error :  Check Power and\n connections[/TEXT][BR]Try again[BR]Cancel") == 2) return 0;
-    	    ex = 1;	
-//	    if(stop) break;
 	}
     return 1;
 }
