@@ -6,13 +6,13 @@ def build(bld):
 
   for driver in drivers_base:
     b=bld(
-      features = 'c cshlib',
-      source = driver+'.c',
+      features = 'cxx cxxshlib',
+      source = driver+'.cpp',
       target=driver,
-      uselib  = 'C',
+      uselib  = 'CXX',
       includes= '#',
       install_path = "${PREFIX}/lib/geepro/drivers"
-    ).env.cshlib_PATTERN       = '%s.driver'
+    ).env.cxxshlib_PATTERN       = '%s.driver'
 
   bld.install_files("${PREFIX}/share/geepro/drivers",
     ['drivers.dtd','drivers.css','willem.xml'])

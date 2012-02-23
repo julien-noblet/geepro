@@ -74,7 +74,7 @@ void buffer_clear(geepro *gep)
 
 long buffer_checksum(geepro *gep)
 {
-    int i;
+    unsigned int i;
     long tmp = 0;
     
     for( i = 0; i < gep->chp->dev_size; i++ ) tmp += gep->chp->buffer[i];

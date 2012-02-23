@@ -22,6 +22,11 @@
 #ifndef __hwdriver_h__
 #define __hwdriver_h__
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+
 // obsolete, will be removed in the future
 #define hw_delay(val)		hw_us_delay(val) 
 
@@ -169,6 +174,10 @@ extern hw_driver_type ___hardware_driver___;
 #define hw_set_jtag_tms(val)	___hardware_driver___( HW_SET_JTAG_TMS,  val, NULL)
 #define hw_get_jtag_tdo()	___hardware_driver___( HW_GET_JTAG_TDO,  0, NULL)
 
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
 

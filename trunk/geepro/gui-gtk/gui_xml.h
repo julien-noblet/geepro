@@ -23,6 +23,10 @@
 #define __gui_xml_h__
 #include "gui.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define GUI_XML(x)	((gui_xml*)x)
 
 typedef struct _gui_xml_ev gui_xml_ev;
@@ -49,7 +53,7 @@ typedef struct{
 */
 typedef struct
 {
-    char *name;
+    const char *name;
     int  id;
 } gui_xml_lt; 
 
@@ -131,6 +135,10 @@ extern void gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *i
     zwraca strukture zdarzenia dla kontolki typu wg i danym id
 */
 extern gui_xml_ev *gui_xml_event_lookup(gui_xml *g, const char *id, gui_xml_ev_wg wg);
+
+#ifdef __cplusplus
+} //extern "C"
+#endif
 
 #endif
 

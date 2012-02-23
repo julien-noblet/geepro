@@ -29,7 +29,7 @@ int jtag_byteblaster_api(en_hw_api func, int val, void *ptr)
     {
 	case HW_IFACE: return IFACE_RS232;
 	case HW_TEST : return 1;
-	case HW_NAME : DRIVER_NAME(ptr) = "JTAG byteblaster - dummy";
+	case HW_NAME : DRIVER_NAME(ptr) = (char *)"JTAG byteblaster - dummy";
 	default: return 0;
     }
 
@@ -43,4 +43,5 @@ driver_register_begin
     register_api( jtag_byteblaster_api );
 
 driver_register_end
+
 

@@ -36,9 +36,9 @@
 
 #define DRIVER_NAME(ptr)	(*(char **)ptr)
 
-#define driver_register_begin 	int driver_init(void *___ptr___){
+#define driver_register_begin 	extern "C" int driver_init(void *___ptr___){
 #define driver_register_end 	return 0; }
-#define register_api(api)	iface_prg_add(___ptr___, api, 1)
+#define register_api(api)	iface_prg_add((iface *)___ptr___, api, 1)
 
 
 #endif
