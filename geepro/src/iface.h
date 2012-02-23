@@ -85,6 +85,10 @@ typedef struct
     void *gep;		/* wskaźnik na główną strukturę danych */
 } iface;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*iface_cb)(iface *, int cl, char *name, char *dev, void *ptr);
 typedef void (*iface_prg_func)(iface *, char *name, void *ptr);
 typedef int  (*iface_cb_fltr)(iface *, const char *path, const char *name, const char *cwd);
@@ -120,4 +124,7 @@ extern void iface_make_modules_list( iface *ifc, const char *path, const char *e
 extern void iface_module_allow(iface *ifc, const char *lst); /* lst jest postaci: "plugin1:plugin2:plugin3 .... "*/
 extern void iface_rmv_modules(iface *);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
 #endif

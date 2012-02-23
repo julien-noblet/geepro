@@ -34,16 +34,16 @@
 
 #define SYSTEM_DEVICE_PATH "/dev/"
 
-#ifndef __cplusplus__
+//#ifndef __cplusplus
 typedef char boolean;
-#define	false 0
-#define true  1
+//#define	false 0
+//#define true  1
 //typedef enum
 //{
 //    false = 0,
 //    true
 //} boolean;
-#endif
+//#endif
 
 
 /* glówna struktura programu */
