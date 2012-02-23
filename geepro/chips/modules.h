@@ -108,7 +108,7 @@
     gui_dialog_box(___geep___, title, msg, "OK", NULL)
 
 #define REGISTER_MODULE_BEGIN(name)	\
-    int init_module(geepro *gep___)\
+    extern "C" int init_module(geepro *gep___)\
     {\
 	int __id__=0, __i__ ;\
 	___geep___ = gep___;\
@@ -123,15 +123,15 @@
     }
 
 #define MODULE_IMPLEMENTATION	\
-    static geepro *___geep___ = ((void*)0);\
+    static geepro *___geep___ = ((geepro*)0);\
     static int ___error___ = 0;\
 
 #define VOID
 
 #define REG_FUNC_BEGIN(name)	\
-    static int name (void *gep___)\
+    static int name (geepro *gep___)\
     {\
-	___geep___ = (geepro*)gep___;\
+	___geep___ = gep___;\
 	___error___ = 0;
 
 #define SET_ERROR	___error___ = -1;	
@@ -139,7 +139,7 @@
 #define ERROR_VAL	___error___
 
 #define REG_FUNC_END	\
-	___geep___ = ((void*)0);\
+	___geep___ = ((geepro*)0);\
 	return ___error___;\
     }
 
@@ -150,9 +150,9 @@
 
 #define register_chip_begin(path, name, family, size)	\
     memset(&__init_struct__, 0, sizeof(chip_desc));\
-    __init_struct__.chip_path = path;\
-    __init_struct__.chip_name = name;\
-    __init_struct__.chip_family = family;\
+    __init_struct__.chip_path = (char *)path;\
+    __init_struct__.chip_name = (char *)name;\
+    __init_struct__.chip_family = (char *)family;\
     __init_struct__.chip_id = ++__id__;\
     __init_struct__.dev_size = size
 
@@ -160,7 +160,7 @@
     chip_register_chip(___geep___->ifc->plugins, &__init_struct__)
 
 #define add_action(bt_name, callback)	\
-    chip_add_action(&__init_struct__, bt_name, callback)
+    chip_add_action(&__init_struct__, bt_name, (int (*)(void *))(callback))
 
 #define add_autostart(callback)	\
     __init_struct__.autostart = callback
@@ -214,7 +214,6 @@
 
 #define loockup_signature( root, vend_id, chip_id, ret_vend_name, ret_chip_name)	\
 			loockup_jedec_signature( root, vend_id, chip_id, ret_vend_name, ret_chip_name )
-
 
 #define BIT_POS( x )	( 1 << (x) )
 

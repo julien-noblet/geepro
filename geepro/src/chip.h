@@ -22,6 +22,10 @@
 #ifndef __chip_h__
 #define __chip_h__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef DEBUG_MODE
     #define MSG_2DEBUG(a,b)		printf(a,b)
     #define MSG_1DEBUG(a)		printf(a)
@@ -77,11 +81,11 @@ struct _chip_action
 struct _chip_desc
 {
     int  chip_id;
-    char *chip_path;		/* chip path format (eg "/EPROMs"), visible later in menu */
-    char *chip_name;		/* chip name eg 2716 */
-    char *chip_family;		/* chip family name eg 27xx */
+    char *chip_path;	/* chip path format (eg "/EPROMs"), visible later in menu */
+    char *chip_name;	/* chip name eg 2716 */
+    char *chip_family;	/* chip family name eg 27xx */
 
-    unsigned int  dev_size;		/* allocation size for buffer */
+    unsigned int  dev_size;	/* allocation size for buffer */
     long checksum;
     char *buffer;		/* buffer data */
 
@@ -124,6 +128,9 @@ extern int  chip_list_action(chip_desc *chip, int (*cb)(chip_desc *, chip_action
 extern const char *take_signature_name(int signature); // obsolete
 extern void loockup_jedec_signature( const char *root_name, unsigned int manufacturer_id, unsigned int chip_id, char *manufacturer_name, char *chip_name );
 
+#ifdef __cplusplus
+    } // extern "C"
+#endif
 
 #endif
 

@@ -1059,7 +1059,7 @@ void gui_progress_break(geepro *gep)
     gui_progress_bar_exit = 1;
 }
 
-void gui_progress_bar_init(geepro *gep, char *title, long range)
+void gui_progress_bar_init(geepro *gep, const char *title, long range)
 {
     GtkWidget *wg0, *wg1;
 

@@ -6,9 +6,9 @@ def build(bld):
   modules_base=["24Cxx","27xx","28xx","93Cxx","mcs48","mcs51","prom","hub_lpc","29xx"]
   for mod in modules_base:
     b=bld(
-      features = 'c cshlib',
-      source = mod+'.c',
+      features = 'cxx cxxshlib',
+      source = mod+'.cpp',
       target=mod,
       install_path = "${PREFIX}/lib/geepro/chips"
-    ).env.cshlib_PATTERN       = '%s.chip'
+    ).env.cxxshlib_PATTERN       = '%s.chip'
 
