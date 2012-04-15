@@ -115,6 +115,9 @@
 #define CHECKSUM_ALGO_CRC16	"CRC-16"
 #define CHECKSUM_ALGO_CRC32	"CRC-32"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum
 {
@@ -129,13 +132,17 @@ typedef enum
     obszary start_sk1..stop_sk i start_sk2..stop_sk2 sa pomijane w liczeniu.
     Jesli obszar wykluczony z liczenia start == stop wówczas nie jest brany pod uwage 
 */
-extern int checksum_calculate(
+ int checksum_calculate(
 	ChecksumAlgo algo, 
 	int bfsize, unsigned char *buffer, 
 	int start, int stop, 
 	int start_sk1, int stop_sk1,
 	int start_sk2, int stop_sk2
     );
+
+#ifdef __cplusplus
+ } //extern "C"
+#endif
 
 #endif
 
