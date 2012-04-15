@@ -1,4 +1,4 @@
-/* $Revision: 1.1 $ */
+/* $Revision: 0.1 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -18,6 +18,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
+
+
+#define TEXT(x)			TEXT_##x
 
 #define MEMORY_ALLOCATION_ERROR_CHIP_QUEUE "Memory allocation error in function register_chip()\n"
 
@@ -129,10 +132,148 @@
 
 #define TIP_BE_CLEAR_BUFFER	"Clear buffer"
 #define TIP_BE_FIND_STRING	"Find string"
-#define TIP_BE_CHECKSUM		"Compute & insert checksum"
 #define TIP_BE_JUMP_TO_MARKER	"Jump to marker"
 #define TIP_BE_REDO_JUMP	"Redo jump" 
 #define TIP_BE_PRINT		"Print"
+#define TIP_BE_MANIPULATOR	"Bit manipulator"
+#define TIP_BE_EXEC		"Execute script"
+#define TIP_BE_stencil		"stencil"
+#define TIP_BE_AUX		"Auxiliary buffer"
+#define TIP_BE_BINED		"Binary bitmap editor"
+#define TIP_BE_ORGANIZER	"Byte organizer"
+#define TIP_BE_RESIZE		"Buffer resize"
+#define TIP_BE_CHECKSUM		"Checksum calculator"
+#define TIP_BE_ASMVIEW		"Assembler viewer"
+#define TIP_BE_CUT		"Cut to clipboard"
+#define TIP_BE_COPY		"Copy from clipboard"
+#define TIP_BE_TEXTED		"Text editor"
+#define TIP_BE_OPEN		"Load binary file"
+#define TIP_BE_WRITE		"Save binary file"
+#define TIP_BE_UNDO		"Undo changes"
+#define TIP_BE_REDO		"Redo changes"
+
+#define TXT_BE_FIND_AND_REPLACE "Find and replace"
+#define TXT_BE_MANIPULATOR	"Bit manipulator"
+#define TXT_BE_stencil		"stencil"
+#define TXT_BE_EXECUTE		"Script execute"
+#define TXT_BE_AUX		"Auxiliary buffer"
+#define TXT_BE_BINED		"Binary bitmap editor"
+#define TXT_BE_CLEAR		"Clear buffer"
+
+
+
+#define TXT_BE_WHOLE_BUFFER	"Whole buffer"
+#define TXT_BE_MARKED_AREA	"Highlighted area"
+
+#define TXT_BE_ADDRESS_RANGE	"Address range"
+#define TXT_BE_ADDRESS_FROM	"From:"
+#define TXT_BE_ADDRESS_TO	"to:"
+#define TXT_BE_PATTERN		"Pattern"
+#define TXT_BE_FIND_ENTRY	"Find string"
+#define TXT_BE_REPLACE_ENTRY	"Replace string"
+
+#define TXT_BE_FIND_ST_LABEL	"Settings"
+#define TXT_BE_FIND_ST_STRING	"Input string"
+#define TXT_BE_FIND_ST_REGEXP	"Input regexp (sed)"
+#define TXT_BE_FIND_ST_HEX	"Input hexadecimal"
+#define TXT_BE_FIND_ST_BIN	"Input binary"
+#define TXT_BE_FIND_ST_CI	"Case insensitive"
+#define TXT_BE_FIND_ST_BEGIN	"Search from begining"
+#define TXT_BE_FIND_ST_CURSOR	"Search from cursor"
+#define TXT_BE_FIND_ST_MARKED	"Search marked area"
+
+#define TXT_BE_TEXT_START	"Start address"
+#define TXT_BE_TEXT_WIDTH	"Columns"
+#define TXT_BE_TEXT_HEIGHT	"Rows"
+
+#define TXT_BE_BM_START_ADDRESS	"Start address:"
+#define TXT_BE_BM_COUNT		"Count        :"
+#define TXT_BE_BM_ARGUMENT	"Argument     :"
+
+#define TXT_BE_BM_FUNCTIONS	"Functions"
+#define TXT_BE_BM_ARITHM	"Arithmetic:"
+#define TXT_BE_BM_LOGIC		"Logic:"
+#define TXT_BE_BM_SHIFT		"Shift:"
+#define TXT_BE_BM_ROTATE	"Rotate:"
+
+#define TXT_BE_BM_SUB		"sub"
+#define TXT_BE_BM_ADD		"add"
+#define TXT_BE_BM_MUL		"mul"
+#define TXT_BE_BM_DIV		"div"
+#define TXT_BE_BM_OR		"or"
+#define TXT_BE_BM_AND		"and"
+#define TXT_BE_BM_XOR		"xor"
+#define TXT_BE_BM_SHL		"sll"
+#define TXT_BE_BM_SAL		"sal"
+#define TXT_BE_BM_SHR		"slr"
+#define TXT_BE_BM_SAR		"sar"
+#define TXT_BE_BM_ROL		"rol"
+#define TXT_BE_BM_ROR		"ror"
+#define TXT_BE_BM_BX		"Bit copy"
+
+#define TXT_BE_ORG_FUNCTIONS	"Byte operations"
+#define TXT_BE_ORG_SPLIT	"Split odd/even"
+#define TXT_BE_ORG_MERGE	"Merge odd/even"
+#define TXT_BE_ORG_XCHG		"Exchange odd/even"
+#define TXT_BE_ORG_REORG	"Byte reorganization"
+#define TXT_BE_ORG_WHOLE	"Whole area"
+#define TXT_BE_ORG_REORG_ADDRS	"Address bits"
+#define TXT_BE_BMP_WIDTH	"Width pixels"
+#define TXT_BE_BMP_HEIGHT	"Height pixels"
+#define TXT_BE_BMP_REV		"Bits reverse order"
+#define TXT_BE_BMP_BS		"Bit selection"
+
+#define TXT_BE_CUT_START	"Start address:"
+#define TXT_BE_CUT_COUNT	"Bytes count:"
+#define TXT_BE_CUT_STOP		"Stop address:"
+#define TXT_BE_COPY_ADDRESS	"Insert at:"
+#define TXT_BE_ASM_FSEL		"Core select"
+#define TXT_BE_ASM_COUNT	"Instruction count: "
+#define TXT_BE_ASM_CORE		"*.brain"
+#define TXT_BE_AUX_SIZE		"Buffer size"
+#define TXT_BE_WINTIT_AUX	"Auxiliary buffer"
+#define TXT_BE_SUM_ALGO_LRC	"Algorithm LRC   "
+#define TXT_BE_SUM_ALGO_CRC16	"Algorithm CRC-16"
+#define TXT_BE_SUM_ALGO_CRC32	"Algorithm CRC-32"
+#define TXT_BE_SUM_RUN		"Compute"
+#define TXT_BE_RESIZE_RES	"New size"
+#define TXT_BE_TITWIN_SELECT_CORE "Select core definition"
+#define TXT_BE_STC_FE		"*.stc"
+#define TXT_BE_STC_WINTIT	"Select stencil"
+#define TXT_BE_OPEN_WINTIT	"Open binary file"
+#define TXT_BE_SAVE_WINTIT	"Write binary file"
+#define TXT_BE_OPEN_FOFFS	"File byte ofset"
+#define TXT_BE_OPEN_START	"Insertion address"
+#define TXT_BE_OPEN_COUNT	"Bytes count"
+#define TXT_BE_SAVE_START	"Insertion address"
+#define TXT_BE_SAVE_COUNT	"Bytes count"
+#define TXT_BE_FIND_NO_MATCH	"There is no more match in selected area."
+#define TXT_BE_FIND_MATCH	"Found string. What to do ?"
+#define TXT_BE_FIND_ALL_BT	"Replace all"
+#define TXT_BE_FIND_REPL_BT	"Replace"
+#define TXT_BE_FIND_ERR_FIND	"Find string syntax error."
+#define TXT_BE_FIND_ERR_REPL	"Replace string syntax error."
+#define TXT_BE_FIND_ERR_NEQ	"Find string and replace have different length."
+#define TXT_BE_GRID_LBL_ADDRESS "Address"
+#define TXT_BE_GRID_LBL_ASCII   "ASCII"
+
+
+#define TEXT_BE_WIN_TIT_CLEAR			"Clear buffer"
+#define TEXT_BE_WIN_TIT_FIND_AND_REPLACE	"Find and replace"
+#define TEXT_BE_WIN_TIT_MANIPULATOR		"Bit manipulator"
+#define TEXT_BE_WIN_TIT_BMPEDIT			"Bitmap editor"
+#define TEXT_BE_WIN_TIT_CHECKSUM		"Checksum calculator"
+#define TEXT_BE_WIN_TIT_ORGANIZER		"Byte organizer"
+#define TEXT_BE_WIN_TIT_TEXT			"Text editor"
+#define TEXT_BE_WIN_TIT_AUX			"Create auxiliary buffer"
+#define TEXT_BE_WIN_TIT_SUM			"Checksum calculator"
+#define TEXT_BE_WIN_TIT_RESIZE			"Resize buffer"
+#define TEXT_BE_WIN_TIT_OPEN			"Open file"
+#define TEXT_BE_WIN_TIT_SAVE			"Save to file"
+
+#define TEXT_BE_WIN_TIT_CUT		"Cut"
+#define TEXT_BE_WIN_TIT_COPY		"Copy"
+#define TEXT_BE_WIN_TIT_ASMVIEWER	"Assembler viewer"
 
 #define DLG_INS_FILE_BUFFER_OFFSET	"Insert to buffer at:"
 #define DLG_INS_FILE_SIZE		"Bytes count:"
