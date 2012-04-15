@@ -42,7 +42,6 @@ typedef struct {
     GtkWidget *from, *to;
     GtkWidget *pattern;    
     GuiBineditor *be;
-    unsigned int start, end;
 } gui_clear_str;
 
 typedef struct
@@ -177,8 +176,8 @@ static void gui_bineditor_find_exec( GuiBineditor *be, GtkWidget *ctx, gui_find_
     if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->r2))) mode = BE_MODE_HEX;
 //    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->r3))) mode = BE_MODE_BINARY;
 
-    from = 0;
-    to = 0;
+    from = 0; to = 0;
+    gui_bineditor_marker_get_range(be, GUI_BINEDITOR_MARKER_SELECTED, &from, &to);
 
     if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->c0))){
 	from = 0;
@@ -603,8 +602,15 @@ static void gui_bineditor_build_resize( GuiBineditor *be, GtkWidget *ctx, gui_be
 static void gui_bineditor_build_sum( GuiBineditor *be, GtkWidget *ctx, gui_be_sum_str *str)
 {
     GtkWidget *wg, *bt;
+    unsigned int from = 0, to = 0;
 
     if(be->priv->buff->size < 2) return;
+
+    if(!gui_bineditor_marker_get_range(be, GUI_BINEDITOR_MARKER_SELECTED, &from, &to)){
+	from = 0;
+	to = be->priv->buff->size - 1;
+    }
+
     str->be = be;
     str->algo = gtk_combo_box_text_new();
     gtk_container_add(GTK_CONTAINER(ctx), str->algo);    
@@ -615,8 +621,8 @@ static void gui_bineditor_build_sum( GuiBineditor *be, GtkWidget *ctx, gui_be_su
 
     str->start = gtk_spin_button_new_with_range( 0, be->priv->buff->size - 2, 1);
     str->stop  = gtk_spin_button_new_with_range( 0, be->priv->buff->size - 1, 1);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->start), 0);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->stop), be->priv->buff->size - 1);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->start), from);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->stop), to);
     gtk_container_add(GTK_CONTAINER(ctx), str->start);    
     gtk_container_add(GTK_CONTAINER(ctx), str->stop);    
 
@@ -779,6 +785,7 @@ void gui_bineditor_bx_sens(GtkToggleButton *tg, gui_be_bm_str *str)
 static void gui_bineditor_build_manipulator( GuiBineditor *be, GtkWidget *ctx, gui_be_bm_str *str )
 {
     GtkWidget *wg, *tb, *vb;
+    unsigned int from = 0, to = 0;
 // input parameters
     wg = gtk_table_new(3, 2, TRUE);
     gtk_container_add(GTK_CONTAINER(ctx), wg);    
@@ -788,6 +795,14 @@ static void gui_bineditor_build_manipulator( GuiBineditor *be, GtkWidget *ctx, g
     str->addr  = gtk_spin_button_new_with_range( 0, be->priv->buff->size - 1, 1);//gtk_entry_new();
     str->count = gtk_spin_button_new_with_range( 0, be->priv->buff->size, 1);//gtk_entry_new();
     str->arg   = gtk_spin_button_new_with_range( 0, 255, 1);//gtk_entry_new();
+
+    if(!gui_bineditor_marker_get_range(be, GUI_BINEDITOR_MARKER_SELECTED, &from, &to)){
+	from = 0;
+	to = be->priv->buff->size - 1;
+    }
+
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->addr), from);    
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->count), to - from + 1);
     gtk_table_attach_defaults(GTK_TABLE(wg), str->addr,  1,2, 0,1);
     gtk_table_attach_defaults(GTK_TABLE(wg), str->count, 1,2, 1,2);
     gtk_table_attach_defaults(GTK_TABLE(wg), str->arg,   1,2, 2,3);
@@ -880,9 +895,16 @@ static void gui_clear_radio_whole(GtkWidget *wg, gui_clear_str *str)
 
 static void gui_clear_radio_marked(GtkWidget *wg, gui_clear_str *str)
 {
+    unsigned int from, to;
     if(!gtk_toggle_button_get_active( GTK_TOGGLE_BUTTON(str->rad1))) return;
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->from), str->start);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->to), str->end);
+    
+    if( !gui_bineditor_marker_get_range(str->be, GUI_BINEDITOR_MARKER_SELECTED, &from, &to) ){
+	from = 0;
+	to = str->be->priv->buff->size - 1;
+    }
+    
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->from), from);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->to), to);
     gtk_widget_set_sensitive(str->from, 1);
     gtk_widget_set_sensitive(str->to, 1);
 }
@@ -893,8 +915,6 @@ static void gui_bineditor_build_clear( GuiBineditor *be, GtkWidget *ctx,  gui_cl
     GtkWidget *hb, *wg;
 // Gui
     /* Radio buttons */
-    str->start = be->priv->clpb_start;
-    str->end   = be->priv->clpb_end;
     str->rad0 = gtk_radio_button_new_with_label(NULL, TXT_BE_WHOLE_BUFFER);
     str->rad1 = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(str->rad0), TXT_BE_MARKED_AREA);
     gtk_box_pack_start(GTK_BOX(ctx), str->rad0, FALSE, FALSE, 2);    
@@ -1038,12 +1058,16 @@ static void gui_be_org_unfoc(GtkWidget *wg, GdkEvent *ev, gui_be_org_str *str)
 static void gui_bineditor_build_organizer( GuiBineditor *be, GtkWidget *ctx, gui_be_org_str *str )
 {
     GtkWidget *wg, *vb, *lb;
-    int start, count;
+    unsigned int start = 0, count = 0, to = 0;
+    
+    if(!gui_bineditor_marker_get_range(be, GUI_BINEDITOR_MARKER_SELECTED, &start, &to)){
+	start = 0;
+	to = be->priv->buff->size - 1;
+    }
 
 // initial values
     str->be = be;
-    start = be->priv->clpb_start;
-    count = be->priv->clpb_end - start;
+    count = to - start;
     if(count < 0) count = 0;
     if(start < 0) start = 0;
     if(!(count | start )){
@@ -1144,15 +1168,19 @@ static void gui_be_cut_stop(GtkWidget *wg, gui_be_cut_str *str)
 static void gui_bineditor_build_cut( GuiBineditor *be, GtkWidget *ctx, gui_be_cut_str *str )
 {
     GtkWidget *tb;
-    int start, count;
+    unsigned int start, count, to;
 
 // initial values
+    if( !gui_bineditor_marker_get_range(be, GUI_BINEDITOR_MARKER_SELECTED, &start, &to) ){
+	start = 0;
+	to = 0;
+    }
+
     str->be = be;
-    start = be->priv->clpb_start;
-    count = be->priv->clpb_end - start;
+    count = to - start;
     if(count <= 0) count = 1;
     if(start < 0) start = 0;
-    
+
 // input parameters
     tb = gtk_table_new(3, 2, TRUE);	
     gtk_box_pack_start(GTK_BOX(ctx), tb, TRUE, TRUE, 5);
@@ -1180,6 +1208,7 @@ static void gui_bineditor_build_copy( GuiBineditor *be, GtkWidget *ctx, gui_be_c
 {
     GtkWidget *wg;
     str->start = gtk_spin_button_new_with_range( 0, be->priv->buff->size - 1, 1);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON( str->start ), be->priv->edit_addr_cursor);
     wg = gtk_hbox_new(FALSE, 0);
     gtk_box_pack_start(GTK_BOX(ctx), wg, TRUE, TRUE, 0);
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new(TXT_BE_COPY_ADDRESS));    
@@ -1245,6 +1274,9 @@ static void gui_bineditor_build_asm( GuiBineditor *be, GtkWidget *ctx, gui_be_as
 static void gui_bineditor_build_text( GuiBineditor *be, GtkWidget *ctx, gui_be_text_str *str )
 {
     GtkWidget *tb;    
+    unsigned int from = 0, to = 0;
+
+    if(!gui_bineditor_marker_get_range(be, GUI_BINEDITOR_MARKER_SELECTED, &from, &to)) from = 0;
 
     tb = gtk_table_new(3, 2, TRUE);	
     gtk_box_pack_start(GTK_BOX(ctx), tb, TRUE, TRUE, 5);
@@ -1252,7 +1284,7 @@ static void gui_bineditor_build_text( GuiBineditor *be, GtkWidget *ctx, gui_be_t
     str->width  = gtk_spin_button_new_with_range( 0, 80, 1);
     str->height = gtk_spin_button_new_with_range( 1, be->priv->buff->size, 1);
 
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->start),  0); // change to cursor position
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->start),  from);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->width),  16);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->height), 16);
 

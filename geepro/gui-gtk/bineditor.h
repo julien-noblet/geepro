@@ -241,6 +241,7 @@ void gui_bineditor_marker_set_value(GuiBineditor *be, GuiBineditorMarkerType id,
 void gui_bineditor_marker_show_item(GuiBineditor *be, GuiBineditorMarkerType id, char show);
 void gui_bineditor_marker_unset_item(GuiBineditor *be, GuiBineditorMarkerType id);
 void gui_bineditor_marker_new(GuiBineditor *be, unsigned int count);
+char gui_bineditor_marker_get_range( GuiBineditor *be, GuiBineditorMarkerType id, unsigned int *from, unsigned int *to); // return true if visible
 void gui_bineditor_marker_free(GuiBineditor *be);
 /*  Gets mouse selected region range. Return True if region is selected */
 char gui_bineditor_selection_get_range( GuiBineditor *be, unsigned int *from, unsigned int *to);

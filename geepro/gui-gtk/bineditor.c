@@ -1060,7 +1060,23 @@ void gui_bineditor_marker_set_value(GuiBineditor *be, GuiBineditorMarkerType id,
     if(be->priv->markers.count == 0) return;
     if(id >= be->priv->markers.count) return;    
     be->priv->markers.items[id].from = from;
-    be->priv->markers.items[id].from = to;
+    be->priv->markers.items[id].to = to;
+}
+
+char gui_bineditor_marker_get_range(GuiBineditor *be, GuiBineditorMarkerType id, unsigned int *from, unsigned int *to)
+{
+    unsigned int tmp;
+    
+    *from = be->priv->markers.items[id].from;
+    *to   = be->priv->markers.items[id].to;
+
+    if(*to < *from){
+	tmp = *from;
+	*from = *to;
+	*to = tmp;
+    }
+
+    return be->priv->markers.items[id].active;
 }
 
 /****************************************************************************************************************************/
