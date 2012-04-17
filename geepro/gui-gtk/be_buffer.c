@@ -3,22 +3,74 @@
 #include <ctype.h>
 #include "be_buffer.h"
 
-unsigned char *gui_bineditor_buff_pattern2data(const char *data, unsigned int *data_size, int *error)
+static inline unsigned int gui_bineditor_buff_str_asm(unsigned char *word, const char *p0, const char *p1, int *error)
 {
-    unsigned char *tmp;
-    int len;
-    
-    len = strlen(data);
-    *data_size = len;
-    *error = 0;
-    tmp = (unsigned char *)malloc( len );
-// temporary
-    memcpy(tmp, data, len);
-
-    return tmp;
+    char tmp[16], *z;
+    const char *x;
+    unsigned char *d;
+    char bs = 0;
+    unsigned int count = 0;
+    *error = 0;    
+    d = word;
+    if( *p0 == '"') { // string copy 
+	for( x = p0 + 1; *x && (x != p1); x++){
+	    if(( *x == '"' ) && !bs) break;
+	    if(( *x == '\\' ) && !bs){
+		bs = 1;
+		continue;
+	    }
+	    bs = 0;    
+	    *d++ = *x;
+	    count++;
+	}   
+	*d = 0; 
+    } else{
+	z = tmp;
+	for( x = p0; *x && (x != p1); x++) *z++ = *x; *z = 0;
+	*d = (unsigned char )strtoul(tmp, NULL, 0); // temporary, should be exchanged by more flexible function
+	count = 1;
+    }
+    return count;
 }
 
-void gui_bineditor_buff_history_add(gui_be_buffer_str *bf, unsigned int from, unsigned int count, unsigned char *data)
+unsigned char *gui_bineditor_buff_pattern2data(const char *data, unsigned int *data_size, int *error)
+{
+    const char *pt0,*pt1;
+    unsigned char *word;
+    int len;
+    char qt, zt;
+
+    len = strlen(data);
+    *data_size = 0;
+    *error = 0;
+    word = (unsigned char *)malloc( len + 1);
+    if( word == NULL ){
+	printf("ERR: gui_bineditor_buff_pattern2data() -> Memory problem.\n");
+	return NULL;
+    }
+    *word = 0;
+
+    for(pt0 = pt1 = data; *pt1; pt1++){
+	qt = zt = 0;
+	// clean from leading white characters
+	for(;*pt1 && (*pt1 < 33); pt1++);
+	// looking for word
+	for(pt0 = pt1; *pt1; pt1++){
+	    if(*pt1 < 32) break;
+	    if( ( *pt1 == ' ' ) && !qt ) break;
+	    if( ( *pt1 == ',' ) && !qt ) break;	    
+	    if( ( *pt1 == '"' ) && !zt ) qt = !qt;
+	    zt = 0;
+	    if( *pt1 == '\\' ) zt = 1;
+	}
+	if( pt0 != pt1 )
+	    *data_size += gui_bineditor_buff_str_asm(word + *data_size, pt0, pt1, error);
+	if( *pt1 == 0 ) break;
+    }
+    return word;
+}
+
+void gui_bineditor_buff_history_add(gui_be_buffer_str *bf, unsigned int from, unsigned int count)
 {
     printf("history not implemented yet\n");
 }
@@ -75,7 +127,7 @@ char gui_bineditor_buff_edit(gui_be_buffer_str *bf, unsigned int from, unsigned 
 	error = 128;
     }    
 
-    gui_bineditor_buff_history_add(bf, from, count, data);
+    gui_bineditor_buff_history_add(bf, from, from + count - 1);
     memcpy(bf->data + from, data, count);
 
     return error;
@@ -84,7 +136,7 @@ char gui_bineditor_buff_edit(gui_be_buffer_str *bf, unsigned int from, unsigned 
 char gui_bineditor_buff_clr(gui_be_buffer_str *bf, unsigned int from, unsigned int to, const char *pattern)
 {
     unsigned char *data;    
-    unsigned int  data_size = 0, i;
+    unsigned int  data_size = 0, i, j ;
     int error = 0;
     
     if( from >= bf->size) error = 1;
@@ -96,15 +148,18 @@ char gui_bineditor_buff_clr(gui_be_buffer_str *bf, unsigned int from, unsigned i
     }
     
     data = gui_bineditor_buff_pattern2data( pattern, &data_size, &error);
-    
     if( error ){
 	printf("Warning: gui_bineditor_buff_clr() -> Pattern error. Ignoring.\n");
 	return error;
     }
 
+    // history
+    gui_bineditor_buff_history_add(bf, from, to);
+
     // fill buffer
-//    for( i = from; (i <= to) && !error; i += data_size)
-//			    error = gui_bineditor_buff_edit(bf, from + i, data_size, data);
+    for(i = from; i <= to;){
+	    for(j = 0;(i <= to) && (j < data_size); i++, j++) bf->data[i] = data[j];
+    }    
     
     if( data ) free( data );
     return 0;

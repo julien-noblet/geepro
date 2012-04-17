@@ -429,7 +429,7 @@ static void gui_bineditor_edit(GuiBineditor *be, int key)
     } else {
 	data = key;
     }
-    gui_bineditor_buff_history_add(be->priv->buff, be->priv->edit_addr_cursor, 1, &data);
+    gui_bineditor_buff_history_add(be->priv->buff, be->priv->edit_addr_cursor, be->priv->edit_addr_cursor);
     be->priv->buff->data[ be->priv->edit_addr_cursor] = data;
     gui_bineditor_cursor_increment( be, 1 );
 }
@@ -474,7 +474,7 @@ static void gui_bineditor_clipboard_insert(GuiBineditor *be, gchar *txt)
 
     // ascii field insert
     if(be->priv->edit_hex & 2){
-        gui_bineditor_buff_history_add(be->priv->buff, be->priv->clpb_start, len, (unsigned char *)txt);
+        gui_bineditor_buff_history_add(be->priv->buff, be->priv->clpb_start, be->priv->clpb_start + len - 1);
 	for(i = 0; i < len; i++)
     	    be->priv->buff->data[be->priv->clpb_start + i] = txt[ i ];
 	gtk_widget_queue_draw(be->priv->drawing_area);

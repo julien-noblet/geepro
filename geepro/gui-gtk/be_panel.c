@@ -34,13 +34,13 @@
 #include "be_stencil.h"
 #include "../src/checksum.h"
 
-typedef void (*gui_bineditor_tmpl_cb)(GuiBineditor *be, GtkWidget *ctx,  void *str);
+typedef void (*gui_bineditor_tmpl_cb)(GuiBineditor *be, GtkWidget *ctx,  void *str, GtkWidget *wg);
 #define GUI_BE_CB(x) ((gui_bineditor_tmpl_cb)(x))
 
 typedef struct {
     GtkWidget *rad0, *rad1;
     GtkWidget *from, *to;
-    GtkWidget *pattern;    
+    GtkWidget *pattern, *dlg;
     GuiBineditor *be;
 } gui_clear_str;
 
@@ -155,6 +155,7 @@ static void gui_bineditor_clear_exec( GuiBineditor *be, GtkWidget *ctx, gui_clea
     pattern = gtk_entry_get_text(GTK_ENTRY(str->pattern));
 
     gui_bineditor_buff_clr(be->priv->buff, from, to, pattern);
+    gui_bineditor_redraw( be );
 }
 
 static void gui_bineditor_find_exec( GuiBineditor *be, GtkWidget *ctx, gui_find_str *str  )
@@ -260,7 +261,7 @@ static void gui_bineditor_find_exec( GuiBineditor *be, GtkWidget *ctx, gui_find_
 		resp = 2;
 	    }
 	    if(resp == 2){
-		gui_bineditor_buff_history_add(be->priv->buff, from, rlen, (unsigned char *)rstr);
+		gui_bineditor_buff_history_add(be->priv->buff, from, from + rlen - 1);
 		memcpy(be->priv->buff->data + from, rstr, rlen);
 	    }
 	} else {
@@ -909,12 +910,18 @@ static void gui_clear_radio_marked(GtkWidget *wg, gui_clear_str *str)
     gtk_widget_set_sensitive(str->to, 1);
 }
 
+static void gui_clear_enter(GtkEntry *entry, gui_clear_str *str)
+{
+    gtk_dialog_response(GTK_DIALOG(str->dlg), GTK_RESPONSE_OK);
+}
+
 /* Clear buffer */
-static void gui_bineditor_build_clear( GuiBineditor *be, GtkWidget *ctx,  gui_clear_str *str)
+static void gui_bineditor_build_clear( GuiBineditor *be, GtkWidget *ctx,  gui_clear_str *str, GtkWidget *dlg)
 {
     GtkWidget *hb, *wg;
 // Gui
     /* Radio buttons */
+    str->dlg = dlg;
     str->rad0 = gtk_radio_button_new_with_label(NULL, TXT_BE_WHOLE_BUFFER);
     str->rad1 = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(str->rad0), TXT_BE_MARKED_AREA);
     gtk_box_pack_start(GTK_BOX(ctx), str->rad0, FALSE, FALSE, 2);    
@@ -947,6 +954,7 @@ static void gui_bineditor_build_clear( GuiBineditor *be, GtkWidget *ctx,  gui_cl
 // Signals
     g_signal_connect(G_OBJECT(str->rad0), "toggled", G_CALLBACK(gui_clear_radio_whole), str);
     g_signal_connect(G_OBJECT(str->rad1), "toggled", G_CALLBACK(gui_clear_radio_marked), str);    
+    g_signal_connect(G_OBJECT(str->pattern), "activate", G_CALLBACK(gui_clear_enter), str);
 }
 
 static void gui_bineditor_as_sensitive(gui_be_org_str *str, char sens)
@@ -1311,11 +1319,11 @@ static void gui_bineditor_dialog_tmpl(GuiBineditor *be, void *str, gui_bineditor
 	  );
     ctx = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
     if(build != NULL){ 
-	build( be, ctx, str);
+	build( be, ctx, str, dlg);
 	gtk_widget_show_all( ctx );            
     }
     RESPONSE = gtk_dialog_run(GTK_DIALOG(dlg));    
-    if(( RESPONSE == GTK_RESPONSE_OK) && ( exec != NULL)) exec( be, ctx, str);
+    if(( RESPONSE == GTK_RESPONSE_OK) && ( exec != NULL)) exec( be, ctx, str, dlg);
     gtk_widget_destroy( dlg );
 }
 
