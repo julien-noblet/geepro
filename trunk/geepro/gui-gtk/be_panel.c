@@ -34,10 +34,13 @@
 #include "be_stencil.h"
 #include "../src/checksum.h"
 
+#include "../src/main.h"
+
 typedef void (*gui_bineditor_tmpl_cb)(GuiBineditor *be, GtkWidget *ctx,  void *str, GtkWidget *wg);
 #define GUI_BE_CB(x) ((gui_bineditor_tmpl_cb)(x))
 
 typedef struct {
+    char	*last_pattern;
     GtkWidget *rad0, *rad1;
     GtkWidget *from, *to;
     GtkWidget *pattern, *dlg;
@@ -153,8 +156,13 @@ static void gui_bineditor_clear_exec( GuiBineditor *be, GtkWidget *ctx, gui_clea
     from = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->from));
     to   = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->to));
     pattern = gtk_entry_get_text(GTK_ENTRY(str->pattern));
-
     gui_bineditor_buff_clr(be->priv->buff, from, to, pattern);
+    if( str->last_pattern == NULL ) 
+	store_set(&store, "CLEAR_PATTERN", pattern);
+    else {
+	if( strcmp(str->last_pattern, pattern) ) 
+	    store_set(&store, "CLEAR_PATTERN", pattern);
+    }
     gui_bineditor_redraw( be );
 }
 
@@ -946,11 +954,12 @@ static void gui_bineditor_build_clear( GuiBineditor *be, GtkWidget *ctx,  gui_cl
 	gtk_container_add(GTK_CONTAINER(hb), str->to);            
 	gtk_widget_set_sensitive(str->to, 0);    
     /* Pattern */
+    store_get(&store, "CLEAR_PATTERN", &str->last_pattern); // global !
     hb = gtk_label_new(TXT_BE_PATTERN);
     gtk_box_pack_start(GTK_BOX(ctx), hb, FALSE, FALSE, 2);
     str->pattern = gtk_entry_new();
     gtk_box_pack_start(GTK_BOX(ctx), str->pattern, FALSE, FALSE, 8);
-    gtk_entry_set_text(GTK_ENTRY(str->pattern), "0xff");
+    gtk_entry_set_text(GTK_ENTRY(str->pattern), (str->last_pattern != NULL) ? str->last_pattern : "0xff");
 // Signals
     g_signal_connect(G_OBJECT(str->rad0), "toggled", G_CALLBACK(gui_clear_radio_whole), str);
     g_signal_connect(G_OBJECT(str->rad1), "toggled", G_CALLBACK(gui_clear_radio_marked), str);    
@@ -1331,7 +1340,9 @@ void gui_bineditor_clear_buffer(GtkWidget *bt, GuiBineditor *be)
 {
     gui_clear_str str;
     str.be = be;
+    str.last_pattern = NULL;
     gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_clear), GUI_BE_CB(gui_bineditor_clear_exec), TEXT(BE_WIN_TIT_CLEAR));
+    if(str.last_pattern) free(str.last_pattern);
 } 
 
 void gui_bineditor_find_string(GtkWidget *wg, GuiBineditor *be)
