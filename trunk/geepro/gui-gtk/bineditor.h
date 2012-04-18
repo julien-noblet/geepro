@@ -120,8 +120,16 @@ typedef struct
     GuiBineditorMarkerItem *items;
 } GuiBineditorMarker;
 
+typedef struct
+{
+    unsigned char *data;
+    unsigned int size;    
+} GuiBineditorCut;
+
 struct _GuiBineditorPrivate
 {
+    GuiBineditor *root, *aux_ed;
+    GuiBineditorCut cut_data;
     GuiBineditorMarker markers;
     gui_be_buffer_str *buff;
     GdkAtom atom;
@@ -246,7 +254,10 @@ void gui_bineditor_marker_free(GuiBineditor *be);
 /*  Gets mouse selected region range. Return True if region is selected */
 char gui_bineditor_selection_get_range( GuiBineditor *be, unsigned int *from, unsigned int *to);
 unsigned int gui_bineditor_grid_get_page_size( GuiBineditor *be );
-
+/* Cut & paste*/
+GuiBineditor *gui_bineditor_get_root( GuiBineditor *be); // return initial bineditor object
+void gui_bineditor_cut_store(GuiBineditor *be, unsigned int from, unsigned int to);
+void gui_bineditor_cut_restore(GuiBineditor *be, unsigned int from);
 G_END_DECLS
 
 #endif 

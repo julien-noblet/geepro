@@ -32,8 +32,6 @@ extern char gui_bineditor_buff_clr(gui_be_buffer_str *bf, unsigned int from, uns
 extern char gui_bineditor_buff_find(gui_be_buffer_str *bf, const char *find, unsigned int size, unsigned int *from, unsigned int to, char ci);
 extern void gui_bineditor_buff_bman(gui_be_buffer_str *bf, unsigned int start, unsigned int count, int arg, char func, char *rel);
 extern void gui_bineditor_buff_reorg(gui_be_buffer_str *bf, unsigned int start, unsigned int count, char arg, char *rel);
-extern void gui_bineditor_buff_cut(gui_be_buffer_str *bf, unsigned int start, unsigned int count, unsigned int stop);
-extern void gui_bineditor_buff_copy(gui_be_buffer_str *bf, unsigned int start);
 extern void gui_bineditor_buff_asm(gui_be_buffer_str *bf, unsigned int start, unsigned int count);
 extern void gui_bineditor_buff_history(gui_be_buffer_str *bf, int operation);
 extern void gui_bineditor_buff_file_insert(gui_be_buffer_str *bf, FILE *fh, long offset, int start, int count );
