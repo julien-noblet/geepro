@@ -367,12 +367,13 @@ static void gui_bineditor_cut_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_cut
     int start, stop, count;
     
     gui_be_cut_get_values( str, &start, &count, &stop );
-    gui_bineditor_buff_cut( be->priv->buff, start, count, stop );
+
+    gui_bineditor_cut_store( be, start, stop - 1);
 }
 
 static void gui_bineditor_copy_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_copy_str *str  )
 {
-    gui_bineditor_buff_copy( be->priv->buff, gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->start)));
+    gui_bineditor_cut_restore(be, gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->start)));
 }
 
 static void gui_bineditor_bined_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_bmp_str *str )
@@ -447,7 +448,13 @@ static void gui_bineditor_aux_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_aux
     gtk_window_set_title(GTK_WINDOW(be->priv->aux_win), TXT_BE_WINTIT_AUX);
 
     aux = gui_bineditor_new(GTK_WINDOW(be->priv->aux_win));
+    if(aux == NULL){
+	printf("WARN:gui_bineditor_aux_exec() -> Cannot create bineditor.\n");
+	return;
+    }
 
+    GUI_BINEDITOR(aux)->priv->root = be;
+    be->priv->aux_ed = GUI_BINEDITOR(aux);
     gui_bineditor_set_buffer(GUI_BINEDITOR(aux), size, (unsigned char *)be->priv->aux_buffer);
     gtk_container_add(GTK_CONTAINER(be->priv->aux_win), GTK_WIDGET(aux));
     gtk_widget_show_all(be->priv->aux_win);

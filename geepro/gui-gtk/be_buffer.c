@@ -198,16 +198,6 @@ void gui_bineditor_buff_reorg(gui_be_buffer_str *be, unsigned int start, unsigne
     printf("byte reorg: %i %i %i\n", start, count, op);
 }
 
-void gui_bineditor_buff_cut(gui_be_buffer_str *be, unsigned int start, unsigned int count, unsigned int stop)
-{
-    printf("byte cut\n");
-}
-
-void gui_bineditor_buff_copy(gui_be_buffer_str *be, unsigned int start)
-{
-    printf("byte copy\n");
-}
-
 void gui_bineditor_buff_asm(gui_be_buffer_str *be, unsigned int start, unsigned int count)
 {
     printf("byte asm\n");

@@ -98,6 +98,7 @@ static void gui_beneditor_destroy(GObject *obj)
     if(be->priv->core_name) free(be->priv->core_name);
     gui_bineditor_buff_destroy( &be->priv->buff );
     gui_bineditor_marker_free(be);
+    if( be->priv->cut_data.data ) free(be->priv->cut_data.data);
 }
 
 static unsigned int gui_bineditor_get_grid_start_address( GuiBineditor *be )
@@ -612,6 +613,7 @@ static inline void gui_bineditor_vert_tool(GuiBineditor *be)
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->copy), TIP_BE_COPY);
     g_signal_connect(G_OBJECT(be->priv->copy), "clicked", G_CALLBACK(gui_bineditor_copy), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->copy), -1);
+    gtk_widget_set_sensitive(be->priv->copy, FALSE);
 
     /* Find string */
     be->priv->find = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_FIND_AND_REPLACE ));
@@ -807,6 +809,9 @@ static inline void gui_bineditor_init(GuiBineditor *be)
 
     gui_bineditor_buff_constr( &be->priv->buff );
 
+    be->priv->root = NULL;
+    be->priv->cut_data.size = 0;
+    be->priv->cut_data.data = NULL;
     be->priv->markers.count = 0;    
     be->priv->aux_buffer = NULL;
     be->priv->aux_size = 0;
@@ -1358,3 +1363,54 @@ void gui_bineditor_show_grid(GuiBineditor *be, unsigned int from, unsigned int t
     gtk_widget_queue_draw(be->priv->drawing_area);
 }
 
+/****************************************************/
+GuiBineditor *gui_bineditor_get_root(GuiBineditor *be)
+{
+    return be->priv->root == NULL ? be : be->priv->root;
+}
+
+void gui_bineditor_cut_store(GuiBineditor *be, unsigned int from, unsigned int to)
+{
+
+    unsigned char *data;
+    GuiBineditor *bt;
+    
+    bt = gui_bineditor_get_root(be);
+    
+    bt->priv->cut_data.size = (from > to ? from - to : to - from) + 1;	
+    if(( from >= be->priv->buff->size) || ( to >= be->priv->buff->size)){
+	printf("WARN: gui_bineditor_cut_save() -> index exceed buffer\n");	
+	return;
+    }
+    
+    data = (unsigned char *)realloc(bt->priv->cut_data.data, bt->priv->cut_data.size );
+    if( data == NULL ){
+	printf("WARN: gui_bineditor_cut_store() -> memory allocation problem\n");
+	return;
+    }
+
+    bt->priv->cut_data.data = data;
+    memcpy(bt->priv->cut_data.data, be->priv->buff->data, bt->priv->cut_data.size);
+    // 
+    gtk_widget_set_sensitive(be->priv->copy, TRUE);
+    if(be->priv->aux)
+	gtk_widget_set_sensitive(GUI_BINEDITOR(be->priv->aux_ed)->priv->copy, TRUE);    
+}
+
+void gui_bineditor_cut_restore(GuiBineditor *be, unsigned int from)
+{
+    unsigned int size;
+    GuiBineditor *bt;
+    
+    bt = gui_bineditor_get_root(be);
+    size = bt->priv->cut_data.size;
+    if( from >= be->priv->buff->size){
+	printf("WARN: gui_bineditor_cut_restore() -> index exceed buffer\n");	
+	return;
+    }
+    
+    if( from + size >= be->priv->buff->size) size = be->priv->buff->size - from - 1;
+    gui_bineditor_buff_history_add(be->priv->buff, from, from + size - 1);
+    memcpy(be->priv->buff->data + from, bt->priv->cut_data.data, size);
+    gui_bineditor_redraw( be );
+}
