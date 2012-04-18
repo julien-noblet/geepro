@@ -142,6 +142,9 @@ char gui_bineditor_buff_clr(gui_be_buffer_str *bf, unsigned int from, unsigned i
     if( from >= bf->size) error = 1;
     if( to >= bf->size) error = 2;
 
+    if(pattern == NULL) return 0;
+    if(*pattern == 0) return 0;
+
     if( error ){
 	printf("Warning: gui_bineditor_buff_clr() -> Address exceed buffer. Ignoring.\n");
 	return error;
