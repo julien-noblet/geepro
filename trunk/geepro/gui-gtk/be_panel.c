@@ -49,10 +49,10 @@ typedef struct {
 
 typedef struct
 {
+    char *last_fstr, *last_rstr;
+    char run_again;
     GtkWidget *find;
-    GtkWidget *repl;
     GtkWidget *replace;
-    GtkWidget *r0, *r1,*r2, *r3;
     GtkWidget *ci, *c0,*c1, *c2;
 } gui_find_str;
 
@@ -148,6 +148,20 @@ typedef struct {
 
 /****************************************************************************************************************/
 
+void gui_bineditor_warning(GuiBineditor *be, const char *text)
+{
+    GtkWidget *dlg;
+    dlg = gtk_message_dialog_new(GTK_WINDOW(be->priv->wmain), 
+        GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL,
+        GTK_MESSAGE_WARNING,
+        GTK_BUTTONS_CLOSE,
+        NULL
+    );
+    gtk_message_dialog_set_markup(GTK_MESSAGE_DIALOG(dlg), text);
+    gtk_dialog_run(GTK_DIALOG(dlg));
+    gtk_widget_destroy( dlg );
+}
+
 static void gui_bineditor_clear_exec( GuiBineditor *be, GtkWidget *ctx, gui_clear_str *str)
 {
     unsigned int from, to;
@@ -166,24 +180,107 @@ static void gui_bineditor_clear_exec( GuiBineditor *be, GtkWidget *ctx, gui_clea
     gui_bineditor_redraw( be );
 }
 
-static void gui_bineditor_find_exec( GuiBineditor *be, GtkWidget *ctx, gui_find_str *str  )
+static inline void gui_bineditor_lookup( GuiBineditor *be, GtkWidget *ctx, unsigned char *fstr, unsigned char *rstr, unsigned int flen, unsigned int rlen, unsigned int from, unsigned int to, char ci, char repl)
 {
     GtkWidget *dlg, *hb;
-    unsigned int from, to, flen, rlen, resp;
-    char repl, mode, ci, ret;
-    const char *find, *replace;
-    unsigned char *fstr, *rstr;
+    int resp;
+    char ret = 0;
     char skip = 0;
-    int error;
+    char fnd = 0, lf = 0;
+    unsigned int from_l, to_l;
+
+    dlg = gtk_dialog_new_with_buttons(NULL, GTK_WINDOW(be->priv->wmain), 0, NULL);
+    if( repl ){
+        gtk_dialog_add_button(GTK_DIALOG(dlg), TXT_BE_FIND_ALL_BT, 1);
+        gtk_dialog_add_button(GTK_DIALOG(dlg), TXT_BE_FIND_REPL_BT, 2);
+    }
+
+    gtk_dialog_add_button(GTK_DIALOG(dlg), GTK_STOCK_CANCEL, 3);
+    gtk_dialog_add_button(GTK_DIALOG(dlg), GTK_STOCK_MEDIA_NEXT, 4);
+    ctx = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
+    hb = gtk_hbox_new(FALSE,20);
+    gtk_container_add(GTK_CONTAINER(ctx), hb);
+    gtk_box_pack_start(GTK_BOX(hb), gtk_image_new_from_stock(GTK_STOCK_DIALOG_QUESTION, GTK_ICON_SIZE_DIALOG), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hb), gtk_label_new(TXT_BE_FIND_MATCH), FALSE, FALSE, 0);
+    gtk_widget_show_all( ctx );            
+
+    from_l = 0;
+    to_l = 0;
+
+    for(;; from++){
+	if((ret = gui_bineditor_buff_find(be->priv->buff, (const char *)fstr, flen, &from, to, ci)) == 1){
+	    fnd = 1; lf = 1;
+	    from_l = from;
+	    to_l = from + flen - 1;
+	    if(!skip){
+		gui_bineditor_marker_set_item(be, GUI_BINEDITOR_MARKER_FOUND, GUI_BINEDITOR_MARKER_HEX | GUI_BINEDITOR_MARKER_ASCII, from, to_l);
+		gui_bineditor_show_grid( be, from, from + flen - 1 );
+		resp = gtk_dialog_run(GTK_DIALOG(dlg));
+		if(resp == 1) skip = 1;
+	        if(resp == 3){
+	    	    lf = 0;
+	    	    break;
+	        }
+	        if(resp == 4) continue;
+	    } else {
+		resp = 2;
+	    }
+	    if(resp == 2){
+		gui_bineditor_buff_history_add(be->priv->buff, from, from + rlen - 1);
+		memcpy(be->priv->buff->data + from, rstr, rlen);
+		gui_bineditor_show_grid( be, from, from + flen - 1 );
+	    }
+	} else {
+	    lf = 0;
+	    gtk_widget_destroy( dlg );
+	    dlg = gtk_message_dialog_new(GTK_WINDOW(be->priv->wmain), 
+    		GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL,
+		GTK_MESSAGE_INFO,
+		GTK_BUTTONS_CLOSE,
+		NULL
+	    );
+	    gtk_message_dialog_set_markup(GTK_MESSAGE_DIALOG(dlg), TXT_BE_FIND_NO_MATCH);    
+	    gtk_dialog_run(GTK_DIALOG(dlg));
+    	    break;
+	}
+    }
+    gtk_widget_destroy( dlg );
+    if( fnd ){
+	if( lf ) gui_bineditor_marker_set_item(be, GUI_BINEDITOR_MARKER_FOUND, GUI_BINEDITOR_MARKER_HEX | GUI_BINEDITOR_MARKER_ASCII, from, to);
+	gui_bineditor_show_grid( be, from_l, to_l);
+    }
+}
+
+static void gui_bineditor_find_exec( GuiBineditor *be, GtkWidget *ctx, gui_find_str *str  )
+{
+    unsigned int from, to;
+    char ci;
+    const char *find, *replace;
+
+    int error = 0;
+    char repl = 0;
+    unsigned char *find_data, *replace_data;
+    unsigned int find_size = 0, replace_size = 0; 
 
     find = gtk_entry_get_text(GTK_ENTRY(str->find));    
     replace = gtk_entry_get_text(GTK_ENTRY(str->replace));    
-    repl = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->repl));
 
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->r0))) mode = BE_MODE_STRING;
-//    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->r1))) mode = BE_MODE_REGEX;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->r2))) mode = BE_MODE_HEX;
-//    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->r3))) mode = BE_MODE_BINARY;
+    if( *find == 0) return; // empty 'find' string, so return
+
+    find_data = gui_bineditor_buff_pattern2data(find, &find_size, &error);
+    if( error ){
+	gui_bineditor_warning(be, TXT_BE_FIND_FIND_PATTERN);
+	str->run_again = 1;
+	return;
+    }
+
+    replace_data = gui_bineditor_buff_pattern2data(replace, &replace_size, &error);
+    if( error ){
+	gui_bineditor_warning(be, TXT_BE_FIND_REPLACE_PATTERN);    
+	str->run_again = 1;
+	return;
+    }
+    repl = replace_size > 0;
 
     from = 0; to = 0;
     gui_bineditor_marker_get_range(be, GUI_BINEDITOR_MARKER_SELECTED, &from, &to);
@@ -203,94 +300,23 @@ static void gui_bineditor_find_exec( GuiBineditor *be, GtkWidget *ctx, gui_find_
 
     ci = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->ci));
 
-    fstr = gui_bineditor_buff_pattern2data(find, &flen, &error);
-    if( error ){
-	dlg = gtk_message_dialog_new(GTK_WINDOW(be->priv->wmain), 
-	    GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL,
-	    GTK_MESSAGE_WARNING,
-	    GTK_BUTTONS_CLOSE,
-	    NULL
-	);
-	gtk_message_dialog_set_markup(GTK_MESSAGE_DIALOG(dlg), TXT_BE_FIND_ERR_FIND);
-	gtk_dialog_run(GTK_DIALOG(dlg));
-	gtk_widget_destroy( dlg );
-	return;
-    }
-    rstr = gui_bineditor_buff_pattern2data(replace, &rlen, &error);
-    if( error ){
-	dlg = gtk_message_dialog_new(GTK_WINDOW(be->priv->wmain), 
-	    GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL,
-	    GTK_MESSAGE_WARNING,
-	    GTK_BUTTONS_CLOSE,
-	    NULL
-	);
-	gtk_message_dialog_set_markup(GTK_MESSAGE_DIALOG(dlg), TXT_BE_FIND_ERR_REPL);
-	gtk_dialog_run(GTK_DIALOG(dlg));
-	gtk_widget_destroy( dlg );
-	return;
-    }
-    if(( repl ) && ( flen != rlen )){
-	dlg = gtk_message_dialog_new(GTK_WINDOW(be->priv->wmain), 
-	    GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL,
-	    GTK_MESSAGE_WARNING,
-	    GTK_BUTTONS_CLOSE,
-	    NULL
-	);
-	gtk_message_dialog_set_markup(GTK_MESSAGE_DIALOG(dlg), TXT_BE_FIND_ERR_NEQ);
-	gtk_dialog_run(GTK_DIALOG(dlg));
-	gtk_widget_destroy( dlg );
+    if(( repl ) && ( find_size != replace_size )){
+	gui_bineditor_warning(be, TXT_BE_FIND_ERR_NEQ);
+	str->run_again = 1;
 	return;
     }
 
-    for(;; from++){
-	if((ret = gui_bineditor_buff_find(be->priv->buff, (const char *)fstr, flen, &from, to, ci)) == 1){
-	    if(!skip){
-		gui_bineditor_marker_set_item(be, GUI_BINEDITOR_MARKER_FOUND, GUI_BINEDITOR_MARKER_HEX | GUI_BINEDITOR_MARKER_ASCII, from, from + flen - 1);
-		gui_bineditor_show_grid( be, from, from + flen - 1 );
-		dlg = gtk_dialog_new_with_buttons(NULL, GTK_WINDOW(be->priv->wmain), 0, NULL);
-		if( repl ){
-		    gtk_dialog_add_button(GTK_DIALOG(dlg), TXT_BE_FIND_ALL_BT, 1);
-		    gtk_dialog_add_button(GTK_DIALOG(dlg), TXT_BE_FIND_REPL_BT, 2);
-		}
-		gtk_dialog_add_button(GTK_DIALOG(dlg), GTK_STOCK_CANCEL, 3);
-		gtk_dialog_add_button(GTK_DIALOG(dlg), GTK_STOCK_MEDIA_NEXT, 4);
-		ctx = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
-		hb = gtk_hbox_new(FALSE,20);
-		gtk_container_add(GTK_CONTAINER(ctx), hb);
-		gtk_box_pack_start(GTK_BOX(hb), gtk_image_new_from_stock(GTK_STOCK_DIALOG_QUESTION, GTK_ICON_SIZE_DIALOG), FALSE, FALSE, 0);
-        	gtk_box_pack_start(GTK_BOX(hb), gtk_label_new(TXT_BE_FIND_MATCH), FALSE, FALSE, 0);
-		gtk_widget_show_all( ctx );            
-		resp = gtk_dialog_run(GTK_DIALOG(dlg));
-		gtk_widget_destroy( dlg );
-		if(resp == 1) skip = 1;
-	        if(resp == 3) break;
-	        if(resp == 4) continue;
-	    } else {
-		resp = 2;
-	    }
-	    if(resp == 2){
-		gui_bineditor_buff_history_add(be->priv->buff, from, from + rlen - 1);
-		memcpy(be->priv->buff->data + from, rstr, rlen);
-	    }
-	} else {
-	    dlg = gtk_message_dialog_new(GTK_WINDOW(be->priv->wmain), 
-		GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL,
-		GTK_MESSAGE_INFO,
-		GTK_BUTTONS_CLOSE,
-		NULL
-	    );
-	    gtk_message_dialog_set_markup(GTK_MESSAGE_DIALOG(dlg), TXT_BE_FIND_NO_MATCH);
-	    gtk_dialog_run(GTK_DIALOG(dlg));
-	    gtk_widget_destroy( dlg );
-    	    return;
-	}
-    }
+    /* store entries*/
+    if( find )
+	store_set( &store, "FIND_LAST_PATTERN", find);
+    if( replace )
+	store_set( &store, "REPLACE_LAST_PATTERN", replace);
 
-    gui_bineditor_marker_set_item(be, GUI_BINEDITOR_MARKER_FOUND, GUI_BINEDITOR_MARKER_HEX | GUI_BINEDITOR_MARKER_ASCII, from, from + flen - 1);
-    gui_bineditor_show_grid( be, from, from + flen - 1 );
+    /* do "find and replace" */
+    gui_bineditor_lookup(be, ctx, find_data, replace_data, find_size, replace_size, from, to, ci, repl);
     
-    if(fstr) free( fstr );
-    if(rstr) free( rstr );
+    if(find_data) free( find_data );
+    if(replace_data) free( replace_data );
 }
 
 static void gui_bineditor_manipulator_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_bm_str *str )
@@ -714,54 +740,46 @@ static void gui_bineditor_build_bined( GuiBineditor *be, GtkWidget *ctx, gui_be_
 
 }
 
-void gui_bineditor_find_repl(GtkToggleButton *tg, gui_find_str *str)
-{
-    if(gtk_toggle_button_get_active( GTK_TOGGLE_BUTTON( tg )))
-	gtk_widget_set_sensitive(str->replace, 1);        
-    else
-	gtk_widget_set_sensitive(str->replace, 0);    
-}
-
 /* Find and replace */
 static void gui_bineditor_build_find_string( GuiBineditor *be, GtkWidget *ctx, gui_find_str *str )
 {
     GtkWidget *hb, *table;
+    char *tmp0, *tmp1;
+
+    /* get last entered text into entries */
+    store_get( &store, "FIND_LAST_PATTERN", &str->last_fstr);
+    store_get( &store, "REPLACE_LAST_PATTERN", &str->last_rstr);
+
     /* entries */
-    gtk_box_pack_start(GTK_BOX(ctx), gtk_label_new(TXT_BE_FIND_ENTRY), FALSE, FALSE, 2);        
-    str->find = gtk_entry_new();    
-    gtk_box_pack_start(GTK_BOX(ctx), str->find, FALSE, TRUE, 2);        
-    gtk_box_pack_start(GTK_BOX(ctx), gtk_label_new(TXT_BE_REPLACE_ENTRY), FALSE, FALSE, 2);        
+    gtk_box_pack_start(GTK_BOX(ctx), gtk_label_new(TXT_BE_FIND_ENTRY), FALSE, FALSE, 2);
+    str->find = gtk_entry_new();
+    gtk_box_pack_start(GTK_BOX(ctx), str->find, FALSE, TRUE, 2);
+    gtk_box_pack_start(GTK_BOX(ctx), gtk_label_new(TXT_BE_REPLACE_ENTRY), FALSE, FALSE, 2);
     hb = gtk_hbox_new(FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(ctx), hb, FALSE, TRUE, 2);        
-    str->repl = gtk_check_button_new();
-    gtk_box_pack_start(GTK_BOX(hb), str->repl, FALSE, FALSE, 2);            
-    str->replace = gtk_entry_new();    
-    gtk_container_add(GTK_CONTAINER(hb), str->replace);                
-    gtk_widget_set_sensitive(str->replace, 0);    
+    gtk_box_pack_start(GTK_BOX(ctx), hb, FALSE, TRUE, 2);
+    str->replace = gtk_entry_new();
+    gtk_container_add(GTK_CONTAINER(hb), str->replace);
 
     /* parameters */
     hb = gtk_frame_new(TXT_BE_FIND_ST_LABEL);
     gtk_frame_set_label_align(GTK_FRAME(hb), 0.5, 0.5);
     gtk_container_add(GTK_CONTAINER(ctx), hb);
-    table = gtk_table_new(4, 2, TRUE);
+    table = gtk_table_new(3, 2, TRUE);
     gtk_container_add(GTK_CONTAINER(hb), table);
-    str->r0 = gtk_radio_button_new_with_label(NULL, TXT_BE_FIND_ST_STRING);
-//    str->r1 = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(str->r0), TXT_BE_FIND_ST_REGEXP);
-    str->r2 = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(str->r0), TXT_BE_FIND_ST_HEX);
-//    str->r3 = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(str->r0), TXT_BE_FIND_ST_BIN);
-    gtk_table_attach_defaults(GTK_TABLE(table), str->r0, 0,1, 0,1);
-//    gtk_table_attach_defaults(GTK_TABLE(table), str->r1, 0,1, 1,2);
-    gtk_table_attach_defaults(GTK_TABLE(table), str->r2, 0,1, 2,3);    
-//    gtk_table_attach_defaults(GTK_TABLE(table), str->r3, 0,1, 3,4);    
     str->ci = gtk_check_button_new_with_label(TXT_BE_FIND_ST_CI);
     str->c0 = gtk_radio_button_new_with_label(NULL, TXT_BE_FIND_ST_BEGIN);
     str->c1 = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(str->c0), TXT_BE_FIND_ST_CURSOR);
     str->c2 = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(str->c0), TXT_BE_FIND_ST_MARKED);
-    gtk_table_attach_defaults(GTK_TABLE(table), str->ci, 1,2, 0,1);
-    gtk_table_attach_defaults(GTK_TABLE(table), str->c0, 1,2, 1,2);
-    gtk_table_attach_defaults(GTK_TABLE(table), str->c1, 1,2, 2,3);    
-    gtk_table_attach_defaults(GTK_TABLE(table), str->c2, 1,2, 3,4);    
-    g_signal_connect(G_OBJECT(str->repl), "toggled", G_CALLBACK(gui_bineditor_find_repl), str );
+    gtk_table_attach_defaults(GTK_TABLE(table), str->c0, 0,1, 0,1);
+    gtk_table_attach_defaults(GTK_TABLE(table), str->c1, 0,1, 1,2);
+    gtk_table_attach_defaults(GTK_TABLE(table), str->c2, 0,1, 2,3);
+    gtk_table_attach(GTK_TABLE(table), str->ci, 1,2, 0,1, GTK_SHRINK, GTK_SHRINK, 10, 2);
+    
+    tmp1 = "";
+    tmp0 = (str->last_fstr == NULL)  ? tmp1 : str->last_fstr;
+    gtk_entry_set_text(GTK_ENTRY(str->find), tmp0);
+    tmp0 = (str->last_rstr == NULL)  ? tmp1 : str->last_rstr;
+    gtk_entry_set_text(GTK_ENTRY(str->replace), tmp0);
 }
 
 /**/
@@ -1348,14 +1366,25 @@ void gui_bineditor_clear_buffer(GtkWidget *bt, GuiBineditor *be)
     gui_clear_str str;
     str.be = be;
     str.last_pattern = NULL;
-    gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_clear), GUI_BE_CB(gui_bineditor_clear_exec), TEXT(BE_WIN_TIT_CLEAR));
-    if(str.last_pattern) free(str.last_pattern);
+//    str.run_again = 0;
+//    do{
+	gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_clear), GUI_BE_CB(gui_bineditor_clear_exec), TEXT(BE_WIN_TIT_CLEAR));
+	if(str.last_pattern) free(str.last_pattern);
+//    }while( str.run_again );
 } 
 
 void gui_bineditor_find_string(GtkWidget *wg, GuiBineditor *be)
 {
     gui_find_str str;
-    gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_find_string), GUI_BE_CB(gui_bineditor_find_exec), TEXT(BE_WIN_TIT_FIND_AND_REPLACE));
+    
+    str.last_fstr = NULL;
+    str.last_rstr = NULL;
+    do{
+        str.run_again = 0;
+	gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_find_string), GUI_BE_CB(gui_bineditor_find_exec), TEXT(BE_WIN_TIT_FIND_AND_REPLACE));
+	if( str.last_fstr ) free(str.last_fstr);
+	if( str.last_rstr ) free(str.last_rstr);
+    }while( str.run_again );
 }
 
 void gui_bineditor_manipulator(GtkWidget *wg, GuiBineditor *be)

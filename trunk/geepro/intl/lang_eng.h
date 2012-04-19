@@ -186,6 +186,10 @@
 #define TXT_BE_TEXT_WIDTH	"Columns"
 #define TXT_BE_TEXT_HEIGHT	"Rows"
 
+
+#define TXT_BE_FIND_FIND_PATTERN	"Find syntax error. Enter string like this: 0x12, 123, \"foo\" 45"
+#define TXT_BE_FIND_REPLACE_PATTERN	"Replace syntax error. Enter string like this: 0x12, 123, \"foo\" 45"
+
 #define TXT_BE_BM_START_ADDRESS	"Start address:"
 #define TXT_BE_BM_COUNT		"Count        :"
 #define TXT_BE_BM_ARGUMENT	"Argument     :"
