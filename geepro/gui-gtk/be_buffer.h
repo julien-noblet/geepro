@@ -23,7 +23,7 @@ typedef struct
 } gui_be_buffer_str;
 
 #define gui_bineditor_buff_edit_byte(be, from, var) gui_bineditor_buff_edit(be, from, 1, &(var))
-extern unsigned char *gui_bineditor_buff_pattern2data(const char *data, unsigned int *data_size, int *error);
+extern unsigned char *gui_bineditor_buff_pattern2data(const char *data, unsigned int *data_size, int *error); // allocate memory, that must be freed
 extern void gui_bineditor_buff_history_add(gui_be_buffer_str *bf, unsigned int from, unsigned int to);
 extern char gui_bineditor_buff_edit(gui_be_buffer_str *bf, unsigned int from, unsigned int count, unsigned char *str);
 extern void gui_bineditor_buff_constr(gui_be_buffer_str **bf); // create tmp history file
