@@ -188,12 +188,12 @@ char gui_bineditor_buff_find(gui_be_buffer_str *bf, const char *find, unsigned i
     return 0;
 }
 
-static char gui_bineditor_bit_copy(char input, const char *rel)
+static char gui_bineditor_bit_copy(char input, const char *rel, char bits)
 {
     int i;
     char tmp, mask;
     
-    for(mask = 1, i = 0, tmp = 0; i < 8; i++, mask <<= 1)
+    for(mask = 1, i = 0, tmp = 0; i < bits; i++, mask <<= 1)
 	    tmp |= ((1 << rel[i]) & input) ? mask : 0;
     
     return tmp;
@@ -214,13 +214,13 @@ static inline char gui_bineditor_func( int arg, char func, char *rel, char input
 	case GUI_BINEDITOR_BM_FUNC_OR:  return input | arg;
 	case GUI_BINEDITOR_BM_FUNC_AND: return input & arg;
 	case GUI_BINEDITOR_BM_FUNC_XOR: return input ^ arg;
-	case GUI_BINEDITOR_BM_FUNC_SHL: return gui_bineditor_bit_copy( input, shl_const ) & 0xfe;
-	case GUI_BINEDITOR_BM_FUNC_SAL: return gui_bineditor_bit_copy( input, shl_const );
-	case GUI_BINEDITOR_BM_FUNC_SHR: return gui_bineditor_bit_copy( input, shr_const ) & 0x7f;
-	case GUI_BINEDITOR_BM_FUNC_SAR: return gui_bineditor_bit_copy( input, shr_const );
-	case GUI_BINEDITOR_BM_FUNC_ROL: return gui_bineditor_bit_copy( input, rol_const );
-	case GUI_BINEDITOR_BM_FUNC_ROR: return gui_bineditor_bit_copy( input, ror_const );
-	case GUI_BINEDITOR_BM_FUNC_BIT: return gui_bineditor_bit_copy( input, rel );
+	case GUI_BINEDITOR_BM_FUNC_SHL: return gui_bineditor_bit_copy( input, shl_const, 8) & 0xfe;
+	case GUI_BINEDITOR_BM_FUNC_SAL: return gui_bineditor_bit_copy( input, shl_const, 8 );
+	case GUI_BINEDITOR_BM_FUNC_SHR: return gui_bineditor_bit_copy( input, shr_const, 8 ) & 0x7f;
+	case GUI_BINEDITOR_BM_FUNC_SAR: return gui_bineditor_bit_copy( input, shr_const, 8 );
+	case GUI_BINEDITOR_BM_FUNC_ROL: return gui_bineditor_bit_copy( input, rol_const, 8 );
+	case GUI_BINEDITOR_BM_FUNC_ROR: return gui_bineditor_bit_copy( input, ror_const, 8 );
+	case GUI_BINEDITOR_BM_FUNC_BIT: return gui_bineditor_bit_copy( input, rel, 8 );
     }
 
     return 0;
@@ -235,9 +235,44 @@ void gui_bineditor_buff_bman(gui_be_buffer_str *bf, unsigned int start, unsigned
 	bf->data[ i + start] = (unsigned char )gui_bineditor_func( arg, func, rel, bf->data[ i + start]);
 }
 
-void gui_bineditor_buff_reorg(gui_be_buffer_str *be, unsigned int start, unsigned int count, char op, char *rel)
+// Can be optimalized for lower memory usage, without need to allocate copy of the buffer
+void gui_bineditor_buff_reorg(gui_be_buffer_str *bf, unsigned int start, unsigned int count, char op, char *rel, char bits)
 {
-    printf("byte reorg: %i %i %i\n", start, count, op);
+    unsigned int i, half;
+    unsigned char *tmp;
+
+    tmp = (unsigned char *)malloc( count );
+    half = count / 2;
+    if( tmp == NULL ){
+	printf("ERROR: gui_bineditor_buff_reorg() -> memory allocation error.\n");
+	return;
+    }
+    memcpy( tmp, bf->data + start, count );
+            
+    gui_bineditor_buff_history_add(bf, start, start + count - 1);
+    
+    switch(op){
+	case GUI_BINEDITOR_ORG_SPLIT: for(i = 0; i < half; i++){
+					 bf->data[ start + i] = tmp[ i * 2]; // even half
+					 bf->data[ start + half + i] = tmp[ i * 2 + 1]; // odd half
+				      }
+				      break;
+	case GUI_BINEDITOR_ORG_MERGE: for(i = 0; i < half; i++){
+					 bf->data[ start + i*2] = tmp[ i ]; // even half
+					 bf->data[ start + i*2 + 1] = tmp[ half + i]; // odd half
+				      }
+				      break;
+	case GUI_BINEDITOR_ORG_XCHG: for(i = 0; i < count; i++){
+					 bf->data[ start + i * 2] = tmp[ i * 2 + 1]; // even half
+					 bf->data[ start + i * 2 + 1] = tmp[ i * 2]; // odd half
+				      }
+				      break;
+	case GUI_BINEDITOR_ORG_REORG: for(i = 0; i < count; i++)
+				         bf->data[ start + i ] = gui_bineditor_bit_copy( tmp[i], rel, bits );
+				      break;
+				      
+    }
+    free( tmp );
 }
 
 void gui_bineditor_buff_asm(gui_be_buffer_str *be, unsigned int start, unsigned int count)
