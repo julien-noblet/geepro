@@ -78,6 +78,7 @@ typedef struct {
     GtkWidget *bits;
     GtkWidget *vb;
     GtkWidget *a[32];  // address bits
+    char bit_count;
 } gui_be_org_str;
 
 typedef struct {
@@ -374,16 +375,22 @@ static void gui_bineditor_organizer_exec( GuiBineditor *be, GtkWidget *ctx, gui_
     addr  = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->addr));        
     count = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->count));        
 
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->split))) op = 0;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->merge))) op = 1;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->xchg ))) op = 2;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->reorg))) op = 3;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->split))) op = GUI_BINEDITOR_ORG_SPLIT;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->merge))) op = GUI_BINEDITOR_ORG_MERGE;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->xchg ))) op = GUI_BINEDITOR_ORG_XCHG;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->reorg))) op = GUI_BINEDITOR_ORG_REORG;
     
     for( i =0; i < 32; i++){
 	 reorg[i] = -1;
 	 if( str->a[i] ) reorg[i] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->a[i]));
     }
-    gui_bineditor_buff_reorg(be->priv->buff, addr, count, op, reorg);	    
+    if( count & 1){
+	gui_bineditor_warning(be, TXT_ORGANIZER_EVEN);
+	return;
+    }
+
+    gui_bineditor_buff_reorg(be->priv->buff, addr, count, op, reorg, str->bit_count);
+    gui_bineditor_redraw( be );
 }
 
 static void gui_be_cut_get_values(gui_be_cut_str *str, int *start, int *count, int *stop)
@@ -1040,12 +1047,13 @@ static GtkWidget *gui_bineditor_set_as(gui_be_org_str *str, unsigned int size)
     gtk_container_add(GTK_CONTAINER(wg), tb);
 
     for(i = 0; i < 32; i++){
-	if( i <= bits)
+	if( i <= bits){
 	    str->a[i] = gtk_spin_button_new_with_range( 0, bits, 1);
-	else
+	    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->a[i]), i);
+	}else
 	    str->a[i] = NULL;
     }
-
+    str->bit_count = bits;
     gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new("+0"),  1,2, 0,1);
     gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new("+1"),  2,3, 0,1);
     gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new("+2"),  3,4, 0,1);
@@ -1114,7 +1122,7 @@ static void gui_bineditor_build_organizer( GuiBineditor *be, GtkWidget *ctx, gui
 
 // initial values
     str->be = be;
-    count = to - start;
+    count = to - start + 1;
     if(count < 0) count = 0;
     if(start < 0) start = 0;
     if(!(count | start )){

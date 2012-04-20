@@ -22,6 +22,14 @@ enum
 
 enum
 {
+    GUI_BINEDITOR_ORG_SPLIT,
+    GUI_BINEDITOR_ORG_MERGE,
+    GUI_BINEDITOR_ORG_XCHG,
+    GUI_BINEDITOR_ORG_REORG
+};
+
+enum
+{
     GUI_BE_UNDO,
     GUI_BE_REDO
 };
@@ -49,7 +57,7 @@ extern void gui_bineditor_buff_destroy(gui_be_buffer_str **bf);  // delete histo
 extern char gui_bineditor_buff_clr(gui_be_buffer_str *bf, unsigned int from, unsigned int to, const char *pattern);
 extern char gui_bineditor_buff_find(gui_be_buffer_str *bf, const char *find, unsigned int size, unsigned int *from, unsigned int to, char ci);
 extern void gui_bineditor_buff_bman(gui_be_buffer_str *bf, unsigned int start, unsigned int count, int arg, char func, char *rel);
-extern void gui_bineditor_buff_reorg(gui_be_buffer_str *bf, unsigned int start, unsigned int count, char arg, char *rel);
+extern void gui_bineditor_buff_reorg(gui_be_buffer_str *bf, unsigned int start, unsigned int count, char arg, char *rel, char bits);
 extern void gui_bineditor_buff_asm(gui_be_buffer_str *bf, unsigned int start, unsigned int count);
 extern void gui_bineditor_buff_history(gui_be_buffer_str *bf, int operation);
 extern void gui_bineditor_buff_file_insert(gui_be_buffer_str *bf, FILE *fh, long offset, int start, int count );
