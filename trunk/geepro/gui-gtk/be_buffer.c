@@ -188,9 +188,51 @@ char gui_bineditor_buff_find(gui_be_buffer_str *bf, const char *find, unsigned i
     return 0;
 }
 
-void gui_bineditor_buff_bman(gui_be_buffer_str *be, unsigned int start, unsigned int count, int arg, char func, char *rel)
+static char gui_bineditor_bit_copy(char input, const char *rel)
 {
-    printf("bit manager: %i %i %i %i\n", start, count, arg, func);
+    int i;
+    char tmp, mask;
+    
+    for(mask = 1, i = 0, tmp = 0; i < 8; i++, mask <<= 1)
+	    tmp |= ((1 << rel[i]) & input) ? mask : 0;
+    
+    return tmp;
+}
+                          // bit: 0 1 2 3 4 5 6 7
+static const char shl_const[8] = {0,0,1,2,3,4,5,6};
+static const char shr_const[8] = {1,2,3,4,5,6,7,7};
+static const char rol_const[8] = {7,0,1,2,3,4,5,6};
+static const char ror_const[8] = {1,2,3,4,5,6,7,0};
+
+static inline char gui_bineditor_func( int arg, char func, char *rel, char input)
+{
+    switch( func ){
+	case GUI_BINEDITOR_BM_FUNC_ADD: return input + arg;
+	case GUI_BINEDITOR_BM_FUNC_SUB: return input - arg;
+	case GUI_BINEDITOR_BM_FUNC_MUL: return input * arg;
+	case GUI_BINEDITOR_BM_FUNC_DIV: if(arg != 0) return input / arg;
+	case GUI_BINEDITOR_BM_FUNC_OR:  return input | arg;
+	case GUI_BINEDITOR_BM_FUNC_AND: return input & arg;
+	case GUI_BINEDITOR_BM_FUNC_XOR: return input ^ arg;
+	case GUI_BINEDITOR_BM_FUNC_SHL: return gui_bineditor_bit_copy( input, shl_const ) & 0xfe;
+	case GUI_BINEDITOR_BM_FUNC_SAL: return gui_bineditor_bit_copy( input, shl_const );
+	case GUI_BINEDITOR_BM_FUNC_SHR: return gui_bineditor_bit_copy( input, shr_const ) & 0x7f;
+	case GUI_BINEDITOR_BM_FUNC_SAR: return gui_bineditor_bit_copy( input, shr_const );
+	case GUI_BINEDITOR_BM_FUNC_ROL: return gui_bineditor_bit_copy( input, rol_const );
+	case GUI_BINEDITOR_BM_FUNC_ROR: return gui_bineditor_bit_copy( input, ror_const );
+	case GUI_BINEDITOR_BM_FUNC_BIT: return gui_bineditor_bit_copy( input, rel );
+    }
+
+    return 0;
+}
+
+void gui_bineditor_buff_bman(gui_be_buffer_str *bf, unsigned int start, unsigned int count, int arg, char func, char *rel)
+{
+    unsigned int i;
+
+    gui_bineditor_buff_history_add(bf, start, start + count - 1);
+    for(i = 0; i < count; i++)
+	bf->data[ i + start] = (unsigned char )gui_bineditor_func( arg, func, rel, bf->data[ i + start]);
 }
 
 void gui_bineditor_buff_reorg(gui_be_buffer_str *be, unsigned int start, unsigned int count, char op, char *rel)

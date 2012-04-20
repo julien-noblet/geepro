@@ -332,21 +332,21 @@ static void gui_bineditor_manipulator_exec( GuiBineditor *be, GtkWidget *ctx, gu
     count = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->count));        
     arg = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->arg));        
 
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->sub))) func = 0;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->add))) func = 1;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->mul))) func = 2;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->div))) func = 3;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->or ))) func = 4;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->and))) func = 5;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->xor))) func = 6;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->shl))) func = 7;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->sal))) func = 8;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->shr))) func = 9;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->sar))) func = 10;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->rol))) func = 11;
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->ror))) func = 12;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->sub))) func = GUI_BINEDITOR_BM_FUNC_SUB;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->add))) func = GUI_BINEDITOR_BM_FUNC_ADD;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->mul))) func = GUI_BINEDITOR_BM_FUNC_MUL;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->div))) func = GUI_BINEDITOR_BM_FUNC_DIV;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->or ))) func = GUI_BINEDITOR_BM_FUNC_OR;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->and))) func = GUI_BINEDITOR_BM_FUNC_AND;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->xor))) func = GUI_BINEDITOR_BM_FUNC_XOR;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->shl))) func = GUI_BINEDITOR_BM_FUNC_SHL;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->sal))) func = GUI_BINEDITOR_BM_FUNC_SAL;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->shr))) func = GUI_BINEDITOR_BM_FUNC_SHR;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->sar))) func = GUI_BINEDITOR_BM_FUNC_SAR;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->rol))) func = GUI_BINEDITOR_BM_FUNC_ROL;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->ror))) func = GUI_BINEDITOR_BM_FUNC_ROR;
     if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->bx ))){
-	func = 13;
+	func = GUI_BINEDITOR_BM_FUNC_BIT;
 	rel[0] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->bx0));
 	rel[1] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->bx1));
 	rel[2] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->bx2));
@@ -356,8 +356,13 @@ static void gui_bineditor_manipulator_exec( GuiBineditor *be, GtkWidget *ctx, gu
 	rel[6] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->bx6));
 	rel[7] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->bx7));
     }
+    if( (arg == 0) && (func == GUI_BINEDITOR_BM_FUNC_DIV)){
+	gui_bineditor_warning(be, TXT_MANIPULATOR_DIVBYZERO);    
+	return;
+    }
     
     gui_bineditor_buff_bman(be->priv->buff, start, count, arg, func, rel);    
+    gui_bineditor_redraw( be );
 }
 
 static void gui_bineditor_organizer_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_org_str *str )
