@@ -186,7 +186,7 @@
 #define TXT_BE_TEXT_WIDTH	"Columns"
 #define TXT_BE_TEXT_HEIGHT	"Rows"
 
-
+#define TXT_MANIPULATOR_DIVBYZERO	"Argument cannot be 0 for division"
 #define TXT_BE_FIND_FIND_PATTERN	"Find syntax error. Enter string like this: 0x12, 123, \"foo\" 45"
 #define TXT_BE_FIND_REPLACE_PATTERN	"Replace syntax error. Enter string like this: 0x12, 123, \"foo\" 45"
 
