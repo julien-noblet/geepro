@@ -275,20 +275,23 @@ void gui_bineditor_buff_reorg(gui_be_buffer_str *bf, unsigned int start, unsigne
     free( tmp );
 }
 
+char gui_bineditor_buff_file_insert(gui_be_buffer_str *bf, FILE *fh, long offs, int start, int count)
+{
+    fseek(fh, offs, SEEK_SET);
+    return fread( bf->data + start, 1, count, fh) != count;
+}
+
+char gui_bineditor_buff_file_save(gui_be_buffer_str *bf, int start, int count, const char *fname)
+{
+    FILE *fh;
+    unsigned int err;
+    if((fh = fopen(fname, "w")) == NULL) return 1;
+    err = fwrite( bf->data + start, 1, count, fh) != count;
+    fclose( fh );
+    return err != count;
+}
+
 void gui_bineditor_buff_asm(gui_be_buffer_str *be, unsigned int start, unsigned int count)
 {
     printf("byte asm\n");
 }
-
-
-void gui_bineditor_buff_file_insert(gui_be_buffer_str *be, FILE *fh, long offs, int start, int count)
-{
-    printf("open \n");
-}
-
-void gui_bineditor_buff_file_save(gui_be_buffer_str *be, int start, int count)
-{
-    printf("save \n");
-}
-
-
