@@ -148,6 +148,10 @@ typedef struct {
 } gui_be_open_str;
 
 typedef struct {
+    unsigned int l_ins;
+    unsigned int l_count;
+    unsigned int r_ins;
+    unsigned int r_count;
     GtkWidget *start;
     GtkWidget *count;
     char *fname;
@@ -585,11 +589,9 @@ static void gui_bineditor_open_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_op
 
 static void gui_bineditor_save_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_save_str *str )
 {
-    gui_bineditor_buff_file_save(be->priv->buff, 
-	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->start)),
-	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->count)),
-	str->fname
-    );
+    str->r_ins = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->start)),
+    str->r_count = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->count)),
+    gui_bineditor_buff_file_save(be->priv->buff, str->r_ins, str->r_count, str->fname );
 }
 
 /****************************************************************************************************************************************/
@@ -639,6 +641,9 @@ static void gui_bineditor_build_save( GuiBineditor *be, GtkWidget *ctx, gui_be_s
 
     str->start = gtk_spin_button_new_with_range( 0, be->priv->buff->size - 1, 1);
     str->count = gtk_spin_button_new_with_range( 1, be->priv->buff->size, 1);
+
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->start), str->l_ins);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->count), str->l_count);    
 
     wg = gtk_hbox_new(FALSE, 0);
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new( TXT_BE_OPEN_START));
@@ -1566,7 +1571,7 @@ void gui_bineditor_open(GtkWidget *wg, GuiBineditor *be)
     if( str.fname ){ 
 	gui_bineditor_open_(be, &str);
 	if( name ){
-	    if( strcmp(name, str.fname) != 0 )
+	    if( strcmp(name, str.fname) )
 	        store_set(&store, "BINEDITOR_OPEN_FNAME", str.fname);
 	} else
 	     store_set(&store, "BINEDITOR_OPEN_FNAME", str.fname);
@@ -1586,8 +1591,14 @@ void gui_bineditor_write(GtkWidget *wg, GuiBineditor *be)
 {
     gui_be_save_str str;
     GtkWidget *dialog;
+    char tmp[256];
+    char *name, *args;
 
+    name = NULL;
     str.fname = NULL;
+    str.l_ins = 0;
+    str.l_count = 1;
+    args = NULL;
     dialog = gtk_file_chooser_dialog_new(TXT_BE_SAVE_WINTIT, GTK_WINDOW(be->priv->wmain), 
 	GTK_FILE_CHOOSER_ACTION_SAVE,
 	GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -1595,14 +1606,38 @@ void gui_bineditor_write(GtkWidget *wg, GuiBineditor *be)
 	NULL
     );
 
-// gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), name);
+    store_get(&store, "BINEDITOR_SAVE_FNAME", &name);
+    store_get(&store, "BINEDITOR_SAVE_ARGS", &args);
+    if( name )
+	if( *name ){
+	    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), name);
+	}
 
+    if( args )
+	if( *args ){
+	    sscanf(args, "%u %u", &str.l_ins, &str.l_count);
+	}
     if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
 	str.fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
     gtk_widget_destroy( dialog );
     if( str.fname != NULL ){ 
 	gui_bineditor_save_(be, &str);
+	if( name ){
+	    if( strcmp(name, str.fname) )
+	        store_set(&store, "BINEDITOR_SAVE_FNAME", str.fname);
+	} else
+	     store_set(&store, "BINEDITOR_SAVE_FNAME", str.fname);
+
+	if( ( str.l_ins != str.r_ins) || ( str.l_count != str.r_count) ){
+	     *tmp = 0;
+	     sprintf( tmp, "%u %u", str.r_ins, str.r_count);
+	     store_set(&store, "BINEDITOR_SAVE_ARGS", tmp);
+	}
+
 	g_free( str.fname );
     }
+    if( name ) free( name );
+    if( args ) free( args );
 }
+
