@@ -60,6 +60,6 @@ extern void gui_bineditor_buff_bman(gui_be_buffer_str *bf, unsigned int start, u
 extern void gui_bineditor_buff_reorg(gui_be_buffer_str *bf, unsigned int start, unsigned int count, char arg, char *rel, char bits);
 extern void gui_bineditor_buff_asm(gui_be_buffer_str *bf, unsigned int start, unsigned int count);
 extern void gui_bineditor_buff_history(gui_be_buffer_str *bf, int operation);
-extern void gui_bineditor_buff_file_insert(gui_be_buffer_str *bf, FILE *fh, long offset, int start, int count );
-extern void gui_bineditor_buff_file_save(gui_be_buffer_str *bf, int start, int count );
+extern char gui_bineditor_buff_file_insert(gui_be_buffer_str *bf, FILE *fh, long offset, int start, int count );
+extern char gui_bineditor_buff_file_save(gui_be_buffer_str *bf, int start, int count, const char *fname );
 #endif
