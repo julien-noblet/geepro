@@ -284,3 +284,6 @@
 #define DLG_INS_FILE_SIZE		"Bytes count:"
 #define DLG_INS_FILE_OFFSET		"File offset:"
 
+#define TXT_BE_BMP_TB_SHRINK	"Zoom out"
+#define TXT_BE_BMP_TB_EXPAND	"Zoom in"
+#define TXT_BE_BMP_TB_AUTO	"Zoom fit"

@@ -4,6 +4,6 @@
 #include "bineditor.h"
 
 extern void gui_bineditor_bitmap(GuiBineditor *be, unsigned int width, unsigned int height, unsigned char mask, unsigned char bit_rev);
-
+extern void gui_bineditor_bitmap_set_address(GuiBineditor *be, unsigned int addr);
 
 #endif // __BE_BITMAP_H__

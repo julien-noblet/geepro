@@ -82,6 +82,10 @@ typedef enum
     GUI_BINEDITOR_COLOR_HL_MRK,		/* highlight color on marker */
     GUI_BINEDITOR_COLOR_MARKER_FG_FOUND,
     GUI_BINEDITOR_COLOR_MARKER_BG_FOUND,
+    GUI_BINEDITOR_COLOR_BMP_BG,		// background color in bitmap editor
+    GUI_BINEDITOR_COLOR_BMP_GRID,	// 
+    GUI_BINEDITOR_COLOR_BMP_PIXEL,	// 
+    GUI_BINEDITOR_COLOR_BMP_AMBIENT,	// 
     GUI_BINEDITOR_COLOR_LAST
 } GuiBineditorColors;
 
@@ -128,6 +132,7 @@ typedef struct
 
 struct _GuiBineditorPrivate
 {
+    const char	 **icon;
     GuiBineditor *root, *aux_ed;
     GuiBineditorCut cut_data;
     GuiBineditorMarker markers;
@@ -214,6 +219,7 @@ struct _GuiBineditorPrivate
     unsigned long clpb_start;	// selected begin
     unsigned long clpb_end;	// selected end
     GtkAdjustment  *adj;
+    void *bmp;
     void *user_ptr1;
     void *user_ptr2;    
 };
@@ -235,6 +241,7 @@ struct _GuiBineditorClass
 
 GType hui_bineditor_get_type	(void) G_GNUC_CONST;
 GtkWidget *gui_bineditor_new(GtkWindow *parent);
+void gui_bineditor_set_icon(GuiBineditor *be, const char **xpm_data);
 void gui_bineditor_set_buffer(GuiBineditor *be, int bfsize, unsigned char *buffer);
 void gui_bineditor_set_properties(GuiBineditor *be, GuiBineditorProperties prop);
 void gui_bineditor_set_colors(GuiBineditor *be, GuiBineditorColors color, float r, float g, float b);

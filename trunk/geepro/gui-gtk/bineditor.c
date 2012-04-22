@@ -324,6 +324,8 @@ static void gui_bineditor_hint(GtkWidget *wg, GdkEventMotion *ev, GuiBineditor *
     sprintf(tmp, " %x:%c%x(%i) ", be->priv->address_mark, offs < 0 ? '-':' ',abs(offs), offs );
     gtk_label_set_text(GTK_LABEL(be->priv->info_mark), tmp);
 
+    if( be->priv->bmp )
+	gui_bineditor_bitmap_set_address( be, address );
 }
 
 static void gui_bineditor_leave(GtkWidget *wg, GdkEventCrossing *ev, GuiBineditor *be)
@@ -377,6 +379,7 @@ static void gui_cairo_outtext(cairo_t *cr, char *tmp, int x, int y, char *str, .
     cairo_move_to(cr, x, y);
     cairo_show_text(cr, tmp);
 }
+
 static gboolean gui_bineditor_draw_sig(GtkWidget *wg, cairo_t *cr, GuiBineditor *be)
 {
     gui_bineditor_draw(be, cr, gtk_widget_get_allocated_width( wg ), gtk_widget_get_allocated_height( wg ), 0);  
@@ -809,6 +812,7 @@ static inline void gui_bineditor_init(GuiBineditor *be)
 
     gui_bineditor_buff_constr( &be->priv->buff );
 
+    be->priv->icon = NULL;
     be->priv->root = NULL;
     be->priv->cut_data.size = 0;
     be->priv->cut_data.data = NULL;
@@ -860,6 +864,11 @@ static inline void gui_bineditor_init(GuiBineditor *be)
 
     SET_COLOR(be, GUI_BINEDITOR_COLOR_MARKER_FG_FOUND, 0.0, 0.0, 0.0);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_MARKER_BG_FOUND, 0.9, 0.9, 0.3);
+
+    SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_BG, 0.9, 0.9, 1.0);
+    SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_GRID, 0.8, 0.8, 0.9);
+    SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_PIXEL, 0.0, 0.5, 0.0);
+    SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_AMBIENT, 0.0, 0.0, 0.2);
 
     gui_bineditor_marker_new(be, GUI_BINEDITOR_MARKER_ALL);
     gui_bineditor_marker_set_color(be, GUI_BINEDITOR_MARKER_SELECTED, GUI_BINEDITOR_COLOR_TEXT_MARKED, GUI_BINEDITOR_COLOR_HL_MRK );
@@ -1413,4 +1422,9 @@ void gui_bineditor_cut_restore(GuiBineditor *be, unsigned int from)
     gui_bineditor_buff_history_add(be->priv->buff, from, from + size - 1);
     memcpy(be->priv->buff->data + from, bt->priv->cut_data.data, size);
     gui_bineditor_redraw( be );
+}
+
+void gui_bineditor_set_icon(GuiBineditor *be, const char **xpm_data)
+{
+    be->priv->icon = xpm_data;
 }
