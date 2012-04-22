@@ -82,6 +82,14 @@ typedef struct {
 } gui_be_org_str;
 
 typedef struct {
+    unsigned int l_width;
+    unsigned int l_height;
+    unsigned int l_mask;
+    unsigned int l_rev;
+    unsigned int r_width;
+    unsigned int r_height;
+    unsigned int r_mask;
+    unsigned int r_rev;
     GtkWidget *mask[8];
     GuiBineditor *be;
     GtkWidget *width;
@@ -426,18 +434,17 @@ static void gui_bineditor_copy_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_co
 
 static void gui_bineditor_bined_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_bmp_str *str )
 {
-    unsigned int width, height, i;
-    unsigned char mask, br;
+    unsigned int i;
   
-    width  = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->width));
-    height = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->height)); 
-    br = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->rev));
+    str->r_width  = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->width));
+    str->r_height = gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->height)); 
+    str->r_rev = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->rev));
 
-    mask = 0;
+    str->r_mask = 0;
     for(i = 0; i < 8; i++) 
-	if( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->mask[i]))) mask |= 1 << i;
+	if( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->mask[i]))) str->r_mask |= 1 << i;
         
-    gui_bineditor_bitmap( be, width, height, mask, br);
+    gui_bineditor_bitmap( be, str->r_width, str->r_height, str->r_mask, str->r_rev);
 }
 
 static void gui_bineditor_asm_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_asm_str *str  )
@@ -496,6 +503,10 @@ static void gui_bineditor_aux_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_aux
     gtk_window_set_title(GTK_WINDOW(be->priv->aux_win), TXT_BE_WINTIT_AUX);
 
     aux = gui_bineditor_new(GTK_WINDOW(be->priv->aux_win));
+    gui_bineditor_set_icon( GUI_BINEDITOR(aux), be->priv->icon);
+    if(be->priv->icon)
+	gtk_window_set_icon(GTK_WINDOW(be->priv->aux_win), gdk_pixbuf_new_from_xpm_data(be->priv->icon));
+    
     if(aux == NULL){
 	printf("WARN:gui_bineditor_aux_exec() -> Cannot create bineditor.\n");
 	return;
@@ -730,8 +741,8 @@ static void gui_bineditor_build_bined( GuiBineditor *be, GtkWidget *ctx, gui_be_
 
     str->width  = gtk_spin_button_new_with_range( 0, 256, 1);
     str->height = gtk_spin_button_new_with_range( 0, 256, 1);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->width), 8);    
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->height), 8);    
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->width), str->l_width);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->height), str->l_height);
 
     wg = gtk_table_new(2, 2, TRUE);
     gtk_container_add(GTK_CONTAINER(ctx), wg);
@@ -757,14 +768,15 @@ static void gui_bineditor_build_bined( GuiBineditor *be, GtkWidget *ctx, gui_be_
     gtk_table_attach_defaults(GTK_TABLE(ww), gtk_label_new("2"), 5,6, 0,1);
     gtk_table_attach_defaults(GTK_TABLE(ww), gtk_label_new("1"), 6,7, 0,1);
     gtk_table_attach_defaults(GTK_TABLE(ww), gtk_label_new("0"), 7,8, 0,1);
-
+//-->
     for(i = 8; i; i--){
             str->mask[i - 1] = gtk_check_button_new();
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(str->mask[i - 1]), TRUE);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(str->mask[i - 1]), (str->l_mask & (1 << (i - 1))) ? TRUE : FALSE);
             gtk_table_attach_defaults(GTK_TABLE(ww), str->mask[i - 1], i - 1, i, 1,2);
     }
     
     str->rev = gtk_check_button_new_with_label(TXT_BE_BMP_REV);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(str->rev), str->l_rev);
     gtk_container_add(GTK_CONTAINER(ctx), str->rev);    
 
 }
@@ -1429,11 +1441,6 @@ void gui_bineditor_organizer(GtkWidget *wg, GuiBineditor *be)
     gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_organizer), GUI_BE_CB(gui_bineditor_organizer_exec), TEXT(BE_WIN_TIT_ORGANIZER));
 }
 
-void gui_bineditor_bined(GtkWidget *wg, GuiBineditor *be)
-{
-    gui_be_bmp_str str;
-    gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_bined), GUI_BE_CB(gui_bineditor_bined_exec), TEXT(BE_WIN_TIT_BMPEDIT));
-}
 
 void gui_bineditor_cut(GtkWidget *wg, GuiBineditor *be)
 {
@@ -1447,11 +1454,6 @@ void gui_bineditor_copy(GtkWidget *wg, GuiBineditor *be)
     gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_copy), GUI_BE_CB(gui_bineditor_copy_exec), TEXT(BE_WIN_TIT_COPY));
 }
 
-void gui_bineditor_asmview(GtkWidget *wg, GuiBineditor *be)
-{
-    gui_be_asm_str str;
-    gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_asm), GUI_BE_CB(gui_bineditor_asm_exec), TEXT(BE_WIN_TIT_ASMVIEWER));
-}
 
 void gui_bineditor_texted(GtkWidget *wg, GuiBineditor *be)
 {
@@ -1485,34 +1487,6 @@ void gui_bineditor_resize(GtkWidget *wg, GuiBineditor *be)
 {
     gui_be_resize_str str;
     gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_resize), GUI_BE_CB(gui_bineditor_resize_exec), TEXT(BE_WIN_TIT_RESIZE));
-}
-
-void gui_bineditor_stencil(GtkWidget *wg, GuiBineditor *be)
-{
-    GtkWidget *dialog;
-    GtkFileFilter *filter;
-    char *fname = NULL;
-
-    dialog = gtk_file_chooser_dialog_new(TXT_BE_STC_WINTIT, GTK_WINDOW(be->priv->wmain), 
-	GTK_FILE_CHOOSER_ACTION_OPEN,
-	GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-	NULL
-    );
-
-// gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), name);
-
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, TXT_BE_STC_FE);
-    gtk_file_filter_add_pattern(filter, "*.stc");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
-	fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-
-    gtk_widget_destroy( dialog );
-    if( fname != NULL ) gui_bineditor_stencil_run(be, fname);
-    g_free( fname );
 }
 
 static void gui_bineditor_open_(GuiBineditor *be, gui_be_open_str *str)
@@ -1641,3 +1615,70 @@ void gui_bineditor_write(GtkWidget *wg, GuiBineditor *be)
     if( args ) free( args );
 }
 
+void gui_bineditor_bined(GtkWidget *wg, GuiBineditor *be)
+{
+    gui_be_bmp_str str;
+    char *args;
+    char tmp[256];
+
+    str.l_width = 8;
+    str.l_height = 8;
+    str.l_mask = 0xff;
+    str.l_rev = 0;
+
+    args = NULL;
+    store_get(&store, "BINEDITOR_BMP_ARGS", &args);
+    if( args )
+	if( *args ){
+	    sscanf(args, "%u %u %u %u", &str.l_width, &str.l_height, &str.l_mask, &str.l_rev);
+	}
+    
+    str.r_width = str.l_width;
+    str.r_height = str.l_height;
+    str.r_mask = str.l_mask;
+    str.r_rev = str.l_rev;
+
+    gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_bined), GUI_BE_CB(gui_bineditor_bined_exec), TEXT(BE_WIN_TIT_BMPEDIT));
+
+    if( ( str.l_width != str.r_width) || ( str.l_height != str.r_height) || ( str.l_mask != str.r_mask) || ( str.l_rev != str.r_rev) ){
+	     *tmp = 0;
+	     sprintf( tmp, "%u %u %u %u", str.r_width, str.r_height, str.r_mask, str.r_rev);
+	     store_set(&store, "BINEDITOR_BMP_ARGS", tmp);
+    }
+
+    if( args ) free( args );
+}
+
+void gui_bineditor_asmview(GtkWidget *wg, GuiBineditor *be)
+{
+    gui_be_asm_str str;
+    gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_asm), GUI_BE_CB(gui_bineditor_asm_exec), TEXT(BE_WIN_TIT_ASMVIEWER));
+}
+
+void gui_bineditor_stencil(GtkWidget *wg, GuiBineditor *be)
+{
+    GtkWidget *dialog;
+    GtkFileFilter *filter;
+    char *fname = NULL;
+
+    dialog = gtk_file_chooser_dialog_new(TXT_BE_STC_WINTIT, GTK_WINDOW(be->priv->wmain), 
+	GTK_FILE_CHOOSER_ACTION_OPEN,
+	GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+	NULL
+    );
+
+// gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), name);
+
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, TXT_BE_STC_FE);
+    gtk_file_filter_add_pattern(filter, "*.stc");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+
+    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
+	fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+
+    gtk_widget_destroy( dialog );
+    if( fname != NULL ) gui_bineditor_stencil_run(be, fname);
+    g_free( fname );
+}
