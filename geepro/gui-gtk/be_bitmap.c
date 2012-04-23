@@ -35,18 +35,24 @@ typedef struct
 
     unsigned int mx,my; // ? mouse x, y grid position ?
     gdouble  xp, yp;  // ?
+    char mode; // actualize on the fly
+    char inverse; // picture negative
+    char edit;	// permision for editing
     
 } gui_bitmap_bmp_str;
 
+static void gui_bineditor_bmp_set_grid_bit(gui_bitmap_bmp_str *s, int x, int y, char op );
 static inline void gui_bineditor_bmp_toolbar_setup( gui_bitmap_bmp_str *s );
 static inline void gui_bineditor_bmp_drawing_setup( gui_bitmap_bmp_str *s );
 static void gui_bineditor_bmp_draw(gui_bitmap_bmp_str *s);
 
 /********************************************************************************************************/
-static void gui_bineditor_bmp_grid_coordinates(gui_bitmap_bmp_str *s, unsigned int x, unsigned int y)
+static void gui_bineditor_bmp_grid_coordinates(gui_bitmap_bmp_str *s, unsigned int x, unsigned int y, char *within)
 {
+    *within = 1;
     s->mx = s->x1 + ((x - s->x0) / s->pixel_size);
     s->my = s->y1 + ((y - s->y0) / s->pixel_size);
+    if((s->mx >= s->g_width) || (s->mx < 0) || (s->my >= s->g_high) || (s->my < 0)) *within = 0;
 }
 
 static inline void gui_bineditor_bmp_redraw( gui_bitmap_bmp_str *s )
@@ -80,11 +86,11 @@ static void gui_bineditor_bmp_draw_compute(gui_bitmap_bmp_str *s)
     s->first_run = 0;
     s->cols = s->g_width;
     s->rows = s->g_high;
-    
+
     if( s->pixel_size != 0){
 	// cut off to drawing area
 	if( s->cols * s->pixel_size >= s->xx ) s->cols = (s->xx / s->pixel_size) + 1;
-	if( s->rows * s->pixel_size >= s->xx ) s->rows = (s->xx / s->pixel_size) + 1;
+	if( s->rows * s->pixel_size >= s->yy ) s->rows = (s->yy / s->pixel_size) + 1;
     } else
 	s->pixel_size = 1;
 
@@ -93,7 +99,8 @@ static void gui_bineditor_bmp_draw_compute(gui_bitmap_bmp_str *s)
     s->hh = s->rows * s->pixel_size;
     // center
     s->x0 = ( s->ww < s->xx) ? (s->xx - s->ww) / 2 : 0;
-    s->y0 = ( s->hh < s->yy) ? (s->yy - s->ww) / 2 : 0;
+    s->y0 = ( s->hh < s->yy) ? (s->yy - s->hh) / 2 : 0;
+
 }
 
 static gboolean gui_bineditor_bmp_draw_(GtkWidget *wg, cairo_t *cr, gui_bitmap_bmp_str *s)
@@ -169,7 +176,8 @@ static void gui_bineditor_bmp_zoom_shrink( gui_bitmap_bmp_str *s )
 
 static void gui_bineditor_bmp_scroll(GtkWidget *wg, GdkEventScroll *ev, gui_bitmap_bmp_str *s)
 {
-    gui_bineditor_bmp_grid_coordinates(s, ev->x, ev->y);
+    char within = 0;
+    gui_bineditor_bmp_grid_coordinates(s, ev->x, ev->y, &within);
     // relative position in grid
     s->xp = (((ev->x - s->x0) / s->pixel_size)) / s->cols;
     s->yp = (((ev->y - s->y0) / s->pixel_size)) / s->rows;
@@ -211,7 +219,9 @@ void gui_bineditor_bitmap(GuiBineditor *be, unsigned int width, unsigned int hei
     }
 
     s->addr = 0; // to change !!!
+    s->inverse = 0; // 0 or 0xff
     s->mask = mask;
+    s->mode = 0;
     s->rev  = br;    
     s->bpb  = 0;
     // count '1' in mask
@@ -222,6 +232,7 @@ void gui_bineditor_bitmap(GuiBineditor *be, unsigned int width, unsigned int hei
 	}
 
     be->priv->bmp = (void*)s;
+    s->edit = 0;
     s->g_width = width;
     s->g_high = height;
     s->be = be;
@@ -281,11 +292,20 @@ static inline void gui_bineditor_bmp_toolbar_setup( gui_bitmap_bmp_str *s )
     gtk_toolbar_insert(GTK_TOOLBAR( s->tb ), GTK_TOOL_ITEM(s->tb_auto), -1);
 }
 
-
 static void gui_bineditor_bmp_mouse_button( gui_bitmap_bmp_str *s, int button, char state, unsigned int x, unsigned int y )
 {
-    gui_bineditor_bmp_grid_coordinates(s, x, y);
-//printf("%i %i %i\n", state, s->mx, s->my);    
+    char within = 0;
+
+    if( !s->edit ) return;
+
+    gui_bineditor_bmp_grid_coordinates(s, x, y, &within);
+    if( !within ) return;
+    switch( button ){
+	case 1 : gui_bineditor_bmp_set_grid_bit(s, x, y, 0 ); break;
+	case 3 : gui_bineditor_bmp_set_grid_bit(s, x, y, 1 ); break;
+    }
+    gui_bineditor_bmp_redraw( s );
+    gui_bineditor_redraw( s->be );
 }
 
 static void gui_bineditor_bmp_button_press(GtkWidget *wg, GdkEventButton *ev, gui_bitmap_bmp_str *s )
@@ -328,19 +348,29 @@ static inline void gui_bineditor_bmp_draw_background( gui_bitmap_bmp_str *s )
     cairo_fill( s->cr );
 }
 
+static inline void gui_bineditor_bmp_draw_hline( cairo_t *cr, int x, int y, int len)
+{
+    cairo_move_to(cr, x, y);
+    cairo_line_to(cr, x + len, y);
+}
+
+static inline void gui_bineditor_bmp_draw_vline( cairo_t *cr, int x, int y, int len)
+{
+    cairo_move_to(cr, x, y);
+    cairo_line_to(cr, x, y + len);
+}
+
 static inline void gui_bineditor_bmp_draw_grid( gui_bitmap_bmp_str *s)
 {
     int i, n;
 
     cairo_set_source_rgb( s->cr, GET_COLOR(GUI_BINEDITOR_COLOR_BMP_GRID) ); // background color
-    for(i = 0, n = 0; i < s->cols; i++, n += s->pixel_size){
-	cairo_move_to(s->cr, s->x0, s->y0 + n);
-	cairo_line_to(s->cr, s->x0 + s->ww, s->y0 + n);
-    }
-    for(i = 0, n = 0; i < s->rows; i++, n += s->pixel_size){
-	cairo_move_to(s->cr, s->x0 + n, s->y0);
-	cairo_line_to(s->cr, s->x0 + n, s->y0 + s->hh);
-    }
+    for(i = 0, n = 0; i < s->cols; i++, n += s->pixel_size) 
+					gui_bineditor_bmp_draw_vline( s->cr, s->x0 + n, s->y0, s->hh);
+    
+    for(i = 0, n = 0; i < s->rows; i++, n += s->pixel_size)
+					gui_bineditor_bmp_draw_hline( s->cr, s->x0, s->y0 + n, s->ww);
+
     cairo_stroke( s->cr );        
 }
 
@@ -376,17 +406,63 @@ static void gui_bineditor_bmp_draw_pixel(gui_bitmap_bmp_str *s, unsigned int x, 
     gui_bineditor_bmp_draw_pixel_part( s, x, y);
 }
 
-static inline char gui_bineditor_bmp_test_bit(gui_bitmap_bmp_str *s, int bit )
+static unsigned int gui_bineditor_bmp_get_grid_addr(gui_bitmap_bmp_str *s, int x, int y, int *bit )
 {
-    unsigned int  byte_idx = bit / s->bpb;
-    unsigned int  bit_idx = bit % s->bpb;
-    unsigned char data;
+    unsigned int  offset = x + y * s->cols;
     
-    if( s->addr + byte_idx >=  s->be->priv->buff->size) return 0;
-    data = s->be->priv->buff->data[s->addr + byte_idx];
-    if( s->rev ) bit_idx = s->bpb - bit_idx;
+    *bit  = offset % s->bpb;
+    return s->addr + ( offset / s->bpb);
+}
 
-    return  data & s->mask_tb[bit_idx];
+static unsigned char gui_bineditor_bmp_get_grid_data(gui_bitmap_bmp_str *s, int x, int y, int *bit )
+{
+    unsigned char data;
+    unsigned int addr;
+
+    addr = gui_bineditor_bmp_get_grid_addr( s, x, y, bit);
+    if( addr < s->be->priv->buff->size)
+	data = s->be->priv->buff->data[addr];
+    else
+	data = 0;
+
+    return data;
+}
+
+static void gui_bineditor_bmp_set_grid_bit(gui_bitmap_bmp_str *s, int x, int y, char op )
+{
+    unsigned char data, tmp;
+    int idx = 0;
+    unsigned int addr;
+
+    addr = gui_bineditor_bmp_get_grid_addr( s, x, y, &idx);
+    if( addr < s->be->priv->buff->size)
+	data = s->be->priv->buff->data[addr];
+    else
+	return;
+
+    if( s->rev) idx = s->bpb - idx - 1;
+    if( idx < 0) return;
+
+    tmp = s->mask_tb[ idx ] ^ s->inverse;
+
+    switch( op ){
+	case 0: data |= tmp;  break;	// set pixel
+	case 1: data &= ~tmp; break;	// clear bit
+	case 2: data ^= tmp;  break;	// change bit to oposite
+    }
+    s->be->priv->buff->data[addr] = data; 
+}
+
+static inline char gui_bineditor_bmp_test_bit(gui_bitmap_bmp_str *s, int x, int y )
+{
+    unsigned char data;
+    int idx = 0;
+
+    data = gui_bineditor_bmp_get_grid_data(s, x, y, &idx);
+    if( s->rev) idx = s->bpb - idx - 1;
+    
+    if( idx < 0) return 0;
+    return data & (s->mask_tb[ idx ] ^ s->inverse);
 }
 
 static void gui_bineditor_bmp_draw_ctx( gui_bitmap_bmp_str *s )
@@ -395,7 +471,7 @@ static void gui_bineditor_bmp_draw_ctx( gui_bitmap_bmp_str *s )
 
     for(j = 0; j < s->rows; j++)
 	for( i = 0; i < s->cols; i++)
-	    if( gui_bineditor_bmp_test_bit(s, i + s->x1 + (j + s->y1) * s->cols) )
+	    if( gui_bineditor_bmp_test_bit(s, i, j)) 
 			gui_bineditor_bmp_draw_pixel( s, i, j);
 }
 
@@ -411,7 +487,14 @@ static void gui_bineditor_bmp_draw(gui_bitmap_bmp_str *s)
 
 void gui_bineditor_bitmap_set_address(GuiBineditor *be, unsigned int address)
 {
+    if( be->priv->bmp == NULL) return;
     ((gui_bitmap_bmp_str *)be->priv->bmp)->addr = address;
     gui_bineditor_bmp_redraw(  (gui_bitmap_bmp_str *)(be->priv->bmp) );
+}
+
+char gui_bineditor_bitmap_get_mode(GuiBineditor *be)
+{
+    if( be->priv->bmp == NULL) return FALSE;
+    return ((gui_bitmap_bmp_str *)be->priv->bmp)->mode;
 }
 
