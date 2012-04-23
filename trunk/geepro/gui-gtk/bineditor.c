@@ -225,7 +225,8 @@ static void gui_bineditor_mbutton(GtkWidget *wg, GdkEventButton *ev, GuiBinedito
     if(!be->priv->buff->data || !be->priv->buff->size) return;
     address = gui_bineditor_get_grid_addr(be, ev->x, ev->y, &ascii);
     if(address < 0) return;
-
+    if( !gui_bineditor_bitmap_get_mode(be) ) gui_bineditor_bitmap_set_address( be, address );        
+    if( be->priv->bmp ) return; // bitmap mode
     if(ev->button == 2){
 	be->priv->address_mark = address;
         gtk_widget_queue_draw(be->priv->drawing_area);
@@ -324,8 +325,8 @@ static void gui_bineditor_hint(GtkWidget *wg, GdkEventMotion *ev, GuiBineditor *
     sprintf(tmp, " %x:%c%x(%i) ", be->priv->address_mark, offs < 0 ? '-':' ',abs(offs), offs );
     gtk_label_set_text(GTK_LABEL(be->priv->info_mark), tmp);
 
-    if( be->priv->bmp )
-	gui_bineditor_bitmap_set_address( be, address );
+    if( gui_bineditor_bitmap_get_mode(be) ) 
+	    gui_bineditor_bitmap_set_address( be, address );        
 }
 
 static void gui_bineditor_leave(GtkWidget *wg, GdkEventCrossing *ev, GuiBineditor *be)
