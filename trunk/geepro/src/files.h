@@ -23,6 +23,10 @@
 #define __files_h__
 #include "geepro.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // false on fail
 typedef boolean (*file_ls_callback)(const char *fname, const char *error, void *arg);
 
@@ -36,5 +40,9 @@ extern long file_length(const char *fname); // returns -1 on fail
 // 'error' have to point array string of 256 size.  It returns error message strings on error. It should be cleared by 0.
 // return false on fail
 extern boolean file_ls(const char *path, const char *regex, char *error, file_ls_callback, void *arg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

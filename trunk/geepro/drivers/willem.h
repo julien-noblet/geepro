@@ -50,8 +50,9 @@
 
 #define DEBUG printf
 
-extern int willem_hardware_driver(en_hw_api func, int val, void *ptr);
-
+extern "C" {
+    extern int willem_hardware_driver(en_hw_api func, int val, void *ptr);
+};
 #endif
 
 

@@ -25,6 +25,10 @@
 #include "chip.h"
 #include "geepro.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int  buffer_alloc(chip_desc *chip);
 extern void buffer_free(chip_desc *chip);
 extern void buffer_clear(geepro *gep);
@@ -33,5 +37,8 @@ extern char buffer_write(geepro *gep, unsigned int addr, unsigned char byte);
 extern int  buffer_read(geepro *gep, unsigned int addr);
 extern char *buffer_get_buffer_ptr(geepro *gep);
 //extern void checksum(void);
+#ifdef __cplusplus
+};
+#endif
 #endif
 

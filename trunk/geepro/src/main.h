@@ -25,10 +25,18 @@
 #include "geepro.h"
 #include "storings.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern store_str store;
 extern void error(void);
 extern char test_hw(void *, geepro*);
 extern int  test_uid(geepro *gep);
 extern void rem_all_modl( modules* );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

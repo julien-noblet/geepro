@@ -30,6 +30,10 @@
 #define MAX_PRIORITY 0xffffafff
 #define MIN_PRIORITY 0xffffbfff     
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
     int pid;
@@ -54,5 +58,9 @@ extern void timer_latency(char sw, int uid); /* zmienia ustawienie planisty, wym
     ze wskaźnikiem ptr jako parametrem
 */
 extern void timer_abort_func(void (*callback)(void*), void *ptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __TIMER_H */

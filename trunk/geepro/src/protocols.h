@@ -37,6 +37,11 @@
 #define uWire_WRITE_AAA		0x00
 #define uWire_WRAL_AAA		0x01
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* I2C protocol */
 extern void init_i2c();
 extern void scl_tik_i2c();
@@ -63,6 +68,10 @@ extern void uWire_ewen_cmd( int alen, int us);
 extern void uWire_read_cmd( int addr, int alen, int us);
 extern void uWire_write_cmd( int addr, int alen, int us);
 extern void uWire_wral_cmd( int alen, int us);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
