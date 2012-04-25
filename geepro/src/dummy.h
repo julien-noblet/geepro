@@ -23,8 +23,14 @@
 #define __dummy_h__
 
 #include "../drivers/hwdriver.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern int dummy_hardware_driver(en_hw_api func, int val, void *ptr);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif
 

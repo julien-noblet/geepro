@@ -28,6 +28,11 @@
 #define IFACE_DRIVER_INIT_FUNC_NAME	"driver_init"
 #define IFACE_MODULE_INIT_FUNC_NAME	"init_module"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef int (*iface_regf)(void *ifc);
 
 /* Klasy interfejsów  */
@@ -85,9 +90,6 @@ typedef struct
     void *gep;		/* wskaźnik na główną strukturę danych */
 } iface;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef void (*iface_cb)(iface *, int cl, char *name, char *dev, void *ptr);
 typedef void (*iface_prg_func)(iface *, char *name, void *ptr);

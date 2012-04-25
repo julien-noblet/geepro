@@ -33,6 +33,10 @@
 #define ELICENSE "GPL version 2"
 
 #define SYSTEM_DEVICE_PATH "/dev/"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //#ifndef __cplusplus
 typedef char boolean;
@@ -56,6 +60,10 @@ typedef struct
     void  *gui;
     chip_desc  *chp;
 } geepro;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

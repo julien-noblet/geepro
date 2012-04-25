@@ -31,6 +31,10 @@
 #define GUI(x)	((gui *)x)
 #define MAX_CB_TABLE	1024
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct _gui_action gui_action;
 
 struct _gui_action
@@ -227,4 +231,9 @@ extern char gui_test_connection(geepro *);
 extern void gui_clk_sqw(gui*, gui_sqw_generator);
 ///* uzywane przez pluginy ukladow */
 //extern void gui_add_action(geepro *g, void *, const char *bt_name, const char *tip, void *cb);
+
+#ifdef __cplusplus
+ } // extern C
+#endif
+
 #endif
