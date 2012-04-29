@@ -292,6 +292,7 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
 	gtk_widget_destroy(wg);    
     gui_checksum_recalculate( gep );
     gtk_widget_queue_draw( GUI(gep->gui)->wmain );
+    gui_bineditor_redraw( GUI(gep->gui)->bineditor );
 }
 
 static void gui_load_file(GtkWidget *w, geepro *gep)
@@ -790,6 +791,7 @@ void gui_refresh_button(GtkWidget *wg, geepro *gep)
     if( err ) 
         gui_error_box(gep, "Error get creation time of file :\n%s\n%s", fname, err);    
     gui_checksum_recalculate( gep );
+    gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
 }
 
 void gui_help(geepro *gep)

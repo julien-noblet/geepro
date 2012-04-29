@@ -19,6 +19,7 @@
  *
  */
 
+#include "be_icons_xpm.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -802,6 +803,23 @@ static inline GtkWidget *gui_bineditor_hex_viewer(GuiBineditor *be)
     return wg0;
 }
 
+static void gui_bineditor_add_icons( GuiBineditor *be)
+{
+    static char first_run = 1;
+    GtkIconFactory *ifc;
+
+    if( first_run == 0) return;
+    first_run = 0;
+    ifc = gtk_icon_factory_new();
+
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_INVERSE_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_INVERSE_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_MIRROR_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_MIRROR_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_GRID_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_GRID_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_LIVE_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_LIVE_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_EDIT_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_EDIT_ICON)));
+    gtk_icon_factory_add_default( ifc );    
+}
+
 static inline void gui_bineditor_init(GuiBineditor *be)
 {
     GtkWidget *wg0, *wg1, *whb;
@@ -871,6 +889,7 @@ static inline void gui_bineditor_init(GuiBineditor *be)
     SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_PIXEL, 0.0, 0.5, 0.0);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_AMBIENT, 0.0, 0.0, 0.2);
 
+    gui_bineditor_add_icons( be );
     gui_bineditor_marker_new(be, GUI_BINEDITOR_MARKER_ALL);
     gui_bineditor_marker_set_color(be, GUI_BINEDITOR_MARKER_SELECTED, GUI_BINEDITOR_COLOR_TEXT_MARKED, GUI_BINEDITOR_COLOR_HL_MRK );
     gui_bineditor_marker_set_color(be, GUI_BINEDITOR_MARKER_FOUND, GUI_BINEDITOR_COLOR_MARKER_FG_FOUND, GUI_BINEDITOR_COLOR_MARKER_BG_FOUND );
@@ -974,6 +993,7 @@ void gui_bineditor_connect_statusbar(GuiBineditor *be, GtkWidget *sb)
 void gui_bineditor_redraw(GuiBineditor *be)
 {
     gtk_widget_queue_draw(be->priv->wmain);
+    gui_bineditor_bitmap_redraw( be );
 }
 
 /**********************************************************************************/

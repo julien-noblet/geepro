@@ -208,7 +208,7 @@ static inline void gui_bineditor_lookup( GuiBineditor *be, GtkWidget *ctx, unsig
     char fnd = 0, lf = 0;
     unsigned int from_l, to_l;
 
-    dlg = gtk_dialog_new_with_buttons(NULL, GTK_WINDOW(be->priv->wmain), 0, NULL);
+    dlg = gtk_dialog_new_with_buttons(NULL, GTK_WINDOW(be->priv->wmain), 0, "",NULL);
     if( repl ){
         gtk_dialog_add_button(GTK_DIALOG(dlg), TXT_BE_FIND_ALL_BT, 1);
         gtk_dialog_add_button(GTK_DIALOG(dlg), TXT_BE_FIND_REPL_BT, 2);
@@ -442,7 +442,7 @@ static void gui_bineditor_bined_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_b
 
     str->r_mask = 0;
     for(i = 0; i < 8; i++) 
-	if( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->mask[i]))) str->r_mask |= 1 << i;
+	if( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(str->mask[7 - i]))) str->r_mask |= 1 << i;
         
     gui_bineditor_bitmap( be, str->r_width, str->r_height, str->r_mask, str->r_rev);
 }
@@ -771,7 +771,7 @@ static void gui_bineditor_build_bined( GuiBineditor *be, GtkWidget *ctx, gui_be_
 //-->
     for(i = 8; i; i--){
             str->mask[i - 1] = gtk_check_button_new();
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(str->mask[i - 1]), (str->l_mask & (1 << (i - 1))) ? TRUE : FALSE);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(str->mask[i - 1]), (str->l_mask & (0x80 >> (i - 1))) ? TRUE : FALSE);
             gtk_table_attach_defaults(GTK_TABLE(ww), str->mask[i - 1], i - 1, i, 1,2);
     }
     
@@ -1559,6 +1559,7 @@ void gui_bineditor_open(GtkWidget *wg, GuiBineditor *be)
     if(str.fh) fclose(str.fh);
     if( name ) free( name );
     if( args ) free( args );
+    gui_bineditor_bitmap_set_address(be, 0);
 }
 
 void gui_bineditor_write(GtkWidget *wg, GuiBineditor *be)
