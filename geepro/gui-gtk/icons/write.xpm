@@ -10,7 +10,7 @@ static char * write_xpm[] = {
 "%	c #191917",
 "&	c #C9C3C3",
 "*	c #EFE8E8",
-"=	c #FFEB0E",
+"=	c #F80505",
 "-	c #887373",
 "                                                                                                                                ",
 "                                                                                                                                ",
