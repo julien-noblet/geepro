@@ -32,6 +32,17 @@
 #include "be_buffer.h"
 #include "be_bitmap.h"
 
+#define GUI_BINEDITOR_BITMAN_ICON	"geepro-bineditor-bitman"
+#define GUI_BINEDITOR_BYTMAN_ICON	"geepro-bineditor-bytman"
+#define GUI_BINEDITOR_CRC_ICON		"geepro-bineditor-crc"
+#define GUI_BINEDITOR_BMP_ICON		"geepro-bineditor-bmp"
+#define GUI_BINEDITOR_TEXT_ICON		"geepro-bineditor-text"
+#define GUI_BINEDITOR_STENCIL_ICON	"geepro-bineditor-stencil"
+#define GUI_BINEDITOR_ASM_ICON		"geepro-bineditor-asm"
+#define GUI_BINEDITOR_EXPAND_ICON	"geepro-bineditor-expand"
+#define GUI_BINEDITOR_AUX_ICON		"geepro-bineditor-aux"
+
+
 enum
 {
     CHANGED,
@@ -627,13 +638,13 @@ static inline void gui_bineditor_vert_tool(GuiBineditor *be)
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->find), -1);
 
     /* Bit Manipulator */
-    be->priv->manipulator = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_CONVERT ));
+    be->priv->manipulator = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_BITMAN_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->manipulator), TIP_BE_MANIPULATOR);
     g_signal_connect(G_OBJECT(be->priv->manipulator), "clicked", G_CALLBACK(gui_bineditor_manipulator), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->manipulator), -1);
 
     /* Byte organizer */
-    be->priv->organizer = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_INDEX ));
+    be->priv->organizer = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_BYTMAN_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->organizer), TIP_BE_ORGANIZER);
     g_signal_connect(G_OBJECT(be->priv->organizer), "clicked", G_CALLBACK(gui_bineditor_organizer), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->organizer), -1);
@@ -642,31 +653,31 @@ static inline void gui_bineditor_vert_tool(GuiBineditor *be)
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), gtk_separator_tool_item_new() , -1);
 
     /* Checksum calculator */
-    be->priv->checksum = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_INFO ));
+    be->priv->checksum = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_CRC_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->checksum), TIP_BE_CHECKSUM);
     g_signal_connect(G_OBJECT(be->priv->checksum), "clicked", G_CALLBACK(gui_bineditor_checksum), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->checksum), -1);
 
     /* Binary editor */
-    be->priv->bined = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_SELECT_COLOR ));
+    be->priv->bined = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_BMP_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->bined), TIP_BE_BINED);
     g_signal_connect(G_OBJECT(be->priv->bined), "clicked", G_CALLBACK(gui_bineditor_bined), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->bined), -1);
 
     /* Text editor */
-    be->priv->texted = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_SELECT_FONT ));
+    be->priv->texted = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_TEXT_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->texted), TIP_BE_TEXTED);
     g_signal_connect(G_OBJECT(be->priv->texted), "clicked", G_CALLBACK(gui_bineditor_texted), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->texted), -1);
 
-    /* Stencel */
-    be->priv->stenc = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_EDIT));
+    /* Stencil */
+    be->priv->stenc = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_STENCIL_ICON));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->stenc), TIP_BE_stencil);
     g_signal_connect(G_OBJECT(be->priv->stenc), "clicked", G_CALLBACK(gui_bineditor_stencil), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->stenc), -1);
 
     /* Asm viewer */
-    be->priv->asmview = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_ZOOM_FIT ));
+    be->priv->asmview = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_ASM_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->asmview), TIP_BE_ASMVIEW);
     g_signal_connect(G_OBJECT(be->priv->asmview), "clicked", G_CALLBACK(gui_bineditor_asmview), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->asmview), -1);
@@ -725,13 +736,13 @@ static inline void gui_bineditor_hor_tool(GuiBineditor *be)
 //    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->exec), -1);
 
     /* Resize buffer */
-    be->priv->resize = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_FULLSCREEN ));
+    be->priv->resize = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_EXPAND_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->resize), TIP_BE_RESIZE);
     g_signal_connect(G_OBJECT(be->priv->resize), "clicked", G_CALLBACK(gui_bineditor_resize), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->resize), -1);
 
     /* Auxiliary buffer */
-    be->priv->aux = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_PASTE ));
+    be->priv->aux = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_AUX_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->aux), TIP_BE_AUX);
     g_signal_connect(G_OBJECT(be->priv->aux), "clicked", G_CALLBACK(gui_bineditor_aux), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->aux), -1);
@@ -817,6 +828,16 @@ static void gui_bineditor_add_icons( GuiBineditor *be)
     gtk_icon_factory_add(ifc, GUI_BINEDITOR_GRID_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_GRID_ICON)));
     gtk_icon_factory_add(ifc, GUI_BINEDITOR_LIVE_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_LIVE_ICON)));
     gtk_icon_factory_add(ifc, GUI_BINEDITOR_EDIT_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_EDIT_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_BITMAN_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BITMAN_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_BYTMAN_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BYTMAN_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_CRC_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_CRC_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_BMP_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_BMP_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_TEXT_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_TEXT_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_STENCIL_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_STENCIL_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_ASM_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_ASM_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_EXPAND_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_EXPAND_ICON)));
+    gtk_icon_factory_add(ifc, GUI_BINEDITOR_AUX_ICON, gtk_icon_set_new_from_pixbuf(gdk_pixbuf_new_from_xpm_data( BE_AUX_ICON)));
+
     gtk_icon_factory_add_default( ifc );    
 }
 
