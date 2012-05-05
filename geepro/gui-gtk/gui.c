@@ -419,11 +419,11 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
     } else 
 	x = -1;
 	
-//    if( x ) gui_dialog_box( gep, 
-//		"[ER][TEXT]"
-//	        "Error ocured during performing action.\n Returned error: %i"
-//		"[/TEXT][BR] OK ", x
-//	    );
+    if( x ) gui_dialog_box( gep, 
+		"[ER][TEXT]"
+	        "Error occured during performing action.\n Returned error: %i"
+		"[/TEXT][BR] OK ", x
+	    );
     gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
     gui_checksum_recalculate( gep );
 }
@@ -819,7 +819,7 @@ void gui_menu_setup(geepro *gep)
     gtk_widget_set_size_request(GUI(gep->gui)->wmain, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
     gtk_widget_realize(GUI(gep->gui)->wmain);
 
-    wg0 = gtk_vbox_new(FALSE, 0);    
+    wg0 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);    
     gtk_container_add(GTK_CONTAINER(GUI(gep->gui)->wmain), wg0);
 
 /* pasek Menu Bar */
@@ -895,6 +895,7 @@ void gui_menu_setup(geepro *gep)
     gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
     ti0 = gtk_tool_button_new_from_stock( GTK_STOCK_PREFERENCES );
     g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_config), gep);
+gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     gtk_tool_item_set_tooltip_text( ti0, CONFIG_TIP);
     gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
     ti0 = gtk_separator_tool_item_new();
@@ -903,7 +904,7 @@ void gui_menu_setup(geepro *gep)
 /* Notebook */
     wg1 = gtk_notebook_new();
     gtk_notebook_set_tab_pos(GTK_NOTEBOOK(wg1), GTK_POS_TOP);
-    gtk_container_add(GTK_CONTAINER(wg0), wg1);
+    gtk_box_pack_start(GTK_BOX(wg0), wg1, TRUE, TRUE, 0);
     GUI(gep->gui)->notebook = wg1;
 
 /* ------------------------------------------- strony NOTEBOOKA ----------------------------------------------------------- */
@@ -938,7 +939,6 @@ void gui_menu_setup(geepro *gep)
     gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,1,2, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->buffer_entry = wg1;
-
     /* Suma CRC */    
     wg1 = gtk_label_new(CHECKSUM_LB);
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
@@ -946,14 +946,12 @@ void gui_menu_setup(geepro *gep)
     wg1 = gtk_entry_new();
     gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     GUI(gep->gui)->crc_entry = wg1;
-    wg4 = gtk_hbox_new(FALSE, 0);
-    gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,2,3, GTK_FILL | GTK_EXPAND, 0, 10,0);
-    gtk_container_add(GTK_CONTAINER(wg4), wg1);
+    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,2,3, GTK_FILL | GTK_EXPAND, 0, 10,0);
 
     /* Nazwa pliku */    
     wg1 = gtk_label_new(FILE_LB);
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,3,4, GTK_FILL, 0, 0,0);
+gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,3,4, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
     gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     GUI(gep->gui)->file_entry = wg1;
@@ -964,11 +962,11 @@ void gui_menu_setup(geepro *gep)
 	    gtk_editable_set_position(GTK_EDITABLE(wg1), -1);
 	}
     }
-    wg4 = gtk_hbox_new(FALSE, 0);
+    wg4 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(wg4), wg1);
     wg1 = gtk_button_new();
-    gtk_box_pack_end(GTK_BOX(wg4), wg1, 0 ,0, 0);    
-    gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
+    gtk_box_pack_start(GTK_BOX(wg4), wg1, FALSE ,FALSE, 0);    
+gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
     wg4 = gtk_image_new_from_stock("gtk-refresh", GTK_ICON_SIZE_BUTTON);    
     gtk_container_add(GTK_CONTAINER(wg1), wg4);
     //gtk_widget_set_tooltip_text(wg1, "Reload");
@@ -1064,30 +1062,26 @@ void gui_progress_break(geepro *gep)
 
 void gui_progress_bar_init(geepro *gep, const char *title, long range)
 {
-    GtkWidget *wg0, *wg1;
+    GUI(gep->gui)->progress_win = gtk_dialog_new();
+    gtk_window_set_resizable(GTK_WINDOW(GUI(gep->gui)->progress_win), FALSE);
+    gtk_window_set_modal(GTK_WINDOW(GUI(gep->gui)->progress_win), TRUE);
+    gtk_window_set_transient_for(GTK_WINDOW(GUI(gep->gui)->progress_win), GTK_WINDOW(GUI(gep->gui)->wmain));
+    g_signal_connect(G_OBJECT(GUI(gep->gui)->progress_win), "destroy", G_CALLBACK(gui_progress_break), NULL);
+    gtk_window_set_title(GTK_WINDOW(GUI(gep->gui)->progress_win), title);
 
-    wg0 = gtk_window_new(GTK_WINDOW_DIALOG);
-    GUI(gep->gui)->progress_win = wg0;
-    gtk_window_set_position(GTK_WINDOW(wg0), GTK_WIN_POS_CENTER_ON_PARENT);
-    gtk_window_set_resizable(GTK_WINDOW(wg0), FALSE);
-    gtk_window_set_modal(GTK_WINDOW(wg0), TRUE);
-    gtk_window_set_transient_for(GTK_WINDOW(wg0), GTK_WINDOW(GUI(gep->gui)->wmain));
-    g_signal_connect(G_OBJECT(wg0), "destroy", G_CALLBACK(gui_progress_break), NULL);
-    gtk_window_set_title(GTK_WINDOW(wg0), title);
-
-    wg1 = gtk_progress_bar_new();
-
-    gtk_container_add(GTK_CONTAINER(wg0), wg1);
-    GUI(gep->gui)->progress_bar = wg1;
+    GUI(gep->gui)->progress_bar = gtk_progress_bar_new();
+    gtk_container_add( GTK_CONTAINER(gtk_dialog_get_action_area(GTK_DIALOG(GUI(gep->gui)->progress_win))), GUI(gep->gui)->progress_bar );
     gui_rfsh_gtk();
     gui_progress_bar_exit = 0;
-
-    gtk_widget_show_all(wg0);
+    gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(GUI(gep->gui)->progress_bar), TRUE);
+    gtk_widget_show_all(GUI(gep->gui)->progress_win);
 }
 
 char gui_progress_bar_set(geepro *gep, long value, long max)
 {
     long delta;
+    
+    if(max == 0) return 0;
     if( gui_progress_bar_exit ) return 1;
     if( value != 1){
 	if((value != 0) || (value != max)){
@@ -1096,7 +1090,7 @@ char gui_progress_bar_set(geepro *gep, long value, long max)
     	    if( value % delta ) return 0;
 	}
     }
-    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(GUI(gep->gui)->progress_bar), value / max);
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(GUI(gep->gui)->progress_bar), (gdouble)value / max);
     gui_rfsh_gtk();
     return 0;
 }
@@ -1216,7 +1210,7 @@ int gui_dialog_box(geepro *gp, const char *en, ...)
     /* przyciski */
     ft = strchr(ex + 1, ']') + 1; /* koniec klamerki */
 
-    wg0 = gtk_hbox_new(FALSE, 0);
+    wg0 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_set_border_width(GTK_CONTAINER(wg0), 3);
     gtk_table_attach(GTK_TABLE(wgtab), wg0, 0,2,1,2 ,GTK_FILL, GTK_FILL, 0,0);
 
@@ -1398,11 +1392,11 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
     if(!strcmp(tmp, "CR")) x = GTK_STOCK_STOP;
     if(!strcmp(tmp, "IF")) x = GTK_STOCK_DIALOG_INFO;
     if(!strcmp(tmp, "AU")) x = GTK_STOCK_DIALOG_AUTHENTICATION;
-    hbox = gtk_hbox_new(FALSE, 0);
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(   gtk_dialog_get_content_area(GTK_DIALOG(wd))  ), hbox, TRUE, TRUE, 0);
     if( x ) 
 	gtk_box_pack_start(GTK_BOX(hbox), gtk_image_new_from_stock( x, GTK_ICON_SIZE_DIALOG), FALSE, FALSE, 10 );
-    vbox = gtk_vbox_new(FALSE, 0);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_end(GTK_BOX(hbox), vbox, FALSE, 0, 0);    
     str = (char *)fmt; 
     cnt = 0;

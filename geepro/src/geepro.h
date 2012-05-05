@@ -23,12 +23,12 @@
 
 #include "iface.h"
 #include "chip.h"
+#include "autors"
 
 /* Informacje o wersji */
 #define EPROGRAM_NAME "Geepro"
 #define ERELDATE "1 Feb 2020"
-#define EVERSION "0.1"
-#define EAUTHORS { "Krzysztof Komarnicki krzkomar@wp.pl", NULL }
+#define EAUTHORS { AUTORS, NULL }
 #define ESRCURL	 "sourceforge.net/projects/geepro"
 #define ELICENSE "GPL version 2"
 

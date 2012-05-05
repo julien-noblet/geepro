@@ -53,14 +53,14 @@ extern void send_byte_i2c( char byte );
 extern char recv_byte_i2c();
 extern char wait_ack_i2c();
 
-/* MICROWIRE */
+/* µWire protocol */
 extern void uWire_init(char org );
 extern void uWire_cs( char state );
 extern char uWire_bit( char si, int us); // send/receive in full duplex one bit
 extern unsigned int uWire_word( unsigned int si, int length, int us); // send/receive in full duplex word
 extern void uWire_start(int opcode, int aaa_mask, int adrlen, int address, int us);
 extern void uWire_stop(int us);
-extern int uWire_wait_busy(int us, int timeout); // return true if timeout
+extern int  uWire_wait_busy(int us, int timeout); // return true if timeout
 extern void uWire_erase_cmd( int addr, int alen, int us);
 extern void uWire_eral_cmd( int alen, int us);
 extern void uWire_ewds_cmd( int alen, int us);
@@ -69,6 +69,10 @@ extern void uWire_read_cmd( int addr, int alen, int us);
 extern void uWire_write_cmd( int addr, int alen, int us);
 extern void uWire_wral_cmd( int alen, int us);
 
+/* SPI protocol */
+extern char spi_send_data( int data );
+extern int  spi_recv_data();
+extern char spi_reset();
 #ifdef __cplusplus
 }
 #endif

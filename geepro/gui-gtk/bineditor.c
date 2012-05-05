@@ -669,18 +669,19 @@ static inline void gui_bineditor_vert_tool(GuiBineditor *be)
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->texted), TIP_BE_TEXTED);
     g_signal_connect(G_OBJECT(be->priv->texted), "clicked", G_CALLBACK(gui_bineditor_texted), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->texted), -1);
-
+//gtk_widget_set_sensitive( be->priv->texted, FALSE );
     /* Stencil */
     be->priv->stenc = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_STENCIL_ICON));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->stenc), TIP_BE_stencil);
     g_signal_connect(G_OBJECT(be->priv->stenc), "clicked", G_CALLBACK(gui_bineditor_stencil), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->stenc), -1);
-
+gtk_widget_set_sensitive( be->priv->stenc, FALSE );
     /* Asm viewer */
     be->priv->asmview = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_ASM_ICON ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->asmview), TIP_BE_ASMVIEW);
     g_signal_connect(G_OBJECT(be->priv->asmview), "clicked", G_CALLBACK(gui_bineditor_asmview), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->asmview), -1);
+gtk_widget_set_sensitive( be->priv->asmview, FALSE );
 }
 
 static inline void gui_bineditor_hor_tool(GuiBineditor *be)
@@ -704,13 +705,13 @@ static inline void gui_bineditor_hor_tool(GuiBineditor *be)
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->i_undo), TIP_BE_UNDO);
     g_signal_connect(G_OBJECT(be->priv->i_undo), "clicked", G_CALLBACK(gui_bineditor_undo), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->i_undo), -1);
-
+gtk_widget_set_sensitive( be->priv->i_undo, FALSE );
 // Redo
     be->priv->i_redo = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_REDO ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->i_redo), TIP_BE_REDO);
     g_signal_connect(G_OBJECT(be->priv->i_redo), "clicked", G_CALLBACK(gui_bineditor_redo), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->i_redo), -1);
-
+gtk_widget_set_sensitive( be->priv->i_redo, FALSE );
     // Separator
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), gtk_separator_tool_item_new() , -1);
 
