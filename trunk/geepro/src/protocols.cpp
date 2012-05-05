@@ -24,6 +24,11 @@
 
 //#define DEBUG
 
+/*******************************************************************************************************************
+	    I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C I2C
+********************************************************************************************************************/
+
+
 #define TI 16
 #define TIMEOUT	100
 
@@ -34,7 +39,7 @@ void init_i2c()
     hw_set_hold(0);
     hw_delay( TI );
     hw_sw_vcc(1);
-    hw_delay( 10 * TI );  // time for POR
+    hw_delay( 10 * TI );  // time for POR (Power On Ready)
 }
 
 void scl_tik_i2c()
@@ -241,4 +246,7 @@ void uWire_wral_cmd( int alen, int us)
     uWire_start( uWire_WRAL_OPC, uWire_WRAL_AAA, alen, 0, us );
 }
 
+/*******************************************************************************************************************
+		 SPI SPI  SPI SPI  SPI SPI  SPI SPI  SPI SPI  SPI SPI  SPI SPI  SPI SPI  SPI SPI
+********************************************************************************************************************/
 

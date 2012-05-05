@@ -300,4 +300,4 @@
 #define TEXT_LBL_SB_HEIGHT	"Height:"
 #define TEXT_LBL_SB_OFFSET	"Offset:"
 #define TEXT_WINTITLE_BINEDITOR	"Geepro - bitmap editor"
-
+#define TEXT_WINTITLE_TEXTED	"Geepro - text editor"
