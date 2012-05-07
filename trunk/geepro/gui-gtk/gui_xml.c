@@ -172,7 +172,10 @@ static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWi
 	sscanf(pos, "%i, %i, %i, %i", &b0, &b1, &b2, &b3);
 	gtk_table_attach(GTK_TABLE(parent), child, b0, b1, b2, b3, flagx, flagy, spx, spy);
     }else
-	gtk_container_add(GTK_CONTAINER(parent), child);
+ 	if(GTK_IS_BOX( parent ))
+	    gtk_box_pack_start(GTK_BOX(parent), child, TRUE, TRUE, 0);
+	else
+	    gtk_container_add(GTK_CONTAINER(parent), child);
 }
 
 static GtkWidget *gui_xml_frame_new(xmlNode *cur)
@@ -208,6 +211,7 @@ static GtkWidget *gui_xml_box_new(xmlNode *cur, char dir)
 {
     char *arg0;
     int arg1, arg2;
+    GtkWidget *wg;
 
     arg0 = (char *)xmlGetProp(cur, (unsigned char *)"expand");
     arg1 = FALSE; arg2 = 0;
@@ -215,9 +219,9 @@ static GtkWidget *gui_xml_box_new(xmlNode *cur, char dir)
 
     arg0 = (char *)xmlGetProp(cur, (unsigned char *)"spacing");
     if(arg0) arg2 = atoi(arg0);
-
-    if(dir) return gtk_hbox_new(arg1, arg2);
-    return gtk_vbox_new(arg1, arg2);
+    wg = gtk_box_new(dir ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL, arg2);
+    gtk_box_set_homogeneous(GTK_BOX(wg), arg1);
+    return wg;
 }
 
 static GtkWidget *gui_xml_dipsw(gui_xml *g, xmlNode *cur)
@@ -263,7 +267,7 @@ static GtkWidget *gui_xml_dipsw(gui_xml *g, xmlNode *cur)
 	gtk_container_add(GTK_CONTAINER(wg0), wg1);
     }
 
-    wg2 = gtk_hbox_new(FALSE,0);
+    wg2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0);
     gtk_container_set_border_width(GTK_CONTAINER(wg2), 5);
     gtk_container_set_border_width(GTK_CONTAINER(wg0), 3);
     gtk_box_pack_start(GTK_BOX(wg2), wg0, TRUE, FALSE, 0);
@@ -327,7 +331,7 @@ static GtkWidget *gui_xml_chbutton(gui_xml *g, xmlNode *cur)
     if(arg) rl = !strcmp(arg, "right");
     
     tmp = gtk_alignment_new( rl ? 1:0, 0.5,0,0);
-    tmp_2 = gtk_hbox_new(FALSE,0);
+    tmp_2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0);
     gtk_container_add(GTK_CONTAINER(tmp), tmp_2);
     tmp_3 = gtk_check_button_new();
     gui_xml_signal_register(g, tmp_3, id, "toggled", GUI_XML_CHECK_BUTTON);
@@ -533,7 +537,7 @@ static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, cons
     for(cur = cur->xmlChildrenNode; cur != NULL; cur = cur->next){
 	if(!strcmp((char*)cur->name,"info") && strstr(section, "info")){
 	    g_return_if_fail(g->info != NULL);
-	    tmp = gtk_vbox_new(FALSE, 3);
+	    tmp = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
 	    gui_xml_signal_register(g, tmp, NULL, NULL, GUI_XML_INFO_ROOT);    
 	    gui_xml_parse_element(g, GTK_WIDGET(tmp), doc, cur->xmlChildrenNode, parm);
 	    gtk_table_attach_defaults(GTK_TABLE(g->info), tmp, 1,2, 0, 2);
@@ -541,7 +545,7 @@ static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, cons
 	}
 	if(!strcmp((char*)cur->name,"notebook") && strstr(section, "notebook")){
 	    lab = gtk_label_new((char *)xmlGetProp(cur, (unsigned char *)"name"));
-	    tmp = gtk_vbox_new(FALSE, 0);
+	    tmp = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	    gui_xml_signal_register(g, tmp, NULL, NULL, GUI_XML_NOTEBOOK_ROOT);
 	    gui_xml_parse_element(g, tmp, doc, cur->xmlChildrenNode, parm);
 	    gtk_notebook_append_page(GTK_NOTEBOOK(g->notebook), tmp, lab);

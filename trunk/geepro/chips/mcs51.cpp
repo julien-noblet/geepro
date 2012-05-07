@@ -444,14 +444,14 @@ unsigned char read_byte_AT89C5x(int addr, int mode)
 void read_AT89C5x(int size)
 { 
     int addr = 0;
-    int signature;
+//    int signature;
     addr_state = 0;
 
     hw_sw_vpp(0);   // VPP OFF
     hw_sw_vcc(1);   // VCC ON
     hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
-    signature = 0;
+//    signature = 0;
     progress_loop(addr, size, "Reading")
 	put_buffer( addr, read_byte_AT89C5x(addr, AT89C5x_READ_MODE) );
 

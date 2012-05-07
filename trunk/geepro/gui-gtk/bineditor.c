@@ -354,7 +354,7 @@ static void gui_bineditor_enter(GtkWidget *wg, GdkEventCrossing *ev, GuiBinedito
     GdkCursor *cursor;
     cursor = gdk_cursor_new(GDK_HAND2);
     gdk_window_set_cursor(gtk_widget_get_parent_window(wg), cursor);
-    gdk_cursor_unref(cursor);
+    g_object_unref(G_OBJECT(cursor));
 }
 
 static void gui_bineditor_slider(GtkAdjustment *wig, GuiBineditor *wg, GuiBineditor *be)
@@ -629,7 +629,7 @@ static inline void gui_bineditor_vert_tool(GuiBineditor *be)
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->copy), TIP_BE_COPY);
     g_signal_connect(G_OBJECT(be->priv->copy), "clicked", G_CALLBACK(gui_bineditor_copy), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->copy), -1);
-    gtk_widget_set_sensitive(be->priv->copy, FALSE);
+    gtk_widget_set_sensitive(be->priv->copy, FALSE );
 
     /* Find string */
     be->priv->find = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_FIND_AND_REPLACE ));
@@ -758,7 +758,7 @@ static inline GtkWidget *gui_bineditor_coord(GuiBineditor *be)
     GtkWidget *wg1, *wg2;
 
     /* info fields */
-    wg1 = gtk_hbox_new(FALSE, 0);
+    wg1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     be->priv->info_addr = gtk_label_new("0000:00");
     wg2 = gtk_frame_new(NULL);
     
@@ -782,12 +782,12 @@ static inline GtkWidget *gui_bineditor_hex_viewer(GuiBineditor *be)
     wg0 = gtk_frame_new(NULL);    
     gtk_frame_set_shadow_type(GTK_FRAME(wg0), GTK_SHADOW_IN);
 
-    wg1 = gtk_hbox_new(FALSE, 0);
+    wg1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(wg0), wg1);
 
     /* add vertical slider */
     be->priv->adj = GTK_ADJUSTMENT(gtk_adjustment_new(0, 0, 1, 1, 0, 0));
-    wg2 = gtk_vscrollbar_new(be->priv->adj);
+    wg2 = gtk_scrollbar_new(GTK_ORIENTATION_VERTICAL, be->priv->adj);
     gtk_box_pack_end(GTK_BOX(wg1), wg2, FALSE, FALSE, 0);
     g_signal_connect(G_OBJECT(be->priv->adj), "value_changed", G_CALLBACK(gui_bineditor_slider), be);
 
@@ -853,6 +853,7 @@ static inline void gui_bineditor_init(GuiBineditor *be)
 
     gui_bineditor_buff_constr( &be->priv->buff );
 
+    be->priv->aux_ed = NULL;
     be->priv->icon = NULL;
     be->priv->root = NULL;
     be->priv->cut_data.size = 0;
@@ -881,6 +882,7 @@ static inline void gui_bineditor_init(GuiBineditor *be)
     be->priv->vfind = NULL;
     be->priv->vreplace = NULL;
     be->priv->rfsh = 0; /* force redrawing */
+    be->priv->texted_str = NULL;
 
     be->priv->key_left = gdk_keyval_from_name("Left");
     be->priv->key_right = gdk_keyval_from_name("Right");
@@ -902,21 +904,19 @@ static inline void gui_bineditor_init(GuiBineditor *be)
     SET_COLOR(be, GUI_BINEDITOR_COLOR_GRID, 0.8, 0.8, 0.8);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_GRID_BG, 1, 1, 0.9);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_DESC_BG, 0.3, 0.3, 1);
-
     SET_COLOR(be, GUI_BINEDITOR_COLOR_MARKER_FG_FOUND, 0.0, 0.0, 0.0);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_MARKER_BG_FOUND, 0.9, 0.9, 0.3);
-
     SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_BG, 0.9, 0.9, 1.0);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_GRID, 0.8, 0.8, 0.9);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_PIXEL, 0.0, 0.5, 0.0);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_AMBIENT, 0.0, 0.0, 0.2);
+    SET_COLOR(be, GUI_BINEDITOR_COLOR_TXT_AMBIENT, 0.0, 0.0, 0.5);
 
     gui_bineditor_add_icons( be );
     gui_bineditor_marker_new(be, GUI_BINEDITOR_MARKER_ALL);
     gui_bineditor_marker_set_color(be, GUI_BINEDITOR_MARKER_SELECTED, GUI_BINEDITOR_COLOR_TEXT_MARKED, GUI_BINEDITOR_COLOR_HL_MRK );
     gui_bineditor_marker_set_color(be, GUI_BINEDITOR_MARKER_FOUND, GUI_BINEDITOR_COLOR_MARKER_FG_FOUND, GUI_BINEDITOR_COLOR_MARKER_BG_FOUND );
-//gui_bineditor_marker_set_item(be, GUI_BINEDITOR_MARKER_FOUND, GUI_BINEDITOR_MARKER_HEX |  GUI_BINEDITOR_MARKER_ASCII, 32, 76);
-    be->priv->vbox = gtk_vbox_new(FALSE,0);
+    be->priv->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL,0);
     gtk_box_pack_start(GTK_BOX(be), be->priv->vbox, TRUE, TRUE, 0);        
 
 // horizontal toolbar 
@@ -928,8 +928,8 @@ static inline void gui_bineditor_init(GuiBineditor *be)
     gtk_box_pack_start(GTK_BOX(be->priv->vbox), wg1, FALSE, FALSE, 0);
 
 //---> Hex viewer and left toolbar
-    whb = gtk_hbox_new(FALSE, 0);
-    gtk_container_add(GTK_CONTAINER(be->priv->vbox), whb);    
+    whb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(be->priv->vbox), whb, TRUE, TRUE, 0);
 
 // vertical toolbar 
     gui_bineditor_vert_tool( be );    
@@ -937,9 +937,17 @@ static inline void gui_bineditor_init(GuiBineditor *be)
 
 // hex viewer
     wg0 = gui_bineditor_hex_viewer( be );
-    gtk_container_add(GTK_CONTAINER(whb), wg0);    
-}
+    gtk_box_pack_start(GTK_BOX(whb), wg0, TRUE, TRUE, 0);    
 
+}
+/*
+void gui_bineditor_hide_fileop(GuiBineditor *be)
+{
+    gtk_widget_realize(be);
+    gtk_widget_hide(be->priv->i_open);
+    gtk_widget_hide(be->priv->i_write);
+}
+*/
 void gui_bineditor_set_buffer(GuiBineditor *be, int bfsize, unsigned char *buffer)
 {
     g_return_if_fail(be != NULL);
@@ -1016,6 +1024,7 @@ void gui_bineditor_redraw(GuiBineditor *be)
 {
     gtk_widget_queue_draw(be->priv->wmain);
     gui_bineditor_bitmap_redraw( be );
+//    gui_bineditor_text_rfsh( be );
 }
 
 /**********************************************************************************/
@@ -1426,26 +1435,24 @@ void gui_bineditor_cut_store(GuiBineditor *be, unsigned int from, unsigned int t
 
     unsigned char *data;
     GuiBineditor *bt;
-    
+
     bt = gui_bineditor_get_root(be);
-    
     bt->priv->cut_data.size = (from > to ? from - to : to - from) + 1;	
     if(( from >= be->priv->buff->size) || ( to >= be->priv->buff->size)){
 	printf("WARN: gui_bineditor_cut_save() -> index exceed buffer\n");	
 	return;
     }
-    
+
     data = (unsigned char *)realloc(bt->priv->cut_data.data, bt->priv->cut_data.size );
     if( data == NULL ){
 	printf("WARN: gui_bineditor_cut_store() -> memory allocation problem\n");
 	return;
     }
-
     bt->priv->cut_data.data = data;
     memcpy(bt->priv->cut_data.data, be->priv->buff->data, bt->priv->cut_data.size);
     // 
     gtk_widget_set_sensitive(be->priv->copy, TRUE);
-    if(be->priv->aux)
+    if(be->priv->aux_ed && be->priv->aux)
 	gtk_widget_set_sensitive(GUI_BINEDITOR(be->priv->aux_ed)->priv->copy, TRUE);    
 }
 

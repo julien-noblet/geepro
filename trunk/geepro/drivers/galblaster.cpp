@@ -1,6 +1,9 @@
+/* $Revision: 1.2 $ */
 /* geepro - Willem eprom programmer for linux
- * Copyright (C) 2011 Krzysztof Komarnicki
+ * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
+ *
+ * JTAG driver
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,23 +21,27 @@
  *
  */
 
-#ifndef __BE_TEXTEDIT_H__
-#define __BE_TEXTEDIT_H__
-#include "bineditor.h"
+#include "drivers.h"
 
-typedef struct
+int jtag_byteblaster_api(en_hw_api func, int val, void *ptr)
 {
-    GuiBineditor *be;
-    unsigned int base_addr;
-    unsigned int ed_len;
-    GtkWidget *wmain, *ctx,*draw_area, *tb_line, *ed_wg;
-    GtkTextBuffer *ed_buffer;
-    GtkAdjustment *vadj, *hadj;
-    cairo_t *cr;
+    switch(func)
+    {
+	case HW_IFACE: return IFACE_RS232;
+	case HW_TEST : return 1;
+	case HW_NAME : DRIVER_NAME(ptr) = (char *)"JTAG byteblaster - dummy";
+	default: return 0;
+    }
 
-} gui_bineditor_text_str;
+    return -2;
+}
 
-extern void gui_bineditor_text_editor(GuiBineditor *be, unsigned int start, unsigned int len);
-extern char gui_bineditor_text_rfsh(GuiBineditor *be);
 
-#endif // __BE_TEXTEDIT_H__
+/******************************************************************************************************************/
+driver_register_begin
+
+    register_api( jtag_byteblaster_api );
+
+driver_register_end
+
+

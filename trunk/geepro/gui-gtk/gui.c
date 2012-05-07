@@ -87,6 +87,7 @@ static void gui_checksum_rfsh(geepro *gep)
 
 static void gui_checksum_recalculate(geepro *gep)
 {
+    if( !gep->chp ) return;
     if(gep->chp->dev_size == 0) return;
 // to add algorithm selection
     gep->chp->checksum = checksum_calculate( CHECKSUM_ALG_LRC, gep->chp->dev_size, (unsigned char *)gep->chp->buffer, 0, gep->chp->dev_size - 1, 0, 0, 0, 0);
@@ -290,6 +291,7 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
 	g_free(fname);
     } else
 	gtk_widget_destroy(wg);    
+
     gui_checksum_recalculate( gep );
     gtk_widget_queue_draw( GUI(gep->gui)->wmain );
     gui_bineditor_redraw( GUI(gep->gui)->bineditor );
@@ -951,7 +953,7 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     /* Nazwa pliku */    
     wg1 = gtk_label_new(FILE_LB);
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,3,4, GTK_FILL, 0, 0,0);
+    gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,3,4, GTK_FILL, 0, 0,0);
     wg1 = gtk_entry_new();
     gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     GUI(gep->gui)->file_entry = wg1;
@@ -963,14 +965,13 @@ gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,3,4, GTK_FILL, 0, 0,0);
 	}
     }
     wg4 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_container_add(GTK_CONTAINER(wg4), wg1);
+    gtk_box_pack_start(GTK_BOX(wg4), wg1,  TRUE, TRUE, 0);
     wg1 = gtk_button_new();
     gtk_box_pack_start(GTK_BOX(wg4), wg1, FALSE ,FALSE, 0);    
-gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
+    gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
     wg4 = gtk_image_new_from_stock("gtk-refresh", GTK_ICON_SIZE_BUTTON);    
     gtk_container_add(GTK_CONTAINER(wg1), wg4);
-    //gtk_widget_set_tooltip_text(wg1, "Reload");
-    //gtk_tooltips_set_tip (gtk_toolbar_get_tooltips(wg1), wg1, "Reload", NULL);
+    gtk_widget_set_tooltip_text(wg1, TEXT(GUI_RELOAD));
     g_signal_connect(G_OBJECT(wg1), "pressed", G_CALLBACK(gui_refresh_button), gep);
 
     /* opis ukladu */
@@ -1006,7 +1007,6 @@ gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
     wg1 = GUI(gep->gui)->notebook;
     wg0 = gui_bineditor_new(GUI(gep->gui)->wmain);
     gui_bineditor_set_icon( GUI_BINEDITOR(wg0), LOGO_ICON );
-
     wg3 = gtk_label_new(TXT_BUFFER);
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg3);
     GUI(gep->gui)->bineditor = wg0;
@@ -1014,7 +1014,7 @@ gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
 /* Koniec inicjowania Gui */
     gui_set_default(gep);
     gui_xml_new(GUI(gep->gui)); /* zainicjowanie struktury gui_xml */
-
+//    gui_bineditor_hide_fileop( GUI_BINEDITOR(wg0) );
 }
 
 void gui_run(geepro *gep)

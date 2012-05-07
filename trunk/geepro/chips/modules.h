@@ -110,9 +110,10 @@
 #define REGISTER_MODULE_BEGIN(name)	\
     extern "C" int init_module(geepro *gep___)\
     {\
-	int __id__=0, __i__ ;\
+	int __id__=0, __i__ =0 ;\
 	___geep___ = gep___;\
 	chip_desc __init_struct__; \
+	__i__++;\
 	printf("Init " #name " module.\n");\
 	{
 
