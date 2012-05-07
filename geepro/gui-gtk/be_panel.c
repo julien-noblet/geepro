@@ -118,8 +118,7 @@ typedef struct {
 typedef struct {
     GuiBineditor *be;
     GtkWidget *start;    
-    GtkWidget *width;
-    GtkWidget *height;
+    GtkWidget *len;
 } gui_be_text_str;
 
 typedef struct {
@@ -208,7 +207,9 @@ static inline void gui_bineditor_lookup( GuiBineditor *be, GtkWidget *ctx, unsig
     char fnd = 0, lf = 0;
     unsigned int from_l, to_l;
 
-    dlg = gtk_dialog_new_with_buttons(NULL, GTK_WINDOW(be->priv->wmain), 0, "",NULL);
+    dlg = gtk_dialog_new();
+    gtk_window_set_transient_for(GTK_WINDOW(dlg), GTK_WINDOW(be->priv->wmain));
+    
     if( repl ){
         gtk_dialog_add_button(GTK_DIALOG(dlg), TXT_BE_FIND_ALL_BT, 1);
         gtk_dialog_add_button(GTK_DIALOG(dlg), TXT_BE_FIND_REPL_BT, 2);
@@ -217,7 +218,7 @@ static inline void gui_bineditor_lookup( GuiBineditor *be, GtkWidget *ctx, unsig
     gtk_dialog_add_button(GTK_DIALOG(dlg), GTK_STOCK_CANCEL, 3);
     gtk_dialog_add_button(GTK_DIALOG(dlg), GTK_STOCK_MEDIA_NEXT, 4);
     ctx = gtk_dialog_get_content_area(GTK_DIALOG(dlg));
-    hb = gtk_hbox_new(FALSE,20);
+    hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
     gtk_container_add(GTK_CONTAINER(ctx), hb);
     gtk_box_pack_start(GTK_BOX(hb), gtk_image_new_from_stock(GTK_STOCK_DIALOG_QUESTION, GTK_ICON_SIZE_DIALOG), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hb), gtk_label_new(TXT_BE_FIND_MATCH), FALSE, FALSE, 0);
@@ -225,7 +226,6 @@ static inline void gui_bineditor_lookup( GuiBineditor *be, GtkWidget *ctx, unsig
 
     from_l = 0;
     to_l = 0;
-
     for(;; from++){
 	if((ret = gui_bineditor_buff_find(be->priv->buff, (const char *)fstr, flen, &from, to, ci)) == 1){
 	    fnd = 1; lf = 1;
@@ -469,10 +469,9 @@ static void gui_bineditor_asm_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_asm
 
 static void gui_bineditor_text_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_text_str *str  )
 {
-    gui_bineditor_buff_texted(be, 
+    gui_bineditor_text_editor(be, 
 	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->start)),
-	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->width)),
-	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->height))
+	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->len))
     );
 }
 
@@ -517,11 +516,16 @@ static void gui_bineditor_aux_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_aux
     gui_bineditor_set_buffer(GUI_BINEDITOR(aux), size, (unsigned char *)be->priv->aux_buffer);
     gtk_container_add(GTK_CONTAINER(be->priv->aux_win), GTK_WIDGET(aux));
     gtk_widget_show_all(be->priv->aux_win);
-    gtk_widget_hide(GUI_BINEDITOR(aux)->priv->aux);
-    gtk_widget_hide(GUI_BINEDITOR(aux)->priv->stenc);
-    gtk_widget_set_sensitive(be->priv->aux, FALSE);
-    g_signal_connect(G_OBJECT(be->priv->aux_win), "destroy", G_CALLBACK(gui_bineditor_aux_destr), be );
 
+    gtk_widget_hide(GUI_BINEDITOR(aux)->priv->aux);
+    gtk_widget_show(GUI_BINEDITOR(aux)->priv->i_open);
+    gtk_widget_show(GUI_BINEDITOR(aux)->priv->i_write);
+
+    if(be->priv->cut_data.data)
+	gtk_widget_set_sensitive(GUI_BINEDITOR(aux)->priv->copy, TRUE);	
+
+    gtk_widget_hide(GUI_BINEDITOR(aux)->priv->stenc);
+    g_signal_connect(G_OBJECT(be->priv->aux_win), "destroy", G_CALLBACK(gui_bineditor_aux_destr), be );
 }
 
 static void gui_bineditor_sum_exec( GtkWidget *wg, gui_be_sum_str *str )
@@ -629,17 +633,17 @@ static void gui_bineditor_build_open( GuiBineditor *be, GtkWidget *ctx, gui_be_o
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->start), str->l_ins);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->count), str->l_count);    
 
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new( TXT_BE_OPEN_FOFFS));
     gtk_container_add(GTK_CONTAINER(wg), str->foffs);
     gtk_container_add(GTK_CONTAINER(ctx), wg);
 
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new( TXT_BE_OPEN_START));
     gtk_container_add(GTK_CONTAINER(wg), str->start);
     gtk_container_add(GTK_CONTAINER(ctx), wg);
 
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new( TXT_BE_OPEN_COUNT));
     gtk_container_add(GTK_CONTAINER(wg), str->count);
     gtk_container_add(GTK_CONTAINER(ctx), wg);
@@ -656,12 +660,12 @@ static void gui_bineditor_build_save( GuiBineditor *be, GtkWidget *ctx, gui_be_s
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->start), str->l_ins);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->count), str->l_count);    
 
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new( TXT_BE_OPEN_START));
     gtk_container_add(GTK_CONTAINER(wg), str->start);
     gtk_container_add(GTK_CONTAINER(ctx), wg);
 
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new( TXT_BE_OPEN_COUNT));
     gtk_container_add(GTK_CONTAINER(wg), str->count);
     gtk_container_add(GTK_CONTAINER(ctx), wg);
@@ -673,7 +677,7 @@ static void gui_bineditor_build_resize( GuiBineditor *be, GtkWidget *ctx, gui_be
     GtkWidget *wg;
     
     str->be = be;
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(ctx), wg);    
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new(TXT_BE_RESIZE_RES));
     str->size = gtk_spin_button_new_with_range( be->priv->buff->size, be->priv->buff->size * 16, 1);
@@ -708,7 +712,7 @@ static void gui_bineditor_build_sum( GuiBineditor *be, GtkWidget *ctx, gui_be_su
     gtk_container_add(GTK_CONTAINER(ctx), str->start);    
     gtk_container_add(GTK_CONTAINER(ctx), str->stop);    
 
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(ctx), wg);    
     str->result = gtk_entry_new();
     gtk_container_add(GTK_CONTAINER(wg), str->result);    
@@ -724,7 +728,7 @@ static void gui_bineditor_build_aux( GuiBineditor *be, GtkWidget *ctx, gui_be_au
     unsigned int r;    
     
     str->be = be;
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(ctx), wg);    
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new(TXT_BE_AUX_SIZE));
     r = be->priv->buff->size;
@@ -796,10 +800,10 @@ static void gui_bineditor_build_find_string( GuiBineditor *be, GtkWidget *ctx, g
     str->find = gtk_entry_new();
     gtk_box_pack_start(GTK_BOX(ctx), str->find, FALSE, TRUE, 2);
     gtk_box_pack_start(GTK_BOX(ctx), gtk_label_new(TXT_BE_REPLACE_ENTRY), FALSE, FALSE, 2);
-    hb = gtk_hbox_new(FALSE, 0);
+    hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(ctx), hb, FALSE, TRUE, 2);
     str->replace = gtk_entry_new();
-    gtk_container_add(GTK_CONTAINER(hb), str->replace);
+    gtk_box_pack_start(GTK_BOX(hb), str->replace, TRUE, TRUE, 0);
 
     /* parameters */
     hb = gtk_frame_new(TXT_BE_FIND_ST_LABEL);
@@ -828,7 +832,7 @@ void gui_bineditor_bx( GtkWidget *tb, GtkWidget *wg, const char *lbl, int x0, in
 {
     GtkWidget *hb;
 
-    hb = gtk_hbox_new(FALSE, 0);    
+    hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);    
     gtk_table_attach_defaults(GTK_TABLE(tb), hb,  x0,x1, y0,y1);
     gtk_container_add(GTK_CONTAINER(hb), gtk_label_new( lbl ));
     gtk_container_add(GTK_CONTAINER(hb), wg);
@@ -921,7 +925,7 @@ static void gui_bineditor_build_manipulator( GuiBineditor *be, GtkWidget *ctx, g
 // bit exchg
     wg = gtk_frame_new(NULL);
     gtk_container_add(GTK_CONTAINER(ctx), wg);    
-    vb = gtk_vbox_new(FALSE, 5);
+    vb = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(wg), vb);    
     str->bx = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(str->sub), TXT_BE_BM_BX);    
     gtk_container_add(GTK_CONTAINER(vb), str->bx);    
@@ -1003,7 +1007,7 @@ static void gui_bineditor_build_clear( GuiBineditor *be, GtkWidget *ctx,  gui_cl
     /* Address range */    
     hb = gtk_label_new(TXT_BE_ADDRESS_RANGE);
     gtk_box_pack_start(GTK_BOX(ctx), hb, FALSE, TRUE, 2);
-    hb = gtk_hbox_new(FALSE, 0);    
+    hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);    
 	/* From */
 	gtk_box_pack_start(GTK_BOX(ctx), hb, FALSE, FALSE, 2);        
 	wg = gtk_label_new(TXT_BE_ADDRESS_FROM);
@@ -1180,7 +1184,7 @@ static void gui_bineditor_build_organizer( GuiBineditor *be, GtkWidget *ctx, gui
 // functions to select
     wg = gtk_frame_new(TXT_BE_ORG_FUNCTIONS);
     gtk_container_add(GTK_CONTAINER(ctx), wg);    
-    vb = gtk_vbox_new(FALSE, 0);
+    vb = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(wg), vb);    
 
     str->split = gtk_radio_button_new_with_label(NULL, TXT_BE_ORG_SPLIT);
@@ -1293,7 +1297,7 @@ static void gui_bineditor_build_copy( GuiBineditor *be, GtkWidget *ctx, gui_be_c
     GtkWidget *wg;
     str->start = gtk_spin_button_new_with_range( 0, be->priv->buff->size - 1, 1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON( str->start ), be->priv->edit_addr_cursor);
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(ctx), wg, TRUE, TRUE, 0);
     gtk_container_add(GTK_CONTAINER(wg), gtk_label_new(TXT_BE_COPY_ADDRESS));    
     gtk_container_add(GTK_CONTAINER(wg), str->start);    
@@ -1334,7 +1338,7 @@ static void gui_bineditor_build_asm( GuiBineditor *be, GtkWidget *ctx, gui_be_as
 
     str->be = be;
 // widgets    
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(ctx), wg);
     str->fsel = gtk_button_new_with_label(TXT_BE_ASM_FSEL);
     gtk_box_pack_start(GTK_BOX(wg), str->fsel, FALSE, FALSE, 0);
@@ -1345,7 +1349,7 @@ static void gui_bineditor_build_asm( GuiBineditor *be, GtkWidget *ctx, gui_be_as
     if(be->priv->core_name)
 	gtk_entry_set_text(GTK_ENTRY(str->proc), be->priv->core_name);
     
-    wg = gtk_hbox_new(FALSE, 0);
+    wg = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(ctx), wg);
     gtk_box_pack_start(GTK_BOX(wg), gtk_label_new(TXT_BE_ASM_COUNT), FALSE, FALSE, 0);    
     str->count = gtk_spin_button_new_with_range( 0, 255, 1);
@@ -1362,23 +1366,17 @@ static void gui_bineditor_build_text( GuiBineditor *be, GtkWidget *ctx, gui_be_t
 
     if(!gui_bineditor_marker_get_range(be, GUI_BINEDITOR_MARKER_SELECTED, &from, &to)) from = 0;
 
-    tb = gtk_table_new(3, 2, TRUE);	
+    tb = gtk_table_new(2, 2, TRUE);	
     gtk_box_pack_start(GTK_BOX(ctx), tb, TRUE, TRUE, 5);
     str->start  = gtk_spin_button_new_with_range( 0, be->priv->buff->size - 1, 1);
-    str->width  = gtk_spin_button_new_with_range( 0, 80, 1);
-    str->height = gtk_spin_button_new_with_range( 1, be->priv->buff->size, 1);
+    str->len  = gtk_spin_button_new_with_range( 1, be->priv->buff->size, 1);
 
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->start),  from);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->width),  16);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->height), 16);
-
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(str->len),  16);
     gtk_table_attach_defaults(GTK_TABLE(tb), str->start,  1,2, 0,1);
-    gtk_table_attach_defaults(GTK_TABLE(tb), str->width,  1,2, 1,2);
-    gtk_table_attach_defaults(GTK_TABLE(tb), str->height, 1,2, 2,3);
+    gtk_table_attach_defaults(GTK_TABLE(tb), str->len,  1,2, 1,2);
     gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new(TXT_BE_TEXT_START),  0,1, 0,1);
-    gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new(TXT_BE_TEXT_WIDTH),  0,1, 1,2);
-    gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new(TXT_BE_TEXT_HEIGHT), 0,1, 2,3);
-// add values guard !
+    gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new(TXT_BE_TEXT_LEN),  0,1, 1,2);
 }
 
 /***************************************************************************************************************************************/

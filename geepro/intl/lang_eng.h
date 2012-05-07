@@ -183,8 +183,7 @@
 #define TXT_BE_FIND_ST_MARKED	"Search marked area"
 
 #define TXT_BE_TEXT_START	"Start address"
-#define TXT_BE_TEXT_WIDTH	"Columns"
-#define TXT_BE_TEXT_HEIGHT	"Rows"
+#define TXT_BE_TEXT_LEN		"Length"
 
 #define TXT_ORGANIZER_EVEN	"Organizer function can be done only on even count data"
 #define TXT_MANIPULATOR_DIVBYZERO	"Argument cannot be 0 for division"
@@ -301,3 +300,6 @@
 #define TEXT_LBL_SB_OFFSET	"Offset:"
 #define TEXT_WINTITLE_BINEDITOR	"Geepro - bitmap editor"
 #define TEXT_WINTITLE_TEXTED	"Geepro - text editor"
+#define TEXT_GUI_RELOAD		"Reload file"
+#define TEXT_BE_TEXTED_UTF8	"Selected area contains invalidated UTF8 characters. Fill them with spaces or abort ?"
+

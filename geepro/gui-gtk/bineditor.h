@@ -29,6 +29,7 @@
 
 #include "be_buffer.h"
 
+
 G_BEGIN_DECLS
 
 #define GUI_TYPE_BINEDITOR		( gui_bineditor_get_type() )
@@ -86,6 +87,7 @@ typedef enum
     GUI_BINEDITOR_COLOR_BMP_GRID,	// 
     GUI_BINEDITOR_COLOR_BMP_PIXEL,	// 
     GUI_BINEDITOR_COLOR_BMP_AMBIENT,	// 
+    GUI_BINEDITOR_COLOR_TXT_AMBIENT,	//     
     GUI_BINEDITOR_COLOR_LAST
 } GuiBineditorColors;
 
@@ -137,6 +139,7 @@ struct _GuiBineditorPrivate
     GuiBineditorCut cut_data;
     GuiBineditorMarker markers;
     gui_be_buffer_str *buff;
+    void *texted_str;
     GdkAtom atom;
     GtkClipboard *clipb;
     /* key values */
@@ -265,6 +268,8 @@ unsigned int gui_bineditor_grid_get_page_size( GuiBineditor *be );
 GuiBineditor *gui_bineditor_get_root( GuiBineditor *be); // return initial bineditor object
 void gui_bineditor_cut_store(GuiBineditor *be, unsigned int from, unsigned int to);
 void gui_bineditor_cut_restore(GuiBineditor *be, unsigned int from);
+//void gui_bineditor_hide_fileop(GuiBineditor *be);
+
 G_END_DECLS
 
 #endif 
