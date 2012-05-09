@@ -56,6 +56,7 @@ def build(bld):
   bld.recurse('gui-gtk')
   bld.recurse('chips')
   bld.recurse('src')
+  bld.recurse('stencils')
   #bld.recurse('po')
   #bld.use_the_magic()
 

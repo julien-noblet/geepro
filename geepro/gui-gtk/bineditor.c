@@ -665,10 +665,10 @@ static inline void gui_bineditor_vert_tool(GuiBineditor *be)
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->bined), -1);
 
     /* Text editor */
-    be->priv->texted = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_TEXT_ICON ));
-    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->texted), TIP_BE_TEXTED);
-    g_signal_connect(G_OBJECT(be->priv->texted), "clicked", G_CALLBACK(gui_bineditor_texted), be);
-    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->texted), -1);
+//    be->priv->texted = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_TEXT_ICON ));
+//    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->texted), TIP_BE_TEXTED);
+//    g_signal_connect(G_OBJECT(be->priv->texted), "clicked", G_CALLBACK(gui_bineditor_texted), be);
+//    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->texted), -1);
 //gtk_widget_set_sensitive( be->priv->texted, FALSE );
     /* Stencil */
     be->priv->stenc = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_STENCIL_ICON));
@@ -677,11 +677,11 @@ static inline void gui_bineditor_vert_tool(GuiBineditor *be)
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->stenc), -1);
 gtk_widget_set_sensitive( be->priv->stenc, FALSE );
     /* Asm viewer */
-    be->priv->asmview = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_ASM_ICON ));
-    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->asmview), TIP_BE_ASMVIEW);
-    g_signal_connect(G_OBJECT(be->priv->asmview), "clicked", G_CALLBACK(gui_bineditor_asmview), be);
-    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->asmview), -1);
-gtk_widget_set_sensitive( be->priv->asmview, FALSE );
+//    be->priv->asmview = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_ASM_ICON ));
+//    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->asmview), TIP_BE_ASMVIEW);
+//    g_signal_connect(G_OBJECT(be->priv->asmview), "clicked", G_CALLBACK(gui_bineditor_asmview), be);
+//    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->asmview), -1);
+//gtk_widget_set_sensitive( be->priv->asmview, FALSE );
 }
 
 static inline void gui_bineditor_hor_tool(GuiBineditor *be)
@@ -911,6 +911,7 @@ static inline void gui_bineditor_init(GuiBineditor *be)
     SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_PIXEL, 0.0, 0.5, 0.0);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_BMP_AMBIENT, 0.0, 0.0, 0.2);
     SET_COLOR(be, GUI_BINEDITOR_COLOR_TXT_AMBIENT, 0.0, 0.0, 0.5);
+    SET_COLOR(be, GUI_BINEDITOR_COLOR_TXT_FONT, 0.5, 1.0, 0.5);
 
     gui_bineditor_add_icons( be );
     gui_bineditor_marker_new(be, GUI_BINEDITOR_MARKER_ALL);
@@ -956,6 +957,11 @@ void gui_bineditor_set_buffer(GuiBineditor *be, int bfsize, unsigned char *buffe
 
     be->priv->buff->size = bfsize;
     be->priv->buff->data = bfsize ? buffer: NULL;
+
+//    if(be->priv->bmp)
+//	gtk_widget_destroy( be->priv->bmp );
+
+
     gtk_adjustment_set_lower(be->priv->adj, 0);
     gtk_adjustment_set_upper(be->priv->adj,bfsize);
     gtk_adjustment_set_page_size(be->priv->adj, 0);

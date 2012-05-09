@@ -222,12 +222,14 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
 	char *fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
 	const char *err;
+
         if(!flag){
 	    store_set(&store, "LAST_OPENED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
     	    store_set(&store, "LAST_OPENED_FILE", gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg)));
 	    gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->file_entry), fname);
 	    gtk_editable_set_position(GTK_EDITABLE(GUI(gep->gui)->file_entry), -1);
 	}
+
 	gtk_widget_destroy(wg);    
 
 	fofs = -1; offset = -1; size = -1;
