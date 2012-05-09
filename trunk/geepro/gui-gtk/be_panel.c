@@ -30,7 +30,6 @@
 #include "be_panel.h"
 #include "be_bitmap.h"
 #include "be_asmview.h"
-#include "be_textedit.h"
 #include "be_stencil.h"
 #include "../src/checksum.h"
 
@@ -114,13 +113,13 @@ typedef struct {
     GtkWidget *proc;
     GtkWidget *fsel;
 } gui_be_asm_str;
-
+/*
 typedef struct {
     GuiBineditor *be;
     GtkWidget *start;    
     GtkWidget *len;
 } gui_be_text_str;
-
+*/
 typedef struct {
     GuiBineditor *be;
     GtkWidget *size;
@@ -466,15 +465,16 @@ static void gui_bineditor_asm_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_asm
 
     gui_bineditor_asm_view(be, be->priv->core_count, be->priv->core_name);
 }
-
+/*
 static void gui_bineditor_text_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_text_str *str  )
 {
     gui_bineditor_text_editor(be, 
 	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->start)),
-	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->len))
+	gtk_spin_button_get_value(GTK_SPIN_BUTTON(str->len)),
+	16 // temporarly
     );
 }
-
+*/
 static void gui_bineditor_aux_destr( GtkWidget *wg, GuiBineditor *p )
 {
     if(p->priv->aux_buffer) free(p->priv->aux_buffer);
@@ -1358,7 +1358,7 @@ static void gui_bineditor_build_asm( GuiBineditor *be, GtkWidget *ctx, gui_be_as
 // signals
     g_signal_connect(G_OBJECT(str->fsel), "pressed", G_CALLBACK(gui_be_asm_fsel), str);
 }
-
+/*
 static void gui_bineditor_build_text( GuiBineditor *be, GtkWidget *ctx, gui_be_text_str *str )
 {
     GtkWidget *tb;    
@@ -1378,7 +1378,7 @@ static void gui_bineditor_build_text( GuiBineditor *be, GtkWidget *ctx, gui_be_t
     gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new(TXT_BE_TEXT_START),  0,1, 0,1);
     gtk_table_attach_defaults(GTK_TABLE(tb), gtk_label_new(TXT_BE_TEXT_LEN),  0,1, 1,2);
 }
-
+*/
 /***************************************************************************************************************************************/
 static void gui_bineditor_dialog_tmpl(GuiBineditor *be, void *str, gui_bineditor_tmpl_cb build, gui_bineditor_tmpl_cb exec, const char *title)
 {
@@ -1452,13 +1452,13 @@ void gui_bineditor_copy(GtkWidget *wg, GuiBineditor *be)
     gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_copy), GUI_BE_CB(gui_bineditor_copy_exec), TEXT(BE_WIN_TIT_COPY));
 }
 
-
+/*
 void gui_bineditor_texted(GtkWidget *wg, GuiBineditor *be)
 {
     gui_be_text_str str;
     gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_text), GUI_BE_CB(gui_bineditor_text_exec), TEXT(BE_WIN_TIT_TEXT));
 }
-
+*/
 void gui_bineditor_undo(GtkWidget *wg, GuiBineditor *be)
 {
     gui_bineditor_buff_history(be->priv->buff, GUI_BE_UNDO);

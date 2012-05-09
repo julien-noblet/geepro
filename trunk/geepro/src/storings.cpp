@@ -102,6 +102,8 @@ int store_get(store_str *st, const char *key, char **val)
 {
     int len;
     char *buffer, *tmp, *x;
+    if(!val ) return -3;
+    if(!st ) return -3;
     if(!st->file ) return -1;
     if(!key) return -3;
     if(strlen(key) > 250) return -3;
@@ -125,8 +127,10 @@ int store_get(store_str *st, const char *key, char **val)
 int store_set(store_str *st, const char *key, const char *str)
 {
     char *buffer, *tmp, *x;
+    if( !st  ) return -3;
+    if( !str ) return -3;
+    if( !key ) return -3;
     if(!st->file ) return -1;
-    if(!key) return -3;
     if(strlen(key) > 250) return -3;
     if(strchr(str, '=') || strchr(key, '$') || strchr(str, '$')) return -2;
     if(!(buffer = store_buffer(st->file))) return -1;

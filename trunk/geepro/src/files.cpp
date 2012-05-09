@@ -202,7 +202,7 @@ const char *file_load(geepro *gep, const char *fname, long file_offset, long buf
 {
     FILE *f;
     int err = 0, x=0;
-    
+
     if(!gep->chp) return "No chip memory size specified.";    
     
     if( file_offset < 0 )
