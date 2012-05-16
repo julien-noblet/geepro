@@ -1016,7 +1016,6 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
 /* Koniec inicjowania Gui */
     gui_set_default(gep);
     gui_xml_new(GUI(gep->gui)); /* zainicjowanie struktury gui_xml */
-//    gui_bineditor_hide_fileop( GUI_BINEDITOR(wg0) );
 }
 
 void gui_run(geepro *gep)
@@ -1039,6 +1038,7 @@ void gui_run(geepro *gep)
     }
     GUI(gep->gui)->gui_run = 1;
     gtk_main(); /* jesli programator ok to startuj program inaczej wyjdź */
+    
 }
 
 void gui_kill_me(geepro *gep)

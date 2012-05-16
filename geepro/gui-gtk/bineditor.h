@@ -269,8 +269,7 @@ unsigned int gui_bineditor_grid_get_page_size( GuiBineditor *be );
 GuiBineditor *gui_bineditor_get_root( GuiBineditor *be); // return initial bineditor object
 void gui_bineditor_cut_store(GuiBineditor *be, unsigned int from, unsigned int to);
 void gui_bineditor_cut_restore(GuiBineditor *be, unsigned int from);
-//void gui_bineditor_hide_fileop(GuiBineditor *be);
-
+void gui_bineditor_file_tool_insert(GuiBineditor *be);
 G_END_DECLS
 
 #endif 

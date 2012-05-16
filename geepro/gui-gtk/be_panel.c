@@ -502,6 +502,7 @@ static void gui_bineditor_aux_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_aux
     gtk_window_set_title(GTK_WINDOW(be->priv->aux_win), TXT_BE_WINTIT_AUX);
 
     aux = gui_bineditor_new(GTK_WINDOW(be->priv->aux_win));
+    gui_bineditor_file_tool_insert( GUI_BINEDITOR(aux) );
     gui_bineditor_set_icon( GUI_BINEDITOR(aux), be->priv->icon);
     if(be->priv->icon)
 	gtk_window_set_icon(GTK_WINDOW(be->priv->aux_win), gdk_pixbuf_new_from_xpm_data(be->priv->icon));
@@ -1656,28 +1657,21 @@ void gui_bineditor_asmview(GtkWidget *wg, GuiBineditor *be)
 
 void gui_bineditor_stencil(GtkWidget *wg, GuiBineditor *be)
 {
-    GtkWidget *dialog;
-    GtkFileFilter *filter;
-    char *fname = NULL;
+    GtkWidget *dlg, *hb, *tree;
 
-    dialog = gtk_file_chooser_dialog_new(TXT_BE_STC_WINTIT, GTK_WINDOW(be->priv->wmain), 
-	GTK_FILE_CHOOSER_ACTION_OPEN,
-	GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-	NULL
-    );
+    dlg = gtk_dialog_new();
+    gtk_window_set_transient_for(GTK_WINDOW(dlg), GTK_WINDOW(be->priv->wmain));
+    gtk_window_set_title(GTK_WINDOW(dlg), "--------------");
 
-// gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), name);
+    hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dlg))), hb, TRUE, TRUE, 0);
 
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, TXT_BE_STC_FE);
-    gtk_file_filter_add_pattern(filter, "*.stc");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+    tree = gtk_tree_view_new();
+    gtk_box_pack_start(GTK_BOX(hb), tree, TRUE, TRUE, 0);
+    
 
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
-	fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
-    gtk_widget_destroy( dialog );
-    if( fname != NULL ) gui_bineditor_stencil_run(be, fname);
-    g_free( fname );
+    gtk_widget_show_all(dlg);        
+    gtk_dialog_run(GTK_DIALOG(dlg));
+    gtk_widget_destroy( dlg );    
 }
