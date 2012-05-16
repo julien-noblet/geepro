@@ -675,7 +675,6 @@ static inline void gui_bineditor_vert_tool(GuiBineditor *be)
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->stenc), TIP_BE_stencil);
     g_signal_connect(G_OBJECT(be->priv->stenc), "clicked", G_CALLBACK(gui_bineditor_stencil), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tbv), GTK_TOOL_ITEM(be->priv->stenc), -1);
-gtk_widget_set_sensitive( be->priv->stenc, FALSE );
     /* Asm viewer */
 //    be->priv->asmview = GTK_WIDGET(gtk_tool_button_new_from_stock( GUI_BINEDITOR_ASM_ICON ));
 //    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->asmview), TIP_BE_ASMVIEW);
@@ -684,29 +683,38 @@ gtk_widget_set_sensitive( be->priv->stenc, FALSE );
 //gtk_widget_set_sensitive( be->priv->asmview, FALSE );
 }
 
+void gui_bineditor_file_tool_insert(GuiBineditor *be)
+{
+    // Separator
+    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), gtk_separator_tool_item_new() , 0);
+
+    // File write
+    be->priv->i_write = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_SAVE ));
+    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->i_write), TIP_BE_WRITE);
+    g_signal_connect(G_OBJECT(be->priv->i_write), "clicked", G_CALLBACK(gui_bineditor_write), be);
+    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->i_write), 0);
+    
+    // File open
+    be->priv->i_open = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_OPEN ));
+    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->i_open), TIP_BE_OPEN);
+    g_signal_connect(G_OBJECT(be->priv->i_open), "clicked", G_CALLBACK(gui_bineditor_open), be);
+    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->i_open), 0);
+}
+
 static inline void gui_bineditor_hor_tool(GuiBineditor *be)
 {
     be->priv->tb = gtk_toolbar_new();
 
-// File open
-    be->priv->i_open = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_OPEN ));
-    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->i_open), TIP_BE_OPEN);
-    g_signal_connect(G_OBJECT(be->priv->i_open), "clicked", G_CALLBACK(gui_bineditor_open), be);
-    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->i_open), -1);
-
-// File write
-    be->priv->i_write = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_SAVE ));
-    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->i_write), TIP_BE_WRITE);
-    g_signal_connect(G_OBJECT(be->priv->i_write), "clicked", G_CALLBACK(gui_bineditor_write), be);
-    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->i_write), -1);
-
-// Undo
+    be->priv->i_open  = NULL;
+    be->priv->i_write = NULL;
+        
+    // Undo
     be->priv->i_undo = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_UNDO ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->i_undo), TIP_BE_UNDO);
     g_signal_connect(G_OBJECT(be->priv->i_undo), "clicked", G_CALLBACK(gui_bineditor_undo), be);
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->i_undo), -1);
 gtk_widget_set_sensitive( be->priv->i_undo, FALSE );
-// Redo
+    // Redo
     be->priv->i_redo = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_REDO ));
     gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(be->priv->i_redo), TIP_BE_REDO);
     g_signal_connect(G_OBJECT(be->priv->i_redo), "clicked", G_CALLBACK(gui_bineditor_redo), be);
@@ -760,8 +768,8 @@ static inline GtkWidget *gui_bineditor_coord(GuiBineditor *be)
     /* info fields */
     wg1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     be->priv->info_addr = gtk_label_new("0000:00");
+
     wg2 = gtk_frame_new(NULL);
-    
     gtk_widget_set_size_request( wg2, 120, 20);
     gtk_frame_set_shadow_type(GTK_FRAME(wg2), GTK_SHADOW_IN);
     gtk_container_add(GTK_CONTAINER(wg2), be->priv->info_addr);
@@ -941,14 +949,7 @@ static inline void gui_bineditor_init(GuiBineditor *be)
     gtk_box_pack_start(GTK_BOX(whb), wg0, TRUE, TRUE, 0);    
 
 }
-/*
-void gui_bineditor_hide_fileop(GuiBineditor *be)
-{
-    gtk_widget_realize(be);
-    gtk_widget_hide(be->priv->i_open);
-    gtk_widget_hide(be->priv->i_write);
-}
-*/
+
 void gui_bineditor_set_buffer(GuiBineditor *be, int bfsize, unsigned char *buffer)
 {
     g_return_if_fail(be != NULL);
