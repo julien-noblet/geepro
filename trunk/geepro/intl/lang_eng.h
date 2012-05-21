@@ -300,6 +300,7 @@
 #define TEXT_LBL_SB_OFFSET	"Offset:"
 #define TEXT_WINTITLE_BINEDITOR	"Geepro - bitmap editor"
 #define TEXT_WINTITLE_TEXTED	"Geepro - text editor"
+#define TEXT_WINTITLE_STENCIL	"Geepro - stencil"
 #define TEXT_GUI_RELOAD		"Reload file"
 #define TEXT_BE_TEXTED_UTF8	"Selected area contains invalidated UTF8 characters. Fill them with spaces or abort ?"
-
+#define TEXT_BE_STENCIL_BRIEF	"Brief description"

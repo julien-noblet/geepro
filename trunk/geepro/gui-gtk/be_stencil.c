@@ -21,7 +21,20 @@
 #include <stdio.h>
 #include "be_stencil.h"
 
-void gui_bineditor_stencil_run(GuiBineditor *be, const char *fname)
+char gui_bineditor_stencil_generate_index_file(GuiBineditor *be, const char *fname)
 {
-    printf("stencil: %s\n", fname);
+    printf("stencil index file generate dummy: %s\n", fname);
+    
+    return 0;
+}
+
+void gui_bineditor_stencil_sheet(GuiBineditor *be, const char *device, const char *fname)
+{
+    printf("stencil: %s - %s\n", fname, device);
+    
+}
+
+char gui_bineditor_stencil_operation(GuiBineditor *be, int id, const char *device, int operation, char has_child)
+{
+    return 0;
 }
