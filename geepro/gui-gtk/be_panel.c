@@ -163,6 +163,46 @@ typedef struct {
     char *fname;
 } gui_be_save_str;
 
+typedef struct
+{
+    GuiBineditor *be;
+    GtkWidget    *view, *brief;
+    GtkTreeViewColumn *col;
+    GtkCellRenderer *renderer;
+    GtkTreeStore *model;   // do wywalenia ?
+    GtkTreeIter *top;
+    FILE 	*idx_file;
+    FILE	*stc_file;
+    int x_id;
+    char *x_name;
+}  gui_bineditor_stencil_str;
+
+enum{
+    TREE_COL_ICON = 0,
+    TREE_COL_TEXT,
+    TREE_COL_FILE,
+    TREE_COL_DESC,
+    TREE_COL_ID,
+    TREE_COL_ALL
+};
+
+enum{
+    GUI_BE_OPERATION_NEW = 1,
+    GUI_BE_OPERATION_ADD,
+    GUI_BE_OPERATION_COPY,
+    GUI_BE_OPERATION_PASTE,
+    GUI_BE_OPERATION_EDIT,
+    GUI_BE_OPERATION_RENAME,
+    GUI_BE_OPERATION_REMOVE,
+    GUI_BE_OPERATION_DELETE
+};
+
+static inline void gui_bineditor_stencil_build_tree(gui_bineditor_stencil_str *, const char *);
+static inline void gui_bineditor_stencil_select_brief(gui_bineditor_stencil_str *, const char *, int);
+static inline void gui_bineditor_stencil_selected(gui_bineditor_stencil_str *, const char *, const char *, int);
+static inline void gui_bineditor_stencil_tree_popup_menu(gui_bineditor_stencil_str *, GtkMenuShell *, char *, int);
+static void gui_bineditor_stencil_tree_operation(gui_bineditor_stencil_str *, int);
+
 /****************************************************************************************************************/
 
 void gui_bineditor_warning(GuiBineditor *be, const char *text)
@@ -1655,23 +1695,417 @@ void gui_bineditor_asmview(GtkWidget *wg, GuiBineditor *be)
     gui_bineditor_dialog_tmpl(be, &str, GUI_BE_CB(gui_bineditor_build_asm), GUI_BE_CB(gui_bineditor_asm_exec), TEXT(BE_WIN_TIT_ASMVIEWER));
 }
 
+static void gui_bineditor_stencil_tree_append(gui_bineditor_stencil_str *s, const char *txt, const char *file, const char *desc, GtkTreeIter *ins, GtkTreeIter *top)
+{
+    gtk_tree_store_append(s->model, ins, top);
+    gtk_tree_store_set(s->model, ins, 
+	TREE_COL_ICON, (txt[0] == '$') ? GTK_STOCK_INDEX : GTK_STOCK_DIRECTORY, 
+	TREE_COL_TEXT, (txt[0] == '$') ? txt + 1 : txt, 
+	TREE_COL_FILE, (txt[0] == '$') ? file : "",
+	TREE_COL_DESC, (txt[0] == '$') ? desc : "",
+	TREE_COL_ID, (txt[0] == '$') ?  1 : 0, 
+	-1
+    );
+}
+
+static gboolean gui_bineditor_stencil_button_ev(GtkWidget *wg, GdkEventButton *ev, gui_bineditor_stencil_str *s)
+{
+    GtkWidget *menu;
+    int id;
+    GtkTreeModel *model = GTK_TREE_MODEL(s->model);
+    GtkTreeIter  iter;
+    GtkTreePath *path;
+    char *tmp;
+    
+    if(ev->type != GDK_BUTTON_PRESS) return FALSE;
+    if(ev->button == 3){
+	gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(wg), ev->x, ev->y, &path, NULL, NULL, NULL);
+	gtk_tree_model_get_iter(model, &iter, path);
+	gtk_tree_path_free( path );
+	gtk_tree_model_get(model, &iter, 
+	    TREE_COL_TEXT, &tmp, 
+	    TREE_COL_ID, &id, 
+	-1
+	);	
+	menu = gtk_menu_new();
+	gui_bineditor_stencil_tree_popup_menu(s, GTK_MENU_SHELL(menu), tmp, id);
+	gtk_widget_show_all( menu );
+	gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, (ev != NULL) ? ev->button : 0, gdk_event_get_time((GdkEvent *)ev) );	
+	g_free(tmp);
+	return TRUE;
+    }
+    return FALSE;
+}
+
+static void gui_bineditor_stencil_select_ev(GtkTreeSelection *sel, gui_bineditor_stencil_str *s)
+{
+    GtkTreeModel *model;
+    GtkTreeIter  iter;
+    char 	 *tmp;
+    int 	 id;
+
+    if( !gtk_tree_selection_get_selected( sel, &model, &iter)) return;
+    gtk_tree_model_get(model, &iter, 
+	TREE_COL_DESC, &tmp, 
+	TREE_COL_ID, &id, 
+	-1
+    );	
+    gui_bineditor_stencil_select_brief( s, tmp,  id);
+    g_free( tmp );
+}
+
+static void gui_bineditor_stencil_row_activated_ev(GtkTreeView *view, GtkTreePath *pth, GtkTreeViewColumn *col, gui_bineditor_stencil_str *s)
+{
+    GtkTreeModel *model;
+    GtkTreeIter  iter;
+    char	 *tmp, *ff;
+    int		 id;
+    
+    model = gtk_tree_view_get_model( view );
+    if(!gtk_tree_model_get_iter(model, &iter, pth)) return;
+    
+    gtk_tree_model_get(model, &iter, 
+	TREE_COL_TEXT, &tmp, 
+	TREE_COL_FILE, &ff, 
+	TREE_COL_ID, &id, 
+	-1
+    );	
+    gui_bineditor_stencil_selected( s, tmp, ff, id);
+    g_free( tmp );
+    g_free( ff );
+}
+
+static inline void gui_bineditor_stencil_tree(GuiBineditor *be, gui_bineditor_stencil_str *s)
+{
+    GtkTreeIter toplevel;
+    GtkCellRenderer *renderer;
+    GtkTreeSelection *sel;
+    
+    s->be = be;
+    s->view = gtk_tree_view_new();
+    
+    g_signal_connect(G_OBJECT(s->view), "button-press-event", G_CALLBACK(gui_bineditor_stencil_button_ev), s);
+    g_signal_connect(G_OBJECT(s->view), "popup-menu", G_CALLBACK(gui_bineditor_stencil_button_ev), s);
+    g_signal_connect(G_OBJECT(s->view), "row-activated", G_CALLBACK(gui_bineditor_stencil_row_activated_ev), s);    
+    gtk_tree_view_set_enable_tree_lines(GTK_TREE_VIEW(s->view), TRUE);
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(s->view), FALSE);
+
+    // column tree setup
+    s->col = gtk_tree_view_column_new();
+    renderer = gtk_cell_renderer_pixbuf_new();    
+    gtk_tree_view_column_pack_start(s->col, renderer, FALSE);
+    gtk_tree_view_column_add_attribute(s->col, renderer, "stock-id", TREE_COL_ICON);
+    s->renderer = gtk_cell_renderer_text_new();    
+    gtk_tree_view_column_pack_start(s->col, s->renderer, FALSE);
+    gtk_tree_view_column_add_attribute(s->col, s->renderer, "text", TREE_COL_TEXT);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(s->view), s->col);
+
+    // content    
+    s->model = gtk_tree_store_new(TREE_COL_ALL, G_TYPE_STRING,  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
+    gui_bineditor_stencil_tree_append( s, "Stencils", NULL, "kjhkjhkjhkjh", &toplevel, NULL); // !! to change
+    gtk_tree_view_set_model(GTK_TREE_VIEW(s->view), GTK_TREE_MODEL(s->model));
+    gtk_tree_selection_set_mode( gtk_tree_view_get_selection(GTK_TREE_VIEW(s->view)), GTK_SELECTION_NONE);    
+    s->top = &toplevel;
+    gui_bineditor_stencil_build_tree( s, "./stencils/stencil.idx" ); // path should be from config !!
+    gtk_tree_view_expand_row(GTK_TREE_VIEW(s->view), gtk_tree_path_new_from_indices(0, -1), FALSE);
+
+    sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(s->view));
+    gtk_tree_selection_set_mode(sel, GTK_SELECTION_SINGLE);
+    g_signal_connect(G_OBJECT(sel), "changed", G_CALLBACK(gui_bineditor_stencil_select_ev), s);
+}
+
 void gui_bineditor_stencil(GtkWidget *wg, GuiBineditor *be)
 {
-    GtkWidget *dlg, *hb, *tree;
+    gui_bineditor_stencil_str str;
+    GtkWidget *dlg, *hb, *sw;
 
     dlg = gtk_dialog_new();
     gtk_window_set_transient_for(GTK_WINDOW(dlg), GTK_WINDOW(be->priv->wmain));
-    gtk_window_set_title(GTK_WINDOW(dlg), "--------------");
+    gtk_window_set_title(GTK_WINDOW(dlg), TEXT(WINTITLE_STENCIL));
+    gtk_widget_set_size_request(dlg, 320, 200);
 
     hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dlg))), hb, TRUE, TRUE, 0);
+    sw = gtk_scrolled_window_new(NULL, NULL);
+    gtk_box_pack_start(GTK_BOX(hb), sw, TRUE, TRUE, 0);
+    gui_bineditor_stencil_tree(be, &str);
+    gtk_container_add( GTK_CONTAINER(sw), str.view);
 
-    tree = gtk_tree_view_new();
-    gtk_box_pack_start(GTK_BOX(hb), tree, TRUE, TRUE, 0);
-    
-
+    sw = gtk_frame_new(TEXT(BE_STENCIL_BRIEF));
+    gtk_box_pack_start(GTK_BOX(hb), sw, TRUE, TRUE, 10);    
+    str.brief = gtk_label_new(NULL);
+    gtk_misc_set_alignment(GTK_MISC(str.brief), 0.0, 0.0);
+    gtk_container_add( GTK_CONTAINER(sw), str.brief);
 
     gtk_widget_show_all(dlg);        
     gtk_dialog_run(GTK_DIALOG(dlg));
+    g_object_unref(str.model);
     gtk_widget_destroy( dlg );    
 }
+
+char gui_bineditor_stencil_split(char **s1, char *tmp)
+{
+    char *s0;
+    int i;
+    
+    s0 = *s1;
+    if(tmp == NULL) return 0;
+    tmp[0] = 0;
+    if((s0 == NULL)||(s1 == NULL)) return 0;
+    if( *s0 == 0 ) return 0;    
+    if(*s0 == '/' ) s0++; // skip single '/'
+    if(*s0 == '/' ) return 0; // protection from empty row '..//..'
+    
+    *s1 = strchr(s0, '/');
+    if(*s1 == NULL) *s1 = strchr(s0, 0);
+
+    if( *s0 == '/') s0++;
+    for(i = 0; (i < 256) && (s0 != *s1); i++, s0++) tmp[i] = *s0;
+    tmp[i] = 0;
+
+    return (*s1 != NULL);    
+}
+
+static void gui_bineditor_stencil_split_rc(gui_bineditor_stencil_str *s, char *file, char *path, char *desc, char *buff, GtkTreeIter *parent)
+{
+    char *tmp, create = 1;
+    GtkTreeIter branch, first, *node;
+
+
+    if(!gui_bineditor_stencil_split(&path, buff)) return;
+    if(gtk_tree_model_iter_has_child( GTK_TREE_MODEL(s->model), parent)){
+	if( !gtk_tree_model_iter_children(GTK_TREE_MODEL(s->model), &first, parent) ){
+	    printf("ERROR:gui_bineditor_stencil_split_rc() --> iterator not valid\n");
+	    return;
+	}
+	node = &first;
+	do{
+	    tmp = NULL;
+	    gtk_tree_model_get(GTK_TREE_MODEL(s->model), node, TREE_COL_TEXT, &tmp, -1);
+	    if( tmp ){
+		if(!strcmp( tmp, buff)){
+		    g_free( tmp );
+		    create = 0;
+		    gui_bineditor_stencil_split_rc(s, file, path, desc, buff, node);    
+		    return;
+		}
+		g_free( tmp );
+	    }
+
+	} while( gtk_tree_model_iter_next(GTK_TREE_MODEL(s->model), node) );
+    } 
+
+    if( create ) gui_bineditor_stencil_tree_append(s, buff, file, desc, &branch, parent);
+    gui_bineditor_stencil_split_rc(s, file, path, desc, buff, &branch);
+}
+
+static void gui_bineditor_stencil_add_item(gui_bineditor_stencil_str *s, const char *file, const char *path, const char *desc)
+{
+    char tmp[256];
+    GtkTreeIter parent;
+    
+    memcpy( &parent, s->top, sizeof(GtkTreeIter));    
+    gui_bineditor_stencil_split_rc(s, (char *)file, (char *)path, (char *)desc, tmp, &parent);
+}
+static inline char *gui_bineditor_stencil_index_file_line(gui_bineditor_stencil_str *s, int *length)
+{
+    int len = 0;
+    int pos;
+    char *tmp, cmt, a;
+
+    // determine length and first position of valid line
+    do{
+	pos = ftell(s->idx_file); // store file position
+	cmt = 0; len = 0;
+	// determine line length
+	while(!feof(s->idx_file)){
+	    a = fgetc(s->idx_file);
+	    if( ( len == 0) && (a == '#' ) ) cmt = 1;
+	    len++;
+	    if( a == '\n' ) break;
+	}
+    } while( cmt ); // skip commentary lines
+    if( len <= 3 ) return NULL; // if end of string or invalid string
+    fseek(s->idx_file, pos, SEEK_SET); // restore file position
+
+    tmp = (char *)malloc( len );
+    if( tmp == NULL ){
+	printf("ERROR: gui_bineditor_stencil_index_file_line() mem alloc problem\n");
+	return NULL;
+    }
+
+    if( fread( tmp, 1, len, s->idx_file) != len ){
+	printf("ERROR: gui_bineditor_stencil_index_file_line() read file problem\n");
+	return NULL;
+    }
+
+    if(tmp[ len - 1] == '\n') len--;
+    tmp[len] = 0;
+    *length = len;
+    return tmp;
+}
+
+static char gui_bineditor_stencil_get_index_file(gui_bineditor_stencil_str *s, char **file, char **path, char **desc)
+{
+    int length, i;
+    char *line, *pt, *pr;    
+
+    *file = NULL; *path = NULL; *desc = NULL;
+    line = gui_bineditor_stencil_index_file_line(s, &length);
+    if(line == NULL) return 0;
+    
+    *file = (char *)malloc( length );
+    *path = (char *)malloc( length );    
+    *desc = (char *)malloc( length );
+    
+    (*file)[0] = 0; (*path)[0] = 0; (*desc)[0] = 0;
+    pt = strchr(line, ':');
+    if(!pt){
+	printf("index file syntax error\n");
+	return 0;
+    }
+    for( pr = line, i = 0; pr != pt; pr++, i++ ) 
+	(*file)[i] = *pr;
+	(*file)[i] = 0;
+    if(*pr == ':') pr++;
+
+    pt = strchr(pr, ':');
+    if(!pt){
+	printf("index file syntax error\n");
+	return 0;
+    }
+    for( i = 0; pr != pt; pr++, i++ ) 
+	(*path)[i] = *pr;
+	(*path)[i] = 0;
+    if(*pr == ':') pr++;
+
+    pr = strchr(pr, '"');
+    if( pr != NULL ){
+	if(pr[0] == '"') pr++;
+	for( i = 0; *pr && (*pr != '"'); pr++, i++ ) 
+	    (*desc)[i] = *pr;
+	    (*desc)[i] = 0;
+    }    
+    free(line);    
+    return 1;
+}
+
+static inline void gui_bineditor_stencil_build_tree(gui_bineditor_stencil_str *s, const char *idx_fpath)
+{
+    char *file = NULL, *path = NULL, *desc = NULL;
+
+    s->idx_file = NULL;
+    if( access(idx_fpath, R_OK) != 0){
+	if(!gui_bineditor_stencil_generate_index_file(s->be, idx_fpath )){
+	    printf("ERROR:error creating index stencil file\n");
+	    return;
+	}
+    }
+    if(!(s->idx_file = fopen(idx_fpath, "r"))){	// try to open index file
+	printf("ERROR:error open index stencil file\n");
+	return;
+    }
+    fseek( s->idx_file, 0L, SEEK_SET);
+    while( gui_bineditor_stencil_get_index_file(s, &file, &path, &desc) ){
+	gui_bineditor_stencil_add_item(s, file, path, desc);
+	if( path ) free( path );
+	if( file ) free( file );
+	if( desc ) free( desc );
+    }
+    if(!s->idx_file) return;
+    fclose(s->idx_file);
+}
+
+static inline void gui_bineditor_stencil_select_brief(gui_bineditor_stencil_str *s, const char *name, int id)
+{
+    gtk_label_set_text(GTK_LABEL(s->brief), (id == 1) ? name : NULL);
+}
+
+static inline void gui_bineditor_stencil_selected(gui_bineditor_stencil_str *s, const char *name, const char *file, int id)
+{
+    if( id == 0 ) return;
+    gui_bineditor_stencil_sheet(s->be, name, file );
+}
+
+static void gui_bineditor_stencil_tree_popup_menu_new_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_NEW);
+}
+
+static void gui_bineditor_stencil_tree_popup_menu_add_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_ADD);
+}
+
+static void gui_bineditor_stencil_tree_popup_menu_copy_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_COPY);
+}
+
+static void gui_bineditor_stencil_tree_popup_menu_paste_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_PASTE);
+}
+
+static void gui_bineditor_stencil_tree_popup_menu_edit_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_EDIT); 
+}
+
+static void gui_bineditor_stencil_tree_popup_menu_rename_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_RENAME);
+}
+
+static void gui_bineditor_stencil_tree_popup_menu_remove_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_REMOVE);
+}
+
+static void gui_bineditor_stencil_tree_popup_menu_delete_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_DELETE);
+}
+
+static inline void gui_bineditor_stencil_tree_popup_menu(gui_bineditor_stencil_str *s, GtkMenuShell *ms, char *name, int id)
+{
+    GtkWidget *mi;
+    s->x_id = id;
+    s->x_name = name;
+    mi = gtk_menu_item_new_with_label("New");
+    gtk_menu_shell_append(ms, mi);    
+    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_new_ev), s);
+    mi = gtk_menu_item_new_with_label("Add");
+    gtk_menu_shell_append(ms, mi);    
+    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_add_ev), s);
+    if( id == 1){
+	mi = gtk_menu_item_new_with_label("Copy");
+	gtk_menu_shell_append(ms, mi);    
+	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_copy_ev), s);
+	mi = gtk_menu_item_new_with_label("Paste");
+	gtk_menu_shell_append(ms, mi);    
+	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_paste_ev), s);
+	mi = gtk_menu_item_new_with_label("Edit");
+	gtk_menu_shell_append(ms, mi);    
+	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_edit_ev), s);
+    }
+    mi = gtk_menu_item_new_with_label("Rename");
+    gtk_menu_shell_append(ms, mi);    
+    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_rename_ev), s);
+    mi = gtk_menu_item_new_with_label("Remove");
+    gtk_menu_shell_append(ms, mi);    
+    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_remove_ev), s);
+    if(id == 1){
+	mi = gtk_menu_item_new_with_label("Delete");
+	gtk_menu_shell_append(ms, mi);    
+	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_delete_ev), s);
+    }
+}
+
+static void gui_bineditor_stencil_tree_operation(gui_bineditor_stencil_str *s, int operation)
+{
+    if(gui_bineditor_stencil_operation(s->be, s->x_id, s->x_name, operation, 0)){
+//rfsh
+    }
+}
+
