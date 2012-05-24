@@ -25,5 +25,5 @@
 
 extern char gui_bineditor_stencil_generate_index_file(GuiBineditor *be, const char *fname);
 extern void gui_bineditor_stencil_sheet(GuiBineditor *be, const char *device, const char *stc_fname);
-extern char gui_bineditor_stencil_operation(GuiBineditor *be, int id, const char *device, int operation, char has_child);
+extern char gui_bineditor_stencil_operation(GuiBineditor *be, int id, const char *device, char *path, int operation, char has_child);
 #endif // __BE_STENCIL_H__
