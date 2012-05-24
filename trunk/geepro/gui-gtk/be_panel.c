@@ -175,6 +175,8 @@ typedef struct
     FILE	*stc_file;
     int x_id;
     char *x_name;
+    char *x_path;
+    char has_child;
 }  gui_bineditor_stencil_str;
 
 enum{
@@ -1727,11 +1729,16 @@ static gboolean gui_bineditor_stencil_button_ev(GtkWidget *wg, GdkEventButton *e
 	    TREE_COL_ID, &id, 
 	-1
 	);	
+	s->x_id = id;
+s->x_name = "00";
+s->x_path = "11";
+s->has_child = 0;
 	menu = gtk_menu_new();
 	gui_bineditor_stencil_tree_popup_menu(s, GTK_MENU_SHELL(menu), tmp, id);
 	gtk_widget_show_all( menu );
 	gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, (ev != NULL) ? ev->button : 0, gdk_event_get_time((GdkEvent *)ev) );	
 	g_free(tmp);
+
 	return TRUE;
     }
     return FALSE;
@@ -1870,7 +1877,6 @@ static void gui_bineditor_stencil_split_rc(gui_bineditor_stencil_str *s, char *f
 {
     char *tmp, create = 1;
     GtkTreeIter branch, first, *node;
-
 
     if(!gui_bineditor_stencil_split(&path, buff)) return;
     if(gtk_tree_model_iter_has_child( GTK_TREE_MODEL(s->model), parent)){
@@ -2067,11 +2073,15 @@ static void gui_bineditor_stencil_tree_popup_menu_delete_ev(GtkWidget *m, gui_bi
     gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_DELETE);
 }
 
+static void gui_bineditor_stencil_tree_popup_menu_cancel_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+{
+printf("RRT\n");
+//    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_DELETE);
+}
+
 static inline void gui_bineditor_stencil_tree_popup_menu(gui_bineditor_stencil_str *s, GtkMenuShell *ms, char *name, int id)
 {
     GtkWidget *mi;
-    s->x_id = id;
-    s->x_name = name;
     mi = gtk_menu_item_new_with_label("New");
     gtk_menu_shell_append(ms, mi);    
     g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_new_ev), s);
@@ -2095,6 +2105,9 @@ static inline void gui_bineditor_stencil_tree_popup_menu(gui_bineditor_stencil_s
     mi = gtk_menu_item_new_with_label("Remove");
     gtk_menu_shell_append(ms, mi);    
     g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_remove_ev), s);
+
+    g_signal_connect(G_OBJECT(ms), "deactivate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_cancel_ev), s);
+
     if(id == 1){
 	mi = gtk_menu_item_new_with_label("Delete");
 	gtk_menu_shell_append(ms, mi);    
@@ -2104,8 +2117,10 @@ static inline void gui_bineditor_stencil_tree_popup_menu(gui_bineditor_stencil_s
 
 static void gui_bineditor_stencil_tree_operation(gui_bineditor_stencil_str *s, int operation)
 {
-    if(gui_bineditor_stencil_operation(s->be, s->x_id, s->x_name, operation, 0)){
-//rfsh
+    if(gui_bineditor_stencil_operation(s->be, s->x_id, s->x_name, s->x_path, operation, s->has_child)){
+	gtk_widget_destroy(s->view);
+	gui_bineditor_stencil_build_tree( s, "./stencils/stencil.idx" ); // path should be from config !!
     }
+printf("free\n");
 }
 

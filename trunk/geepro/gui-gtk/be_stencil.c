@@ -34,7 +34,8 @@ void gui_bineditor_stencil_sheet(GuiBineditor *be, const char *device, const cha
     
 }
 
-char gui_bineditor_stencil_operation(GuiBineditor *be, int id, const char *device, int operation, char has_child)
+char gui_bineditor_stencil_operation(GuiBineditor *be, int id, const char *device, char *path, int operation, char has_child)
 {
+    printf("dev:%s\npath:%s\n\n", device, path);
     return 0;
 }
