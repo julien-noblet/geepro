@@ -566,6 +566,7 @@ s_cfp *cfp_init(void)
     if( !p ){
 	ERROR(E_ERR, "malloc");
     }
+    p->p = NULL;
     return p;
 }
 
@@ -593,40 +594,41 @@ void cfp_foreach(s_cfp *p, f_cfp_cb cb, void *user_data)
     cfp_foreach_m(p->p, cb, user_data);
 }
 
-const char *cfp_get_key(s_cfpq *p)
+const char *cfp_get_key(const s_cfpq *p)
 {
     if( !p ) return NULL;
     return p->key;
 }
 
-const char *cfp_get_val(s_cfpq *p)
+const char *cfp_get_val(const s_cfpq *p)
 {
     if( !p ) return NULL;
     return p->value;
 }
 
-char *cfp_get_val_string(s_cfpq *p)
+char *cfp_get_val_string(const s_cfpq *p)
 {
     char *tmp;
-    char *empty = "", *z1, *z2, *t;
+    char *z1, *z2, *t;
     int x;
-    if( !p ) return empty;
-    if( !p->value) return empty;
+    if( !p ) return NULL;
+    if( !p->value) return NULL;
     x = strlen(p->value);
     tmp = (char *)malloc(x + 1);
     if(!tmp ){
 	ERROR(E_ERR, "malloc");
-	return empty;
+	return NULL;
     }
     memset(tmp, 0, x + 1);
     z1 = strchr(p->value, '"');
-    if(!z1 ) return empty;
+    if(!z1 ) return NULL; // did not opening quotation "...
     z2 = z1;
     do {
-	if(! *z2 ) return empty;
-	z2 = strchr(z2 + 1, '"');
-	if(!z2 ) return empty;
-    } while( *(z2 - 1) != '\\');        
+	z2++;
+	if(! *z2 ) return NULL;
+	z2 = strchr(z2, '"');
+	if(!z2 ) return NULL;
+    } while( *(z2 - 1) == '\\');
     t = tmp;
     z1++; // skip '"'
     while( z1 != z2) *t++ = *z1++;
@@ -634,21 +636,21 @@ char *cfp_get_val_string(s_cfpq *p)
     return tmp;
 }
 
-long cfp_get_val_int(s_cfpq *p)
+long cfp_get_val_int(const s_cfpq *p)
 {
     if( !p ) return 0;
     if( !p->value) return 0;
     return strtol( p->value, NULL, 0);
 }
 
-double cfp_get_val_float(s_cfpq *p)
+double cfp_get_val_float(const s_cfpq *p)
 {
     if( !p ) return 0.0;
     if( !p->value) return 0.0;
     return strtod( p->value, NULL);
 }
 
-t_bool cfp_get_val_bool(s_cfpq *p)
+t_bool cfp_get_val_bool(const s_cfpq *p)
 {
     int i;
     const char *comp[] = {"true","1",".t.","high","on","enabled","enable"};

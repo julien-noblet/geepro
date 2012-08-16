@@ -62,8 +62,6 @@ memory_map =
 
 entries = {
     table = 4, 10; // rows, cols on page
-    entry{0, "Remaining alarm time", "min", "tip", 16, intiger, 0x0000, 0xffff, 0, 0 };
-    entry{1, "Remaining capacity alarm", "mAh", "tip", 16, intiger, 0x0000, 0xffff, 0, 0 };
     
 
 };
