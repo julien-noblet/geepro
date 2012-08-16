@@ -51,4 +51,5 @@ void gui_bineditor_open(GtkWidget *wg, GuiBineditor *be);
 void gui_bineditor_write(GtkWidget *wg, GuiBineditor *be);
 void gui_bineditor_undo(GtkWidget *wg, GuiBineditor *be);
 void gui_bineditor_redo(GtkWidget *wg, GuiBineditor *be);
+void gui_bineditor_stencil_update(GuiBineditor *be);
 #endif

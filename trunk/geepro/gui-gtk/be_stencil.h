@@ -21,9 +21,32 @@
 #ifndef __BE_STENCIL_H__
 #define __BE_STENCIL_H__
 
+#define GUI_BINEDITOR_STENCIL_FILE_EXTENSION	".stc"
+
 #include "bineditor.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+enum{
+    GUI_BE_OPERATION_NEW = 1,
+    GUI_BE_OPERATION_ADD,
+    GUI_BE_OPERATION_COPY,
+    GUI_BE_OPERATION_PASTE,
+    GUI_BE_OPERATION_EDIT,
+    GUI_BE_OPERATION_RENAME,
+    GUI_BE_OPERATION_REMOVE,
+    GUI_BE_OPERATION_DELETE,
+    GUI_BE_OPERATION_UPDATE_ALL
+};
+
 
 extern char gui_bineditor_stencil_generate_index_file(GuiBineditor *be, const char *fname);
 extern void gui_bineditor_stencil_sheet(GuiBineditor *be, const char *device, const char *stc_fname);
-extern char gui_bineditor_stencil_operation(GuiBineditor *be, int id, const char *device, char *path, int operation, char has_child);
+extern char gui_bineditor_stencil_operation(GuiBineditor *be, const char *device, char *path, int operation, char has_child);
+
+#ifdef __cplusplus
+}; // "C" extern
+#endif
 #endif // __BE_STENCIL_H__
+

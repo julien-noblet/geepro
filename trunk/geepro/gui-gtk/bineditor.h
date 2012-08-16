@@ -184,6 +184,7 @@ struct _GuiBineditorPrivate
     int properties;
     unsigned int aux_size;
     int pagesize;
+    void  *stencil;
     GtkWidget *clear;
     GtkWidget *texted;
     GtkWidget *cut;

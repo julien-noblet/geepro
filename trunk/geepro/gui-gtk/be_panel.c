@@ -171,6 +171,7 @@ typedef struct
     GtkCellRenderer *renderer;
     GtkTreeStore *model;   // do wywalenia ?
     GtkTreeIter *top;
+    GtkWidget *sw;
     FILE 	*idx_file;
     FILE	*stc_file;
     int x_id;
@@ -188,16 +189,6 @@ enum{
     TREE_COL_ALL
 };
 
-enum{
-    GUI_BE_OPERATION_NEW = 1,
-    GUI_BE_OPERATION_ADD,
-    GUI_BE_OPERATION_COPY,
-    GUI_BE_OPERATION_PASTE,
-    GUI_BE_OPERATION_EDIT,
-    GUI_BE_OPERATION_RENAME,
-    GUI_BE_OPERATION_REMOVE,
-    GUI_BE_OPERATION_DELETE
-};
 
 static inline void gui_bineditor_stencil_build_tree(gui_bineditor_stencil_str *, const char *);
 static inline void gui_bineditor_stencil_select_brief(gui_bineditor_stencil_str *, const char *, int);
@@ -1717,28 +1708,45 @@ static gboolean gui_bineditor_stencil_button_ev(GtkWidget *wg, GdkEventButton *e
     GtkTreeModel *model = GTK_TREE_MODEL(s->model);
     GtkTreeIter  iter;
     GtkTreePath *path;
-    char *tmp;
+    char *tmp, *node, *z;
+    int x;
     
     if(ev->type != GDK_BUTTON_PRESS) return FALSE;
     if(ev->button == 3){
+	if(s->x_path ) free(s->x_path);
+	s->x_path = NULL;
+	if(s->x_name) free(s->x_name);
+	s->x_name = NULL;
 	gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(wg), ev->x, ev->y, &path, NULL, NULL, NULL);
 	gtk_tree_model_get_iter(model, &iter, path);
-	gtk_tree_path_free( path );
 	gtk_tree_model_get(model, &iter, 
 	    TREE_COL_TEXT, &tmp, 
 	    TREE_COL_ID, &id, 
 	-1
 	);	
 	s->x_id = id;
-s->x_name = "00";
-s->x_path = "11";
-s->has_child = 0;
+	if( id == 1 ){
+	    for( x = gtk_tree_path_get_depth(path) - 1; x > 1; x--){
+		gtk_tree_path_up( path );
+		gtk_tree_model_get_iter(model, &iter, path);
+		gtk_tree_model_get(model, &iter,  TREE_COL_TEXT, &node,	-1 );	
+		z = (char *)malloc( strlen(node) + (s->x_path ? strlen(s->x_path) : 0) + 2);
+		if(s->x_path)
+		    sprintf(z,"/%s%s", node, s->x_path);
+		else
+		    sprintf(z, "/%s", node);
+		if(s->x_path) free(s->x_path);
+		s->x_path = z;
+		free( node );
+	    }
+	    s->x_name = tmp;
+	}
+	gtk_tree_path_free( path );
+	s->has_child = 0;
 	menu = gtk_menu_new();
 	gui_bineditor_stencil_tree_popup_menu(s, GTK_MENU_SHELL(menu), tmp, id);
 	gtk_widget_show_all( menu );
 	gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, (ev != NULL) ? ev->button : 0, gdk_event_get_time((GdkEvent *)ev) );	
-	g_free(tmp);
-
 	return TRUE;
     }
     return FALSE;
@@ -1789,6 +1797,8 @@ static inline void gui_bineditor_stencil_tree(GuiBineditor *be, gui_bineditor_st
     GtkTreeSelection *sel;
     
     s->be = be;
+    s->x_path = NULL;
+    s->x_name = NULL;    
     s->view = gtk_tree_view_new();
     
     g_signal_connect(G_OBJECT(s->view), "button-press-event", G_CALLBACK(gui_bineditor_stencil_button_ev), s);
@@ -1823,23 +1833,32 @@ static inline void gui_bineditor_stencil_tree(GuiBineditor *be, gui_bineditor_st
 
 void gui_bineditor_stencil(GtkWidget *wg, GuiBineditor *be)
 {
+    gint w=0, h=0;
     gui_bineditor_stencil_str str;
     GtkWidget *dlg, *hb, *sw;
 
+    str.x_name = NULL;
+    str.x_path = NULL;
+
+    be->priv->stencil = NULL;
     dlg = gtk_dialog_new();
     gtk_window_set_transient_for(GTK_WINDOW(dlg), GTK_WINDOW(be->priv->wmain));
     gtk_window_set_title(GTK_WINDOW(dlg), TEXT(WINTITLE_STENCIL));
     gtk_widget_set_size_request(dlg, 320, 200);
 
-    hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    hb = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dlg))), hb, TRUE, TRUE, 0);
-    sw = gtk_scrolled_window_new(NULL, NULL);
-    gtk_box_pack_start(GTK_BOX(hb), sw, TRUE, TRUE, 0);
+    str.sw = gtk_scrolled_window_new(NULL, NULL);
+    gtk_paned_add1(GTK_PANED(hb), str.sw);
+    be->priv->stencil = &str;    
     gui_bineditor_stencil_tree(be, &str);
-    gtk_container_add( GTK_CONTAINER(sw), str.view);
+    gtk_container_add( GTK_CONTAINER(str.sw), str.view);
+    // set paned divider position
+    gtk_widget_get_size_request(dlg, &w,&h);
+    gtk_paned_set_position(GTK_PANED(hb), w / 2);
 
     sw = gtk_frame_new(TEXT(BE_STENCIL_BRIEF));
-    gtk_box_pack_start(GTK_BOX(hb), sw, TRUE, TRUE, 10);    
+    gtk_paned_add2(GTK_PANED(hb), sw);
     str.brief = gtk_label_new(NULL);
     gtk_misc_set_alignment(GTK_MISC(str.brief), 0.0, 0.0);
     gtk_container_add( GTK_CONTAINER(sw), str.brief);
@@ -1848,6 +1867,25 @@ void gui_bineditor_stencil(GtkWidget *wg, GuiBineditor *be)
     gtk_dialog_run(GTK_DIALOG(dlg));
     g_object_unref(str.model);
     gtk_widget_destroy( dlg );    
+    if(str.x_path ) free(str.x_path);
+    if(str.x_name) free(str.x_name);
+}
+
+void gui_bineditor_stencil_update(GuiBineditor *be)
+{
+    gui_bineditor_stencil_str *str = (gui_bineditor_stencil_str *)be->priv->stencil;
+    if( !str ) return;
+    if( !str->sw ) return;                                                         
+    gtk_widget_destroy( str->view );    
+
+//    if(s->x_path ) free(s->x_path);
+//    if(s->x_name) free(s->x_name);
+//    s->x_name = NULL;
+//    s->x_path = NULL;
+
+    gui_bineditor_stencil_tree(be, str);
+    gtk_container_add( GTK_CONTAINER(str->sw), str->view);
+    gtk_widget_show_all( str->view);
 }
 
 char gui_bineditor_stencil_split(char **s1, char *tmp)
@@ -2042,7 +2080,7 @@ static void gui_bineditor_stencil_tree_popup_menu_add_ev(GtkWidget *m, gui_bined
 {
     gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_ADD);
 }
-
+/*
 static void gui_bineditor_stencil_tree_popup_menu_copy_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
 {
     gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_COPY);
@@ -2052,25 +2090,30 @@ static void gui_bineditor_stencil_tree_popup_menu_paste_ev(GtkWidget *m, gui_bin
 {
     gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_PASTE);
 }
-
+*/
 static void gui_bineditor_stencil_tree_popup_menu_edit_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
 {
     gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_EDIT); 
 }
-
+/*
 static void gui_bineditor_stencil_tree_popup_menu_rename_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
 {
     gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_RENAME);
 }
-
+*/
 static void gui_bineditor_stencil_tree_popup_menu_remove_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
 {
     gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_REMOVE);
 }
 
-static void gui_bineditor_stencil_tree_popup_menu_delete_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+//static void gui_bineditor_stencil_tree_popup_menu_delete_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
+//{
+//    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_DELETE);
+//}
+
+static void gui_bineditor_stencil_tree_popup_menu_update_all_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
 {
-    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_DELETE);
+    gui_bineditor_stencil_tree_operation(s, GUI_BE_OPERATION_UPDATE_ALL);
 }
 
 static void gui_bineditor_stencil_tree_popup_menu_cancel_ev(GtkWidget *m, gui_bineditor_stencil_str *s)
@@ -2089,38 +2132,43 @@ static inline void gui_bineditor_stencil_tree_popup_menu(gui_bineditor_stencil_s
     gtk_menu_shell_append(ms, mi);    
     g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_add_ev), s);
     if( id == 1){
-	mi = gtk_menu_item_new_with_label("Copy");
-	gtk_menu_shell_append(ms, mi);    
-	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_copy_ev), s);
-	mi = gtk_menu_item_new_with_label("Paste");
-	gtk_menu_shell_append(ms, mi);    
-	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_paste_ev), s);
+//	mi = gtk_menu_item_new_with_label("Copy");
+//	gtk_menu_shell_append(ms, mi);    
+//	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_copy_ev), s);
+//	mi = gtk_menu_item_new_with_label("Paste");
+//	gtk_menu_shell_append(ms, mi);    
+//	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_paste_ev), s);
 	mi = gtk_menu_item_new_with_label("Edit");
 	gtk_menu_shell_append(ms, mi);    
 	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_edit_ev), s);
+
+	mi = gtk_menu_item_new_with_label("Delete");
+	gtk_menu_shell_append(ms, mi);    
+	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_remove_ev), s);
+
     }
-    mi = gtk_menu_item_new_with_label("Rename");
-    gtk_menu_shell_append(ms, mi);    
-    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_rename_ev), s);
-    mi = gtk_menu_item_new_with_label("Remove");
-    gtk_menu_shell_append(ms, mi);    
-    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_remove_ev), s);
+//    mi = gtk_menu_item_new_with_label("Rename");
+//    gtk_menu_shell_append(ms, mi);    
+//    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_rename_ev), s);
 
     g_signal_connect(G_OBJECT(ms), "deactivate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_cancel_ev), s);
 
-    if(id == 1){
-	mi = gtk_menu_item_new_with_label("Delete");
-	gtk_menu_shell_append(ms, mi);    
-	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_delete_ev), s);
-    }
+//    if(id == 1){
+//	mi = gtk_menu_item_new_with_label("Delete");
+//	gtk_menu_shell_append(ms, mi);    
+//	g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_delete_ev), s);
+//    }
+    mi = gtk_menu_item_new_with_label("Update all");
+    gtk_menu_shell_append(ms, mi);    
+    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(gui_bineditor_stencil_tree_popup_menu_update_all_ev), s);
+
 }
 
 static void gui_bineditor_stencil_tree_operation(gui_bineditor_stencil_str *s, int operation)
 {
-    if(gui_bineditor_stencil_operation(s->be, s->x_id, s->x_name, s->x_path, operation, s->has_child)){
+    if(gui_bineditor_stencil_operation(s->be, s->x_name, s->x_path, operation, s->has_child)){
 	gtk_widget_destroy(s->view);
 	gui_bineditor_stencil_build_tree( s, "./stencils/stencil.idx" ); // path should be from config !!
     }
-printf("free\n");
 }
 

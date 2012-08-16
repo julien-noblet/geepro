@@ -94,7 +94,7 @@ typedef void (*f_cfp_cb)(const char *key, const char *value, int nested, t_cfp_m
     cfp_add( p, "/section1/section2/custom_entry","array[1,2,3,4,5]");
     cfp_cut( p, "/foo/some_existed_entry"); // delete entry
     cfp_save( p, "my_config_file.cfg");
-    printf("%s\n",  cfp_get_val(p, "/section1/section2/entry1")); 
+    printf("%s\n",  cfp_get(p, "/section1/section2/entry1")); 
     cfp_free( p );
 */
 
@@ -110,12 +110,12 @@ const s_cfpq *cfp_next( s_cfpq *); // return next node or NULL
 const s_cfpq *cfp_prev( s_cfpq *); // return previous node or NULL
 t_bool cfp_is_section(s_cfpq *);	    // return _T_ if node is section
 void cfp_foreach(s_cfp *, f_cfp_cb, void *user_data);
-const char *cfp_get_key(s_cfpq *);
-const char *cfp_get_val(s_cfpq *);
-char *cfp_get_val_string(s_cfpq *); // "...", allocating memory, must be freed
-long   cfp_get_val_int(s_cfpq *); // 12345, 0x12345
-double cfp_get_val_float(s_cfpq *); // 12.345
-t_bool cfp_get_val_bool(s_cfpq *);  // true,false,0,1,.t.,.f.,high,low,on,off,enabled,disabled,enable,disable - case insensitive
+const char *cfp_get_key(const s_cfpq *);
+const char *cfp_get_val(const s_cfpq *);
+char *cfp_get_val_string(const s_cfpq *); // "...", allocating memory, must be freed
+long   cfp_get_val_int(const s_cfpq *); // 12345, 0x12345
+double cfp_get_val_float(const s_cfpq *); // 12.345
+t_bool cfp_get_val_bool(const s_cfpq *);  // true,false,0,1,.t.,.f.,high,low,on,off,enabled,disabled,enable,disable - case insensitive
 
 /*
     ////////////////// path decomposition set of functions //////////////////////////
