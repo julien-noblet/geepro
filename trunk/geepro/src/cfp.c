@@ -389,7 +389,7 @@ static t_bool cfp_save_file_m(s_cfpq *p, const char *path)
     return _T_;    
 }
 
-const s_cfpq *cfp_find(s_cfpq *p, const char *key)
+const s_cfpq *cfp_find(const s_cfpq *p, const char *key)
 {
     while( p ){
 	if(!p->key) return NULL;
@@ -397,6 +397,12 @@ const s_cfpq *cfp_find(s_cfpq *p, const char *key)
 	p = p->next;
     }    
     return NULL;
+}
+
+const s_cfpq *cfp_block(const s_cfpq *p)
+{
+    if( !p ) return NULL;
+    return p->branch;
 }
 
 static t_bool cfp_cut_m(s_cfpq **ps, const char *path)
@@ -567,16 +573,17 @@ s_cfp *cfp_init(void)
 	ERROR(E_ERR, "malloc");
     }
     p->p = NULL;
+    p->current = NULL;
     return p;
 }
 
-const s_cfpq *cfp_next(s_cfpq *p)
+const s_cfpq *cfp_next(const s_cfpq *p)
 {
     if( !p ) return NULL;    
     return p->next;
 }
 
-const s_cfpq *cfp_prev(s_cfpq *p)
+const s_cfpq *cfp_prev(const s_cfpq *p)
 {
     if( !p ) return NULL;    
     return p->prev;
@@ -600,13 +607,24 @@ const char *cfp_get_key(const s_cfpq *p)
     return p->key;
 }
 
-const char *cfp_get_val(const s_cfpq *p)
+const char *cfp_get_val(const s_cfpq *p, const char *key)
 {
+    if(!(p = cfp_find( p, key))) return 0;
     if( !p ) return NULL;
     return p->value;
 }
 
-char *cfp_get_val_string(const s_cfpq *p)
+char *cfp_get_val_stringp(s_cfp *p, const char *key)
+{
+    return cfp_get_val_string_lo( cfp_get( p, key) );
+}
+
+char *cfp_get_val_string(s_cfpq *p, const char *key)
+{
+    return cfp_get_val_string_lo( cfp_find( p, key) );
+}
+
+char *cfp_get_val_string_lo(const s_cfpq *p)
 {
     char *tmp;
     char *z1, *z2, *t;
@@ -636,25 +654,27 @@ char *cfp_get_val_string(const s_cfpq *p)
     return tmp;
 }
 
-long cfp_get_val_int(const s_cfpq *p)
+long cfp_get_val_int(const s_cfpq *p, const char *key)
 {
-    if( !p ) return 0;
+    if(!(p = cfp_find( p, key))) return 0;
     if( !p->value) return 0;
     return strtol( p->value, NULL, 0);
 }
 
-double cfp_get_val_float(const s_cfpq *p)
+double cfp_get_val_float(const s_cfpq *p, const char *key)
 {
+    if(!(p = cfp_find( p, key))) return 0.0;
     if( !p ) return 0.0;
     if( !p->value) return 0.0;
     return strtod( p->value, NULL);
 }
 
-t_bool cfp_get_val_bool(const s_cfpq *p)
+t_bool cfp_get_val_bool(const s_cfpq *p, const char *key)
 {
     int i;
     const char *comp[] = {"true","1",".t.","high","on","enabled","enable"};
     char tmp[16], *t;
+    if(!(p = cfp_find( p, key))) return _F_;
     if( !p ) return _F_;
     if( !p->value) return _F_;
     strncpy( tmp, p->value, 15);
@@ -770,4 +790,10 @@ char path_get_type(s_path *s)
     if( !s ) return 0;    
     return *s->link - '0';
 }
+
+int cfp_get_val_select(const s_cfpq *p, char mode, const char *key, const char *values)
+{
+    return -1;
+}
+
 

@@ -45,6 +45,7 @@ typedef struct s__cfp_q s_cfpq;
 typedef struct
 {
     s_cfpq *p;
+    s_cfpq *current;
 } s_cfp;
 
 struct s__cfp_q
@@ -105,18 +106,23 @@ t_bool cfp_load(s_cfp *, const char *file_path);
 t_bool cfp_cut(s_cfp *, const char *path);
 t_bool cfp_add(s_cfp *, const char *path, const char *value); // add/modify
 const s_cfpq *cfp_get(s_cfp *, const char *path); // return node given by path or NULL if not existed
-const s_cfpq *cfp_find( s_cfpq *, const char *key); // search branch s_cfpq to find key, return NULL if fail
-const s_cfpq *cfp_next( s_cfpq *); // return next node or NULL
-const s_cfpq *cfp_prev( s_cfpq *); // return previous node or NULL
+const s_cfpq *cfp_find( const  s_cfpq *, const char *key); // search branch s_cfpq to find key, return NULL if fail
+const s_cfpq *cfp_next( const  s_cfpq *); // return next node or NULL
+const s_cfpq *cfp_prev( const  s_cfpq *); // return previous node or NULL
+const s_cfpq *cfp_block( const s_cfpq *); // return branch node or NULL
 t_bool cfp_is_section(s_cfpq *);	    // return _T_ if node is section
 void cfp_foreach(s_cfp *, f_cfp_cb, void *user_data);
 const char *cfp_get_key(const s_cfpq *);
-const char *cfp_get_val(const s_cfpq *);
-char *cfp_get_val_string(const s_cfpq *); // "...", allocating memory, must be freed
-long   cfp_get_val_int(const s_cfpq *); // 12345, 0x12345
-double cfp_get_val_float(const s_cfpq *); // 12.345
-t_bool cfp_get_val_bool(const s_cfpq *);  // true,false,0,1,.t.,.f.,high,low,on,off,enabled,disabled,enable,disable - case insensitive
 
+const char *cfp_get_val(const s_cfpq *, const char *key);
+char *cfp_get_val_stringp(s_cfp *, const char *path); // "...", allocating memory, must be freed
+char *cfp_get_val_string(s_cfpq *, const char *key); // "...", allocating memory, must be freed
+char *cfp_get_val_string_lo(const s_cfpq *); // "...", allocating memory, must be freed
+long   cfp_get_val_int(const s_cfpq *, const char *key); // 12345, 0x12345
+double cfp_get_val_float(const s_cfpq *, const char *key); // 12.345
+t_bool cfp_get_val_bool(const s_cfpq *, const char *key);  // true,false,0,1,.t.,.f.,high,low,on,off,enabled,disabled,enable,disable - case insensitive
+
+int cfp_get_val_select(const s_cfpq *, char mode, const char *key, const char *values); // return 0+ position found, or -1: values string: "aa,bb,cc,dd,ee" -> 0,1,2,3,4
 /*
     ////////////////// path decomposition set of functions //////////////////////////
     Path format:
