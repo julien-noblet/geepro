@@ -368,12 +368,12 @@ void write_25lcxx(unsigned int dev_size)
     lb = checkbox(
 	"[TITLE]Write Chip[/TITLE][TYPE:WN]"
 	"[CB:1:0: Tick to program whole chip.]"
-	"[CB:2:1: Erase chip.]"
-	"[CB:4:1: Verify chip.]"
+//	"[CB:2:1: Erase chip.]"
+//	"[CB:4:1: Verify chip.]"
     );
     if( !lb ) return;
-    if( *lb & 2 ) 
-	erase_25lcxx();
+//    if( *lb & 2 ) 
+//	erase_25lcxx();
 
     spi_start( 33 );
     i = 0;
@@ -395,15 +395,15 @@ void write_25lcxx(unsigned int dev_size)
 	break_if( timeout == 0 );
 	// verify page    
 	read_page( buff, page );
-	for(i = 0; i < 256; i++){ 
-	    ch = buff[i + 4];	// chip data
-	    bf = get_buffer( i + page * 256); // buffer data
-	    erraddr = page * 256 + i;
-	    if( ch != bf ){
-	        i = 300;
-	        break;
-	    }
-	}
+//	for(i = 0; i < 256; i++){ 
+//	    ch = buff[i + 4];	// chip data
+//	    bf = get_buffer( i + page * 256); // buffer data
+//	    erraddr = page * 256 + i;
+//	    if( ch != bf ){
+//	        i = 300;
+//	        break;
+//	    }
+//	}
 	break_if( i == 300 );
     }
     spi_stop();
@@ -418,8 +418,8 @@ void write_25lcxx(unsigned int dev_size)
     } else
 	show_message(0, "[IF][TEXT] Chip programed succesfully.[/TEXT][OK]OK", NULL, NULL);
     finish_action();
-    if( *lb & 4 )
-	verify_25lcxx( dev_size );
+//    if( *lb & 4 )
+//	verify_25lcxx( dev_size );
 }
 
 /*********************************************************************************************
