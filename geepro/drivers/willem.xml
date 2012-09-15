@@ -42,6 +42,17 @@
 		    </hbox>
 		</vbox>
 	    </if>
+	    <if family="25Cxx">
+		<description>I2C EEPROM.</description>
+		<image src="pixmaps/willem_25Cxx.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x0"/>
+		    </hbox>
+		</vbox>
+	    </if>
+
 	    <if family="27C0xx">
 		<description>EEPROM.</description>
 		<image src="pixmaps/willem_32pin.png"/>

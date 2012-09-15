@@ -177,6 +177,7 @@ typedef struct
     int x_id;
     char *x_name;
     char *x_path;
+    char *x_fname;
     char has_child;
 }  gui_bineditor_stencil_str;
 
@@ -1694,7 +1695,7 @@ static void gui_bineditor_stencil_tree_append(gui_bineditor_stencil_str *s, cons
     gtk_tree_store_set(s->model, ins, 
 	TREE_COL_ICON, (txt[0] == '$') ? GTK_STOCK_INDEX : GTK_STOCK_DIRECTORY, 
 	TREE_COL_TEXT, (txt[0] == '$') ? txt + 1 : txt, 
-	TREE_COL_FILE, (txt[0] == '$') ? file : "",
+	TREE_COL_FILE, file, //(txt[0] == '$') ? file : "",
 	TREE_COL_DESC, (txt[0] == '$') ? desc : "",
 	TREE_COL_ID, (txt[0] == '$') ?  1 : 0, 
 	-1
@@ -1708,7 +1709,7 @@ static gboolean gui_bineditor_stencil_button_ev(GtkWidget *wg, GdkEventButton *e
     GtkTreeModel *model = GTK_TREE_MODEL(s->model);
     GtkTreeIter  iter;
     GtkTreePath *path;
-    char *tmp, *node, *z;
+    char *tmp, *node, *z, *fff;
     int x;
     
     if(ev->type != GDK_BUTTON_PRESS) return FALSE;
@@ -1717,7 +1718,10 @@ static gboolean gui_bineditor_stencil_button_ev(GtkWidget *wg, GdkEventButton *e
 	s->x_path = NULL;
 	if(s->x_name) free(s->x_name);
 	s->x_name = NULL;
+	if(s->x_fname) free(s->x_fname);
+	s->x_fname = NULL;
 	gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(wg), ev->x, ev->y, &path, NULL, NULL, NULL);
+	if( path == NULL ) return FALSE;
 	gtk_tree_model_get_iter(model, &iter, path);
 	gtk_tree_model_get(model, &iter, 
 	    TREE_COL_TEXT, &tmp, 
@@ -1729,7 +1733,11 @@ static gboolean gui_bineditor_stencil_button_ev(GtkWidget *wg, GdkEventButton *e
 	    for( x = gtk_tree_path_get_depth(path) - 1; x > 1; x--){
 		gtk_tree_path_up( path );
 		gtk_tree_model_get_iter(model, &iter, path);
-		gtk_tree_model_get(model, &iter,  TREE_COL_TEXT, &node,	-1 );	
+		gtk_tree_model_get(model, &iter,  
+		    TREE_COL_TEXT, &node,	
+		    TREE_COL_FILE, &fff,	
+		    -1 
+		);	
 		z = (char *)malloc( strlen(node) + (s->x_path ? strlen(s->x_path) : 0) + 2);
 		if(s->x_path)
 		    sprintf(z,"/%s%s", node, s->x_path);
@@ -1738,6 +1746,9 @@ static gboolean gui_bineditor_stencil_button_ev(GtkWidget *wg, GdkEventButton *e
 		if(s->x_path) free(s->x_path);
 		s->x_path = z;
 		free( node );
+		s->x_fname = (char *)malloc( strlen(fff) + 1);
+		strcpy( s->x_fname, fff);
+		free( fff );
 	    }
 	    s->x_name = tmp;
 	}
@@ -1799,6 +1810,7 @@ static inline void gui_bineditor_stencil_tree(GuiBineditor *be, gui_bineditor_st
     s->be = be;
     s->x_path = NULL;
     s->x_name = NULL;    
+    s->x_fname = NULL;
     s->view = gtk_tree_view_new();
     
     g_signal_connect(G_OBJECT(s->view), "button-press-event", G_CALLBACK(gui_bineditor_stencil_button_ev), s);
@@ -1819,7 +1831,9 @@ static inline void gui_bineditor_stencil_tree(GuiBineditor *be, gui_bineditor_st
 
     // content    
     s->model = gtk_tree_store_new(TREE_COL_ALL, G_TYPE_STRING,  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
-    gui_bineditor_stencil_tree_append( s, "Stencils", NULL, "kjhkjhkjhkjh", &toplevel, NULL); // !! to change
+
+    gui_bineditor_stencil_tree_append( s, "Stencils", NULL, NULL, &toplevel, NULL); // !! to change
+
     gtk_tree_view_set_model(GTK_TREE_VIEW(s->view), GTK_TREE_MODEL(s->model));
     gtk_tree_selection_set_mode( gtk_tree_view_get_selection(GTK_TREE_VIEW(s->view)), GTK_SELECTION_NONE);    
     s->top = &toplevel;
@@ -1839,6 +1853,7 @@ void gui_bineditor_stencil(GtkWidget *wg, GuiBineditor *be)
 
     str.x_name = NULL;
     str.x_path = NULL;
+    str.x_fname = NULL;
 
     be->priv->stencil = NULL;
     dlg = gtk_dialog_new();
@@ -1869,6 +1884,7 @@ void gui_bineditor_stencil(GtkWidget *wg, GuiBineditor *be)
     gtk_widget_destroy( dlg );    
     if(str.x_path ) free(str.x_path);
     if(str.x_name) free(str.x_name);
+    if(str.x_fname) free(str.x_fname);
 }
 
 void gui_bineditor_stencil_update(GuiBineditor *be)
@@ -2166,7 +2182,7 @@ static inline void gui_bineditor_stencil_tree_popup_menu(gui_bineditor_stencil_s
 
 static void gui_bineditor_stencil_tree_operation(gui_bineditor_stencil_str *s, int operation)
 {
-    if(gui_bineditor_stencil_operation(s->be, s->x_name, s->x_path, operation, s->has_child)){
+    if(gui_bineditor_stencil_operation(s->be, s->x_fname, s->x_name, s->x_path, operation)){
 	gtk_widget_destroy(s->view);
 	gui_bineditor_stencil_build_tree( s, "./stencils/stencil.idx" ); // path should be from config !!
     }
