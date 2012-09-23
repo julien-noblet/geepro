@@ -33,6 +33,9 @@
 #define ELICENSE "GPL version 2"
 
 #define SYSTEM_DEVICE_PATH "/dev/"
+
+#define GEEPRO(x)	((geepro *)(x))
+
 #ifdef __cplusplus
 extern "C" {
 #endif

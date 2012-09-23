@@ -102,7 +102,7 @@ void verify_mcs48(int size)
     oe(0, 3000);  // RESET = 0, VPP = VCC
     hw_sw_vpp(1); // VPP = Uvpp
     oe(1, 3000);  // RESET = 1, VPP = VCC    
-    progress_loop(addr, size, "Verifycation"){
+    progress_loop(addr, size, "Verification"){
 	set_address_mcs48( addr, MCS48_READ_MODE );
 	rdata = hw_get_data();
 	wdata = get_buffer( addr );

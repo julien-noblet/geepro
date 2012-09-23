@@ -135,7 +135,7 @@ int iface_select_iface(iface *ifc, char *name)
     char *dev;
     iface *ifct = ifc;    
     dev = iface_get_dev(ifc, name);
-    printf("Opening interface %s (device: %s)\n", name, dev);
+    printf("Opening interface '%s' (device: '%s')\n", name, dev);
     if(hw_open(dev, 0) == HW_ERROR){
 	ifc = ifct;
 	return -1;
@@ -148,16 +148,14 @@ int iface_prg_add(iface *ifc, iface_prg_api api, char on)
 {
     iface_prg *new_tie, *tmp;
     char *d_name = NULL;
-
     if(!api) return -1;
 
     api(HW_NAME, 0, &d_name);
-
     if(!d_name) {
 	printf("{iface.h} iface_add() -> driver rejected due to missing name !\n");
 	return -1; /* brak nazwy */
     }
-    
+
     if(!(new_tie = (iface_prg*) malloc(sizeof(iface_prg)))){
 	printf("{iface.h} iface_add() -> memory allocation error (1) \n");
 	return -1;
@@ -303,7 +301,6 @@ static int iface_add_plug_file(iface *ifc, const char *pth, const char *name, co
     char tx[256];
     char *tmp = tx, *path = (char*)pth;
     int len, z, n=0;
-    
     if(*path != '/' ){ /* nie jest ścieżką absolutną */
 	path = (char*)malloc(sizeof(char) * (strlen(pth) + strlen(cwd) + 2));
 	sprintf(path, "%s/%s", cwd, pth);
@@ -322,11 +319,9 @@ static int iface_add_plug_file(iface *ifc, const char *pth, const char *name, co
     if(z < 0) z = 0;
     if( *(tmp + z ) != '/') strcat(tmp, "/");
     strcat(tmp, name);
-    printf("Adding driver file %s ... ", tmp);
-
+    printf("Adding driver file '%s' ... ", tmp);
     /* czy ścieżka absoltna, jeśli nie to dodaj cwd */
     if(n) free(path);
-    
     /* otwarcie pluginu */
     dlerror(); /* wyzerowanie błędów */
     if(!(pf = dlopen(tmp, RTLD_LAZY))){
@@ -356,7 +351,6 @@ static int iface_add_plug_file(iface *ifc, const char *pth, const char *name, co
 	dlclose(pf);
 	return -2;
     };
-
 
     return 0;
 }
