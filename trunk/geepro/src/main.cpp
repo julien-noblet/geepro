@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     
     store_constr(&store, "~/.geepro","geepro.st");
 // do poprawki jak będzie config - te wszystkie stałe mają być pobierane z pliku configuracyjnego 
-    iface_driver_allow(geep.ifc, "willem:dummy:jtag");
+    iface_driver_allow(geep.ifc, "willem:dummy:jtag:stk200");
     iface_module_allow(geep.ifc, "prom:mcs51:mcs48:exampl:93Cxx:27xx:24Cxx:28xx:hub_lpc:29xx:25xx");
     iface_load_config(geep.ifc, NULL);
     iface_make_driver_list(geep.ifc, drivers_path.c_str(), ".driver");
