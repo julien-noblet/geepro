@@ -93,6 +93,8 @@ typedef enum{
     HW_SET_JTAG_TCK,
     HW_SET_JTAG_TMS,
     HW_GET_JTAG_TDO,
+    HW_SET_JTAG_TDO,
+    HW_SET_JTAG_TRST,
 } en_hw_api;
 
 /********************************************************************
@@ -173,7 +175,8 @@ extern hw_driver_type ___hardware_driver___;
 #define hw_set_jtag_tck(val)	___hardware_driver___( HW_SET_JTAG_TCK,  val, NULL)
 #define hw_set_jtag_tms(val)	___hardware_driver___( HW_SET_JTAG_TMS,  val, NULL)
 #define hw_get_jtag_tdo()	___hardware_driver___( HW_GET_JTAG_TDO,  0, NULL)
-
+#define hw_set_jtag_tdo()	___hardware_driver___( HW_SET_JTAG_TDO,  0, NULL)
+#define hw_set_jtag_trst()	___hardware_driver___( HW_SET_JTAG_TRST, 0, NULL)
 
 #ifdef __cplusplus
 } // extern "C"

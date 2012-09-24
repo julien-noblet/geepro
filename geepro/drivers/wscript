@@ -15,10 +15,11 @@ def build(bld):
     ).env.cxxshlib_PATTERN       = '%s.driver'
 
   bld.install_files("${PREFIX}/share/geepro/drivers",
-    ['drivers.dtd','drivers.css','willem.xml','stk200.xml'])
+    ['drivers.dtd','drivers.css','willem.xml','stk200.xml','xilinx_cable_iii.xml'])
 
   bld.copy_to_build(geefile='willem.xml')
   bld.copy_to_build(geefile='stk200.xml')
+  bld.copy_to_build(geefile='xilinx_cable_iii.xml')
   bld.copy_to_build(geefile='drivers.dtd')
   bld.copy_to_build(geefile='drivers.css')
 

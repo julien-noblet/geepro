@@ -23,7 +23,7 @@
 
 #include "drivers.h"
 
-extern const char *shared_drivers_xml_file;
+//extern const char *shared_drivers_xml_file;
 
 static const gui_xml_lt	stk200_xml_lt[] = { { "MOSI", 1}, { "LED", 2}, { "RST", 3}, { "SCK", 4}, { "MISO", 5}, { "MISO_BT", 6} };
 
