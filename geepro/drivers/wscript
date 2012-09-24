@@ -2,7 +2,7 @@
 # drivers
 def build(bld):
   print('→ building drivers')
-  drivers_base=["jtag","willem","stk200","galblaster","altera_byteblaster","xilinx_cable_iii"]
+  drivers_base=["jtag","willem","stk200","galblaster","altera_byteblaster","xilinx_cable_iii","altera_byteblaster"]
 
   for driver in drivers_base:
     b=bld(
@@ -15,11 +15,12 @@ def build(bld):
     ).env.cxxshlib_PATTERN       = '%s.driver'
 
   bld.install_files("${PREFIX}/share/geepro/drivers",
-    ['drivers.dtd','drivers.css','willem.xml','stk200.xml','xilinx_cable_iii.xml'])
+    ['drivers.dtd','drivers.css','willem.xml','stk200.xml','xilinx_cable_iii.xml', 'altera_byteblaster.xml'])
 
   bld.copy_to_build(geefile='willem.xml')
   bld.copy_to_build(geefile='stk200.xml')
   bld.copy_to_build(geefile='xilinx_cable_iii.xml')
+  bld.copy_to_build(geefile='altera_byteblaster.xml')
   bld.copy_to_build(geefile='drivers.dtd')
   bld.copy_to_build(geefile='drivers.css')
 
