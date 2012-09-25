@@ -23,11 +23,6 @@
 
 #include "drivers.h"
 
-//extern const char *shared_drivers_xml_file;
-
-static const gui_xml_lt	altera_bb_xml_lt[] = { { "nSTAT", 1}, { "TDI", 2}, { "TMS", 3}, { "TCK", 4}, { "TDO", 5}, { "TDO_BT", 6},  { "nSTAT_BT", 6}};
-
-
 static int altera_bb_test_connected()
 {
     if( parport_clr_bit(PA, PP_07) ) return 0;

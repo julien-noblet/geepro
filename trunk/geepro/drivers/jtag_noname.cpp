@@ -23,11 +23,6 @@
 
 #include "drivers.h"
 
-//extern const char *shared_drivers_xml_file;
-
-static const gui_xml_lt	xyz_xml_lt[] = { { "TRST", 1}, { "TDI", 2}, { "TMS", 3}, { "TCK", 4}, { "TDO", 5}, { "TDO_BT", 6} };
-
-
 static int xyz_sw_vcc( char state )
 {
     if( state )

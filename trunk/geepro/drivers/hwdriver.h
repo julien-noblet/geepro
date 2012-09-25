@@ -96,6 +96,13 @@ typedef enum{
     HW_SET_JTAG_TDO,
     HW_SET_JTAG_TRST,
     HW_GET_JTAG_NSTAT,
+// GAL
+    HW_GET_GAL_SDOUT,
+    HW_SET_GAL_SDIN,
+    HW_SET_GAL_SCLK,
+    HW_SET_GAL_STB,
+    HW_SET_GAL_PV,
+    HW_SET_GAL_RA,
 } en_hw_api;
 
 /********************************************************************
@@ -179,6 +186,14 @@ extern hw_driver_type ___hardware_driver___;
 #define hw_set_jtag_tdo()	___hardware_driver___( HW_SET_JTAG_TDO,  0, NULL)
 #define hw_set_jtag_trst()	___hardware_driver___( HW_SET_JTAG_TRST, 0, NULL)
 #define hw_get_jtag_nstat()	___hardware_driver___( HW_GET_JTAG_NSTAT, 0, NULL)
+
+// GAL 
+#define hw_get_gal_sdout()	___hardware_driver___( HW_GET_GAL_SDOUT,   0, NULL)
+#define hw_set_gal_sdin(val)    ___hardware_driver___( HW_SET_GAL_SDIN,  val, NULL)
+#define hw_set_gal_sclk(val)    ___hardware_driver___( HW_SET_GAL_SCLK,  val, NULL)
+#define hw_set_gal_stb(val)     ___hardware_driver___( HW_SET_GAL_STB,   val, NULL)
+#define hw_set_gal_pv(val)      ___hardware_driver___( HW_SET_GAL_PV,    val, NULL)
+#define hw_set_gal_ra(val)      ___hardware_driver___( HW_SET_GAL_RA,    val, NULL)
 
 #ifdef __cplusplus
 } // extern "C"
