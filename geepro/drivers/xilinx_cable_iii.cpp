@@ -23,11 +23,6 @@
 
 #include "drivers.h"
 
-//extern const char *shared_drivers_xml_file;
-
-static const gui_xml_lt	x3_xml_lt[] = { { "TDO_PRG", 1}, { "TDI", 2}, { "TMS", 3}, { "TCK", 4}, { "TDO", 5}, { "TDO_BT", 6} };
-
-
 static int x3_test_connected()
 {
     if( parport_get_bit(PB, PP_15) == 0 ){  // VCC sense
