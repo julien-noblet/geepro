@@ -88,6 +88,7 @@ typedef enum{
     HW_SET_ISP_SCK,
     HW_SET_ISP_RST,
     HW_SET_ISP_LED,
+    HW_SET_AVR_XTAL,
 // JTAG
     HW_SET_JTAG_TDI,
     HW_SET_JTAG_TCK,
@@ -177,6 +178,8 @@ extern hw_driver_type ___hardware_driver___;
 #define hw_set_isp_sck(val)	___hardware_driver___( HW_SET_ISP_SCK,   val, NULL)
 #define hw_set_isp_rst(val)	___hardware_driver___( HW_SET_ISP_RST,   val, NULL)
 #define hw_set_isp_led(val)	___hardware_driver___( HW_SET_ISP_LED,   val, NULL)
+
+#define hw_set_avr_xtal(val)	___hardware_driver___( HW_SET_AVR_XTAL,   val, NULL)
 
 // JTAG
 #define hw_set_jtag_tdi(val)	___hardware_driver___( HW_SET_JTAG_TDI,  val, NULL)
