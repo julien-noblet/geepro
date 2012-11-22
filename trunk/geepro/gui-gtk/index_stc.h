@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef __gui_xml_h__
-#define __gui_xml_h__
+#ifndef __gui_index_stc_h__
+#define __gui_index_stc_h__
 
 #ifdef __cplusplus
 extern "C" {

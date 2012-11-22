@@ -27,6 +27,7 @@
 #include "../src/chip.h"
 #include "../src/protocols.h"
 #include "../gui-gtk/gui.h"
+#include "../gui-gtk/gui_dialog.h"
 #include "../src/buffer.h"
 #include "../src/geepro.h"
 
@@ -103,6 +104,10 @@
 
 #define  show_message(sw,title,msg_1,msg_2)	\
     gui_dialog_box(___geep___, title, sw ? msg_2 : msg_1, "OK", NULL)
+
+#define message(fmt, arg...)	\
+    gui_dialog_box(___geep___, fmt, ##arg)
+
 
 #define show_dialog(title, msg)	\
     gui_dialog_box(___geep___, title, msg, "OK", NULL)

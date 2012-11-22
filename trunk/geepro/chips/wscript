@@ -3,7 +3,7 @@
 def build(bld):
   print('→ building chips')
   bld.copy_to_build(geefile="signatures.sig")
-  modules_base=["24Cxx","27xx","28xx","93Cxx","mcs48","mcs51","prom","hub_lpc","29xx", "25xx"]
+  modules_base=["24Cxx","27xx","28xx","93Cxx","mcs48","mcs51","prom","hub_lpc","29xx", "25xx", "i2c_peripheral"]
   for mod in modules_base:
     b=bld(
       features = 'cxx cxxshlib',

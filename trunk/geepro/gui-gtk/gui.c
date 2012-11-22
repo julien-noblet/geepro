@@ -39,6 +39,8 @@
 #include "bineditor.h"
 #include "icons_xpm.c"
 #include "../src/checksum.h"
+#include "../src/error.h"
+#include "gui_dialog.h"
 
 typedef struct 
 {
@@ -1425,6 +1427,139 @@ unsigned long *gui_checkbox(geepro *gep, const char *fmt)
     free(tmp);
     if(result != GTK_RESPONSE_ACCEPT) return NULL;
     return &gui_checkbox_result;
+}
+
+//*******************************************************************************************************************
+
+
+typedef struct
+{
+    int i_par;
+    int val;
+    void *u_par;
+    dlg_slider_cb cb;
+} s_slider;
+
+typedef struct gui_stack_ gui_stack;
+
+struct gui_stack_
+{
+    GtkWidget *node;
+    gui_stack *prev;
+};
+
+gui_stack *gstk = NULL;
+gui_stack *sliders = NULL;
+
+GtkWidget *dlg;
+
+void gui_push(GtkWidget *it, gui_stack **stk)
+{
+    gui_stack *tmp;
+
+    if(! stk ) return;
+    if(!(tmp = (gui_stack *)malloc( sizeof(gui_stack) ))){
+	ERR( E_T_MALLOC );
+	return;
+    }
+    tmp->node = it;
+    tmp->prev = *stk;
+    *stk = tmp;
+}
+
+void gui_pop(gui_stack **stk)
+{
+    gui_stack *x;
+    if( !stk ) return;
+    if( !*stk ) return;
+    x = *stk;
+    *stk = (*stk)->prev;
+    free( x );
+}
+
+void gui_free_stack(gui_stack **stk)
+{
+    while( !*stk ) gui_pop( stk );
+}
+
+GtkWidget *gui_get_stack(gui_stack *stk)
+{
+    if( ! stk ) return NULL;
+    return stk->node;
+}
+
+void dialog_start(const char *title, int width, int height)
+{
+    dlg = gtk_dialog_new_with_buttons(title, NULL, 0, 
+	GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
+	NULL
+    );
+    gtk_widget_set_size_request(dlg, width, height);
+    
+    gui_push( gtk_dialog_get_content_area(GTK_DIALOG( dlg )), &gstk);
+}
+
+void dialog_cleanup()
+{
+    gtk_widget_destroy( dlg );
+    gui_free_stack( &gstk );
+    while( !sliders ){
+	if(sliders->node) free(sliders->node);
+        gui_pop( &sliders );
+    }
+}
+
+void dialog_end()
+{
+    gtk_widget_show_all( dlg ); 
+    gtk_dialog_run( GTK_DIALOG( dlg ));
+    dialog_cleanup();
+}
+
+void frame_start(const char *name)
+{
+    GtkWidget *tmp, *x;    
+    
+    tmp = gtk_frame_new( name );
+    x = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_add(GTK_CONTAINER( tmp ), x );    
+    gtk_container_add(GTK_CONTAINER( gui_get_stack( gstk ) ), tmp );
+    gui_push( x, &gstk );
+}
+
+void frame_end()
+{
+    gui_pop( &gstk );
+}
+
+static void slider_cb(GtkRange *range, s_slider *ud)
+{
+    if( !ud || !range ) return;
+    ud->val = gtk_range_get_value( range );    
+    if(ud->cb) ud->cb( ud->val, ud->u_par, ud->i_par);
+}
+
+void slider_add(const char *label, int min, int max, int def, dlg_slider_cb cb, int i_par, void *u_par )
+{
+    GtkWidget *tmp, *x;
+    s_slider *ss;
+    
+    if(!(ss = (s_slider *)malloc(sizeof( s_slider )))){
+	ERR(E_T_MALLOC);
+	return;
+    }
+    ss->i_par = i_par;
+    ss->u_par = u_par;
+    ss->cb = cb;
+    tmp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    x = gtk_label_new( label );
+    gtk_box_pack_start(GTK_BOX( tmp ), x, FALSE, FALSE, 10);    
+    x = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, min, max, 1);
+    gtk_range_set_value( GTK_RANGE(x), def );    
+    g_signal_connect(G_OBJECT(x), "value-changed", G_CALLBACK(slider_cb), ss);
+    gui_push( (GtkWidget *)ss, &sliders);
+    gtk_box_pack_start(GTK_BOX( tmp ), x, TRUE, TRUE, 10);    
+    gtk_container_add(GTK_CONTAINER( gui_get_stack( gstk ) ), tmp );
 }
 
 

@@ -48,6 +48,10 @@ typedef char t_bool;
 #define E_T_MALLOC	"malloc() == NULL"
 
 #define ERROR(err_class, format, x...) printf("EC[%i]{%i}:%s:%s()->"format"\n", err_class, __LINE__, __FILE__,__FUNCTION__, ##x)
+#define ERR( fmt, x...)			ERROR( E_ERR, fmt, ##x)
+#define MSG( fmt, x...)			ERROR( E_MSG, fmt, ##x)
+#define WRN( fmt, x...)			ERROR( E_WRN, fmt, ##x)
+#define CRT( fmt, x...)			ERROR( E_CRT, fmt, ##x)
 
 #endif // __ERROR_H__
 

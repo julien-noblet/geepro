@@ -51,7 +51,7 @@ enum{
 };
 
 static void gui_bineditor_stencil_edit_add_entries( GtkWidget *list, gui_stencil_edit_str *gses );
-static char gui_bineditor_stencil_new(GuiBineditor *be);
+//static char gui_bineditor_stencil_new(GuiBineditor *be);
 static char gui_bineditor_stencil_edit(GuiBineditor *be, const char *fname);
 static void gui_bineditor_stencil_edit_desc_entry_ev(GtkTextBuffer *txt, gui_stencil_edit_str *gses);
 static void gui_bineditor_stencil_edit_fname_entry_ev();
@@ -344,7 +344,7 @@ char gui_bineditor_stencil_operation(GuiBineditor *be, const char *fname, const 
     }
     return 0;
 }
-
+/*
 static char gui_bineditor_stencil_new(GuiBineditor *be)
 {
     GtkWidget *dlg, *ctx, *tb;
@@ -384,7 +384,7 @@ static char gui_bineditor_stencil_new(GuiBineditor *be)
     gui_bineditor_stencil_edit( be, fnm );
     return 0;
 }
-
+*/
 static GtkWidget *gui_bineditor_stencil_edit_list()
 {
     GtkWidget *list, *wg;
@@ -522,9 +522,9 @@ void gui_bineditor_stencil_edit_get_entry(s_cfp *cfp, entry_str *en, const char 
     s_cfpq *p = NULL;
     // get entry content
     sprintf(tmp, "/entries/%s", name);
-    if( cfp && name)
-	p = cfp_get( cfp, tmp);
-    p = cfp_block( p );
+//    if( cfp && name)
+//	p = cfp_get( cfp, tmp);
+//    p = cfp_block( p );
     // get all possible entry values
     en->name = name;
 return;
