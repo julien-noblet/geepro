@@ -42,6 +42,17 @@
 		    </hbox>
 		</vbox>
 	    </if>
+	    <if family="I2C_PERIPHERAL">
+		<description>Various type of devices connected via I2C</description>
+		<image src="pixmaps/willem_24Cxx.png"/>
+		<vbox>
+		    <hbox border="0">
+			<jumper name_up="29x" set="0"/>
+			<dipswitch name="Dip switch" len="12" value="0x0"/>
+		    </hbox>
+		</vbox>
+	    </if>
+
 	    <if family="25Cxx">
 		<description>I2C EEPROM.</description>
 		<image src="pixmaps/willem_25Cxx.png"/>
