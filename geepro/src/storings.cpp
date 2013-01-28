@@ -36,10 +36,13 @@ int store_constr(store_str *st, const char *path, const char *fname)
     DIR *dir;
     const char *home;
     char *tmp = (char *)path, *x;
+
+    if(!path || !st || !fname ) return -1;
     st->file = NULL;
     st->sval = NULL;
     st->ival = 0;
     st->fval = 0;
+
     // rozwinięcie katalogu domowego jesli jes w sciezce
     home = getenv("HOME"); // scieżka katalogu domowego
     if((x = strchr((char *)path, '~'))){
@@ -72,6 +75,7 @@ int store_constr(store_str *st, const char *path, const char *fname)
 
 void store_destr(store_str *st)
 {
+    if(!st) return;
     if(st->file) fclose(st->file);
     if(st->sval) free(st->sval);
 }
@@ -80,6 +84,8 @@ static char *store_buffer(FILE *f)
 {
     unsigned int len;
     char *tmp;
+
+    if(!f) return NULL;
     // get file size
     fseek(f, 0L, SEEK_END);
     len = ftell(f);
@@ -94,6 +100,8 @@ static char *store_buffer(FILE *f)
 static char *store_lookup(const char *buffer, const char *k)
 {
     char tmp[256];
+
+    if(!buffer || !k) return NULL;
     sprintf(tmp, "$%s=", k);
     return strstr((char *)buffer, tmp);
 }
@@ -102,7 +110,8 @@ int store_get(store_str *st, const char *key, char **val)
 {
     int len;
     char *buffer, *tmp, *x;
-    if(!val ) return -3;
+
+    if(!val || !st) return -3;
     if(!st ) return -3;
     if(!st->file ) return -1;
     if(!key) return -3;

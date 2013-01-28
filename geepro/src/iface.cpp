@@ -41,10 +41,12 @@ iface *iface_init()
 {
     iface *ifc;
     if(!(ifc = (iface *)malloc(sizeof(iface)))) return NULL;
-    ifc->qe = NULL;
-    ifc->prg = NULL;
-    ifc->plg = NULL;
-    if(!(ifc->plugins = (chip_plugins *)malloc(sizeof(chip_plugins)))) return NULL;
+    memset(ifc, 0, sizeof(iface));
+    if(!(ifc->plugins = (chip_plugins *)malloc(sizeof(chip_plugins)))){
+	free( ifc );
+	return NULL;
+    }
+    memset(ifc->plugins, 0, sizeof(chip_plugins));
     chip_init_qe(ifc->plugins);
     return ifc;
 }
@@ -166,7 +168,7 @@ int iface_prg_add(iface *ifc, iface_prg_api api, char on)
     new_tie->api = api;
     new_tie->on = on;
 
-    printf("   Adding driver: %s\n", new_tie->name);
+    printf(" *  Adding driver: %s\n", new_tie->name);
 
     if(!ifc->prg){
 	ifc->prg = new_tie;
@@ -256,13 +258,14 @@ int iface_dir_fltr(iface *ifc, const char *lst, const char *path, const char *ex
 	old_path = (char *)realloc(old_path, i * 16 * sizeof(char));
     }
 
-
     if(chdir(path) != 0){
-	printf("{iface.h} iface_dir_fltr() -> chdir() error 1 \n");
+	printf("{iface.h} iface_dir_fltr() -> chdir('%s') error 1 \n", path);
+	free(old_path);
 	return -1;
     }        
     if(!(dir = opendir("./"))){
 	printf("{iface.h} iface_dir_fltr() -> error opening current directory \n");
+	free(old_path);
 	return -1;
     }
     
@@ -270,14 +273,16 @@ int iface_dir_fltr(iface *ifc, const char *lst, const char *path, const char *ex
 	for(tmp = dr->d_name + strlen(dr->d_name); tmp != dr->d_name && *tmp != '.'; tmp--);
 	if( strcmp(tmp, ext) ) continue;
 
-
 	for(n = (char *)lst; *n; ){
 	
 	    for(ex = 0, tx = dr->d_name; *tx && (tx != tmp); tx++, n++ ) 
 						    if(*tx != *n){ ex = 1; break; };
 
 	    if(!ex)
-	    	if(cb(ifc, path, dr->d_name, old_path) == -1) return -1;
+	    	if(cb(ifc, path, dr->d_name, old_path) == -1){
+	    	    free(old_path);
+	    	    return -1;
+	    	}
 	    
 	    for(; *n && (*n != ':'); n++); /* dojechanie do końca nazwy, która nie jest zgodna */
 	    if(*n == ':') n++;
@@ -286,7 +291,8 @@ int iface_dir_fltr(iface *ifc, const char *lst, const char *path, const char *ex
 
     closedir(dir);
     if(chdir(old_path) != 0){
-	printf("{iface.h} iface_dir_fltr() -> chdir() error 2 \n");
+	printf("{iface.h} iface_dir_fltr() -> chdir('%s') error 2 \n", old_path);
+	free(old_path);
 	return -1;
     }        
 
@@ -301,6 +307,7 @@ static int iface_add_plug_file(iface *ifc, const char *pth, const char *name, co
     char tx[256];
     char *tmp = tx, *path = (char*)pth;
     int len, z, n=0;
+
     if(*path != '/' ){ /* nie jest ścieżką absolutną */
 	path = (char*)malloc(sizeof(char) * (strlen(pth) + strlen(cwd) + 2));
 	sprintf(path, "%s/%s", cwd, pth);
@@ -319,33 +326,33 @@ static int iface_add_plug_file(iface *ifc, const char *pth, const char *name, co
     if(z < 0) z = 0;
     if( *(tmp + z ) != '/') strcat(tmp, "/");
     strcat(tmp, name);
-    printf("Adding driver file '%s' ... ", tmp);
+    printf("[MSG] Adding driver file '%s' ... ", name);
     /* czy ścieżka absoltna, jeśli nie to dodaj cwd */
     if(n) free(path);
-    /* otwarcie pluginu */
-    dlerror(); /* wyzerowanie błędów */
+
+    // otwarcie pluginu
+    dlerror(); // wyzerowanie błędów 
     if(!(pf = dlopen(tmp, RTLD_LAZY))){
 	printf("Error: dlopen() --> %s\n", dlerror());
 	if(len) free(tmp);
 	return -2;
     }
-    if(len) free(tmp); /* ściezka do pliku jest już niepotrzebna */
+    if(len) free(tmp); // ściezka do pliku jest już niepotrzebna 
 
     if(!(init = (iface_regf)dlsym(pf, IFACE_DRIVER_INIT_FUNC_NAME))){
 	printf("Error: dlsym() --> %s\n", dlerror());
 	dlclose(pf);
 	return -2;
     }
-    printf("OK\nInit drivers:\n");
-
-    /* wywołanie funkcji rejestrującej plugin */
-    if(init(ifc)){
+    printf("OK\n *Init drivers:\n");
+    // wywołanie funkcji rejestrującej plugin 
+  if(init(ifc)){
 	printf("Error: " IFACE_DRIVER_INIT_FUNC_NAME "()\n");
 	dlclose(pf);
 	return -2;
     }
 
-    /* dodanie pluginu do kolejki */
+    // dodanie pluginu do kolejki
     if(iface_add_driver(ifc, pf, init)){
 	printf("Error: " IFACE_DRIVER_INIT_FUNC_NAME "()\n");
 	dlclose(pf);
@@ -362,14 +369,23 @@ int iface_make_driver_list(iface *ifc, const char *path, const char *ext)
 
 void iface_rmv_modules(iface *ifc)
 {
-    modules *m = ifc->plugins->mdl;
-    while(m->first_modl){
-	m->modl = (mod_list *)m->first_modl->next;
-	dlclose(m->first_modl->handler);	
-	free(m->first_modl);
-	m->first_modl = m->modl;
+    modules *m;
+    mod_list *tmp;
+
+    if( !ifc ) return;
+    if( !ifc->plugins ) return;
+    if( !ifc->plugins->mdl ) return;
+
+    m = ifc->plugins->mdl;
+    tmp = m->first_modl;
+    while( tmp ){
+	m->modl = (mod_list *)tmp->next;
+	if( tmp->handler ) dlclose(tmp->handler);	
+	free( tmp );
+	tmp = m->modl;
     }
     m->modl = NULL;
+    m->first_modl = NULL;
 }
 
 void iface_destroy(iface *ifc)
@@ -379,9 +395,11 @@ void iface_destroy(iface *ifc)
     iface_rmv_ifc(ifc);
     iface_rmv_prg(ifc);
     iface_rmv_driver(ifc);
-    chip_rmv_qe(ifc->plugins);
-    if(ifc->plugins->mdl) iface_rmv_modules(ifc);
-    if(ifc->plugins) free(ifc->plugins);
+    if(ifc->plugins){
+	if(ifc->plugins->mdl) iface_rmv_modules(ifc);
+	chip_rmv_qe(ifc->plugins);
+        free(ifc->plugins);
+    }
     free(ifc);
 }
 
@@ -527,7 +545,7 @@ static int iface_add_mod_file(iface *ifc, const char *pth, const char *name, con
     if(z < 0) z = 0;
     if( *(tmp + z ) != '/') strcat(tmp, "/");
     strcat(tmp, name);
-    printf("Adding module file %s --> ", name);
+    printf("[MSG] Adding module file %s --> ", name);
 
     /* czy ścieżka absoltna, jeśli nie to dodaj cwd */
     if(n) free(path);

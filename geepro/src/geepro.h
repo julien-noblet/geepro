@@ -24,6 +24,7 @@
 #include "iface.h"
 #include "chip.h"
 #include "autors"
+#include "cfp.h"
 
 /* Informacje o wersji */
 #define EPROGRAM_NAME "Geepro"
@@ -62,6 +63,7 @@ typedef struct
     iface *ifc;	/* plugins queue */
     void  *gui;
     chip_desc  *chp;
+    s_cfp *cfg;
 } geepro;
 
 #ifdef __cplusplus
