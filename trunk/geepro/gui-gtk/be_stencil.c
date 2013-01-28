@@ -37,7 +37,7 @@ typedef struct
 	      *seconds, *format,
 	      *script, *description,*settings;
     gint sel;
-    s_cfp *cfp;
+//    s_cfp *cfp;
     char  changed;
 } gui_stencil_edit_str;
 
@@ -87,9 +87,9 @@ static inline char gui_be_stencil_check_ext(const char *name)
 
 static inline void gui_be_stencil_add_position(GuiBineditor *be, const char *path, const char *f_name, FILE *f)
 {    
-    char *tree, *name, *desc, *fname;
-    s_cfp *cfp;
-    
+//    char *tree, *name, *desc, *fname;
+//    s_cfp *cfp;
+/*    
     if(!(fname = (char *) malloc( strlen(path) + strlen(f_name) + 2))){
 	ERROR(E_ERR, E_T_MALLOC);
 	return;
@@ -126,6 +126,7 @@ static inline void gui_be_stencil_add_position(GuiBineditor *be, const char *pat
     free( desc );
     free( name );
     free( fname );
+*/
 }
 
 char gui_bineditor_stencil_generate_index_file(GuiBineditor *be, const char *fname)
@@ -170,6 +171,7 @@ static inline char gui_bineditor_stencil_update_all( GuiBineditor *be )
 
 static inline void gui_bineditor_stencil_add_file(GuiBineditor *be, char *fname)
 {
+/*
     GtkWidget *dlg;
     char *tree, *name, *desc, ch;
     FILE *f1, *f2;
@@ -272,6 +274,7 @@ static inline void gui_bineditor_stencil_add_file(GuiBineditor *be, char *fname)
     free( desc );
     free( name );
     gui_bineditor_stencil_update( be );	
+*/	
 }
 
 static inline char gui_bineditor_stencil_add(GuiBineditor *be)
@@ -519,7 +522,7 @@ typedef struct
 void gui_bineditor_stencil_edit_get_entry(s_cfp *cfp, entry_str *en, const char *name)
 {
     char tmp[ strlen(name) + 16];
-    s_cfpq *p = NULL;
+//    s_cfpq *p = NULL;
     // get entry content
     sprintf(tmp, "/entries/%s", name);
 //    if( cfp && name)
@@ -529,6 +532,7 @@ void gui_bineditor_stencil_edit_get_entry(s_cfp *cfp, entry_str *en, const char 
     en->name = name;
 return;
 //    en->type = cfp_get_val_select(p,  "type", "integer,string,check,selection,date,time");
+/*
     en->deflt = cfp_get_val_string(p, "default");
     en->minimum = cfp_get_val_int(p,  "minimum");
     en->maximum = cfp_get_val_int(p,  "maximum");
@@ -542,6 +546,7 @@ return;
     en->seconds = cfp_get_val_bool(p, "seconds");
     en->mode12h =cfp_get_val_bool(p,  "mode12h");
 printf(" --> %s\n", en->deflt);
+*/
 }
 
 static void gui_bineditor_stencil_edit_select(GtkTreeSelection *tree, gui_stencil_edit_str *gses)
@@ -550,7 +555,7 @@ static void gui_bineditor_stencil_edit_select(GtkTreeSelection *tree, gui_stenci
     char *tmp = NULL, *value = NULL;
     GtkTreeIter iter;
     GtkTreeModel *model;
-    entry_str en;
+//    entry_str en;
 
     // destroy previous selection
     if( gses->box != NULL ) gtk_widget_destroy( gses->box );
@@ -558,7 +563,7 @@ static void gui_bineditor_stencil_edit_select(GtkTreeSelection *tree, gui_stenci
     if(gtk_tree_selection_get_selected( tree, &model, &iter))
 		    gtk_tree_model_get( model, &iter, 1, &value, -1);
 
-    gui_bineditor_stencil_edit_get_entry( gses->cfp, &en, value);
+//    gui_bineditor_stencil_edit_get_entry( gses->cfp, &en, value);
     if( value )g_free( value );
     
     gses->box = gtk_box_new( GTK_ORIENTATION_VERTICAL, 5);
@@ -608,10 +613,10 @@ static void gui_bineditor_stencil_edit_select(GtkTreeSelection *tree, gui_stenci
 
 static void gui_bineditor_stencil_edit_add_entries( GtkWidget *list, gui_stencil_edit_str *gses )
 {
-    char key[64], rr, *tmp;
-    int i;
-    const s_cfpq *entries, *cr, *xx;
-
+//    char key[64], rr, *tmp;
+//    int i;
+//    const s_cfpq *entries, *cr, *xx;
+/*
     entries = cfp_get( gses->cfp, "/entries");
     if( !entries ) return;    
     xx = cfp_block( entries );
@@ -632,10 +637,12 @@ static void gui_bineditor_stencil_edit_add_entries( GtkWidget *list, gui_stencil
 	    rr = 1;
 	}
     }    
+*/
 }
 
 static inline void gui_bineditor_stencil_edit_build(GuiBineditor *be, GtkWidget *ctx, gui_stencil_edit_str *gses, const char *fname )
 {
+/*
     GtkWidget *hbox, *wg, *list, *wgx, *tb, *tx;
     char *tmp;
 
@@ -707,6 +714,7 @@ static inline void gui_bineditor_stencil_edit_build(GuiBineditor *be, GtkWidget 
     wg = gtk_button_new_with_label("Delete");
     gtk_table_attach(GTK_TABLE( tb ), wg, 1, 2, 1, 2, GTK_FILL | GTK_EXPAND, GTK_SHRINK, 0, 0);        
     g_signal_connect(G_OBJECT(wg), "pressed", G_CALLBACK(gui_bineditor_stencil_edit_del_button_ev), gses);
+*/
 }
 
 static char gui_bineditor_stencil_edit(GuiBineditor *be, const char *fname)
@@ -719,7 +727,7 @@ static char gui_bineditor_stencil_edit(GuiBineditor *be, const char *fname)
     gses.changed = 0;
     if( !( p = cfp_init())) return 0;
     if( fname ) cfp_load( p, fname);
-    gses.cfp = p;
+//    gses.cfp = p;
     
     dlg = gtk_dialog_new_with_buttons("Geepro - edit stencil", GTK_WINDOW(be->priv->wmain),
 	GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,

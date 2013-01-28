@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+# pixmaps
+def build(bld):
+  print('→ building config')
+  stencils=["geepro.cfg"]
+
+  for cfg in stencils:
+    bld.copy_to_build(geefile=cfg)
+
+  bld.install_files("${PREFIX}/share/geepro/cfg",cfg)

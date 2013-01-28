@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type="text/css" href="drivers.css" ?>
+<!DOCTYPE gui SYSTEM "drivers.dtd">
+
+<gui>
+
+<info>
+    <frame align="50, 50" >
+	<vbox>
+	    <description>8/16 bit EPROM simulator</description>
+	    <image src="pixmaps/memsim.jpg"/>
+	</vbox>
+    </frame>
+</info>
+
+<notebook name="HW Test">
+    <table dim="2,2">
+	<frame  shadow="etched_in" expand="true" fillx="true" pos="0,1, 0,1">
+	    <table dim="5, 3" fillx="true">
+		<chbutton id="READY" pos="0,2, 0,1" label="LED - READY" fillx="true" spacex="5" />
+		<chbutton id="TRANS" pos="0,2, 1,2" label="LED - TRANSMISSION" fillx="true" spacex="5" />
+		<chbutton id="RST_ST" pos="0,2, 2,3" label="RESET STATE" fillx="true" spacex="5" spacey="5" />		
+		<chbutton id="RST_OUT" pos="0,2, 3,4" label="RESET OUT" fillx="true" spacex="5" spacey="5" />		
+	    </table>	    
+	</frame>
+	<image src="pixmaps/memsim_lpt_sch.png" pos="0,2, 1,2"/>
+    </table>
+</notebook>
+
+</gui>
+
+

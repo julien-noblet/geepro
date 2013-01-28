@@ -339,6 +339,7 @@ void chip_init_qe(chip_plugins *plg)
     plg->chip_qe  = NULL;
     plg->chip_sel = NULL;
     plg->mdl = (modules *)malloc(sizeof(modules));
+    memset(plg->mdl, 0, sizeof(modules));
     __plugins__=1;
 }
 

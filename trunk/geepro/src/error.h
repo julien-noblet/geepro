@@ -53,5 +53,7 @@ typedef char t_bool;
 #define WRN( fmt, x...)			ERROR( E_WRN, fmt, ##x)
 #define CRT( fmt, x...)			ERROR( E_CRT, fmt, ##x)
 
+#define MALLOC_ERR	"malloc!\n"
+
 #endif // __ERROR_H__
 

@@ -33,7 +33,7 @@ extern void dialog_cleanup(); //
 extern void frame_start(const char *name);
 extern void frame_end();
 extern void slider_add(const char *label, int min, int max, int def, dlg_slider_cb, int i_par, void *u_ptr);
-
+extern void spin_add(const char *label, int min, int max, int def, dlg_slider_cb, int i_par, void *u_ptr);
 
 #ifdef __cplusplus
 } //extern "C"

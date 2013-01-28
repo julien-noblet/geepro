@@ -58,6 +58,7 @@ def build(bld):
   bld.recurse('chips')
   bld.recurse('src')
   bld.recurse('stencils')
+  bld.recurse('cfg')
   #bld.recurse('po')
   #bld.use_the_magic()
 

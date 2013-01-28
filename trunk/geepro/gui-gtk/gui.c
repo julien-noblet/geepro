@@ -687,10 +687,12 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     gep->ifc->prog_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
     /* usuniecie listy interfejsów*/
     gtk_widget_destroy(GUI(gep->gui)->iface);
-
     hw_destroy(gep);
+
     ___hardware_driver___ = api;
+
     gep->ifc->cl = hw_get_iface();
+
     /* utworzenie wyboru interfaców */
     gui_add_iface_combox(gep);
     /* usuniecie menu */
@@ -701,6 +703,7 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
     g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->iface), "changed");    
     sprintf(tmp,"%i", gtk_combo_box_get_active(GTK_COMBO_BOX(wg)));
+
     if(GUI(gep->gui)->gui_run) store_set(&store, "LAST_SELECTED_PROGRAMMER", tmp);
 }
 
@@ -709,7 +712,6 @@ static void gui_build_prg_menu(iface *ifc, char *name, GtkWidget *wg)
 {
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg), name);
 }
-
 
 static GtkWidget *gui_prog_list(geepro *gep)
 {
@@ -1025,6 +1027,7 @@ void gui_run(geepro *gep)
     char *tmp;
     GUI(gep->gui)->gui_run = 0;
 
+    gui_menu_setup( gep );
     gui_action_icon_set();
 
     gtk_notebook_set_current_page(GTK_NOTEBOOK(GUI(gep->gui)->notebook), 0);
@@ -1040,7 +1043,6 @@ void gui_run(geepro *gep)
     }
     GUI(gep->gui)->gui_run = 1;
     gtk_main(); /* jesli programator ok to startuj program inaczej wyjdź */
-    
 }
 
 void gui_kill_me(geepro *gep)
@@ -1450,6 +1452,7 @@ struct gui_stack_
 
 gui_stack *gstk = NULL;
 gui_stack *sliders = NULL;
+gui_stack *spins = NULL;
 
 GtkWidget *dlg;
 
@@ -1507,6 +1510,11 @@ void dialog_cleanup()
 	if(sliders->node) free(sliders->node);
         gui_pop( &sliders );
     }
+    while( !spins ){
+	if(spins->node) free(spins->node);
+        gui_pop( &spins );
+    }
+
 }
 
 void dialog_end()
@@ -1558,6 +1566,37 @@ void slider_add(const char *label, int min, int max, int def, dlg_slider_cb cb, 
     gtk_range_set_value( GTK_RANGE(x), def );    
     g_signal_connect(G_OBJECT(x), "value-changed", G_CALLBACK(slider_cb), ss);
     gui_push( (GtkWidget *)ss, &sliders);
+    gtk_box_pack_start(GTK_BOX( tmp ), x, TRUE, TRUE, 10);    
+    gtk_container_add(GTK_CONTAINER( gui_get_stack( gstk ) ), tmp );
+}
+
+static void spin_cb(GtkSpinButton *spin, s_slider *ud)
+{
+    if( !ud || !spin ) return;
+    ud->val = gtk_spin_button_get_value( spin );    
+    if(ud->cb) ud->cb( ud->val, ud->u_par, ud->i_par);
+}
+
+
+void spin_add(const char *label, int min, int max, int def, dlg_slider_cb cb, int i_par, void *u_par )
+{
+    GtkWidget *tmp, *x;
+    s_slider *ss;
+    
+    if(!(ss = (s_slider *)malloc(sizeof( s_slider )))){
+	ERR(E_T_MALLOC);
+	return;
+    }
+    ss->i_par = i_par;
+    ss->u_par = u_par;
+    ss->cb = cb;
+    tmp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    x = gtk_label_new( label );
+    gtk_box_pack_start(GTK_BOX( tmp ), x, FALSE, FALSE, 10);    
+    x = gtk_spin_button_new_with_range(min, max, 1);
+    gtk_spin_button_set_value( GTK_SPIN_BUTTON(x), def );    
+    g_signal_connect(G_OBJECT(x), "value-changed", G_CALLBACK(spin_cb), ss);
+    gui_push( (GtkWidget *)ss, &spins);
     gtk_box_pack_start(GTK_BOX( tmp ), x, TRUE, TRUE, 10);    
     gtk_container_add(GTK_CONTAINER( gui_get_stack( gstk ) ), tmp );
 }
