@@ -23,6 +23,8 @@
 
 #include "drivers.h"
 
+static geepro *gep = NULL; // temporary
+
 static int galb_sw_vcc( char state )
 {
     if( state )
@@ -41,13 +43,13 @@ static int galb_set_vpp( int volt )
     x = parport_get(PA);
     if( x == PP_ERROR) return HW_ERROR;
     err =  parport_set(PA, glb_volt_set(volt));
-    hw_delay(2);
+    gep->hw_delay(2);
     err |= parport_clr_bit(PC, PP_14);
-    hw_delay(2);
+    gep->hw_delay(2);
     err |= parport_set_bit(PC, PP_14);
-    hw_delay(2);
+    gep->hw_delay(2);
     err |= parport_set(PA, x );
-    hw_delay(2);
+    gep->hw_delay(2);
     return err;
 }
 
@@ -159,7 +161,7 @@ static int galb_gui(geepro *gep, const char *chip_name, const char *family)
     // HW test page
     galb_if_attr[0].val = chip_name;
     galb_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/galblast.xml", (char *)"info,notebook", galb_if_attr);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/galblast.xml", (char *)"info,notebook", galb_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), galb_event);
     return 0;
 }
@@ -167,8 +169,9 @@ static int galb_gui(geepro *gep, const char *chip_name, const char *family)
 /*
     API API API API API API API API API API API API API API API API API API API API API API API API API API API API 
 */
-int galb_api(en_hw_api func, int val, void *ptr)
+int galb_api(void *g, en_hw_api func, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(func)
     {
 	case HW_IFACE: return IFACE_LPT;

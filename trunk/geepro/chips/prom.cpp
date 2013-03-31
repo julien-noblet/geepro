@@ -21,6 +21,8 @@
 
 #include "modules.h"
 
+static geepro *gep = NULL;
+
 MODULE_IMPLEMENTATION
 
 #define ADDR_MASK_474	0x600
@@ -29,18 +31,18 @@ MODULE_IMPLEMENTATION
 REG_FUNC_BEGIN(read_474)
     int addr;
 
-    hw_sw_vpp(0);
-    hw_sw_vcc(1);
-    hw_set_addr(0);
-    hw_set_data(0);
-    hw_delay(1000);
+    gep->hw_sw_vpp(0);
+    gep->hw_sw_vcc(1);
+    gep->hw_set_addr(0);
+    gep->hw_set_data(0);
+    gep->hw_delay(1000);
     progress_loop(addr, SIZE_PROM_474, "Reading..."){
-	hw_set_oe(1);
-	hw_set_ce(1);
-	hw_set_addr(addr | ADDR_MASK_474);	
-	hw_delay(200);
-	buffer_write(___geep___,addr,hw_get_data());
-	hw_delay(200);
+	gep->hw_set_oe(1);
+	gep->hw_set_ce(1);
+	gep->hw_set_addr(addr | ADDR_MASK_474);	
+	gep->hw_delay(200);
+	buffer_write(___geep___,addr,gep->hw_get_data());
+	gep->hw_delay(200);
     }
     finish_action();
 REG_FUNC_END
@@ -48,20 +50,20 @@ REG_FUNC_END
 REG_FUNC_BEGIN(verify_474)
     int addr;
 
-    hw_sw_vpp(0);
-    hw_sw_vcc(1);
-    hw_set_addr(0);
-    hw_set_data(0);
-    hw_delay(1000);
+    gep->hw_sw_vpp(0);
+    gep->hw_sw_vcc(1);
+    gep->hw_set_addr(0);
+    gep->hw_set_data(0);
+    gep->hw_delay(1000);
     progress_loop(addr, SIZE_PROM_474, "Veryfying..."){
-	hw_set_oe(1);
-	hw_set_ce(1);
-	hw_set_addr(addr | ADDR_MASK_474);	
-	hw_delay(200);
-	if(buffer_read(___geep___,addr) != hw_get_data() ){
+	gep->hw_set_oe(1);
+	gep->hw_set_ce(1);
+	gep->hw_set_addr(addr | ADDR_MASK_474);	
+	gep->hw_delay(200);
+	if(buffer_read(___geep___,addr) != gep->hw_get_data() ){
 // ?????
 	}
-	hw_delay(200);
+	gep->hw_delay(200);
     }
     finish_action();
 REG_FUNC_END

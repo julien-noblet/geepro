@@ -23,6 +23,8 @@
 
 #include "drivers.h"
 
+static geepro *gep=NULL;
+
 static int stk200_set_test(char test)
 {
     if( test & 1 ){
@@ -181,7 +183,7 @@ static int stk200_gui(geepro *gep, const char *chip_name, const char *family)
     // HW test page
     stk200_if_attr[0].val = chip_name;
     stk200_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/stk200.xml", (char *)"info,notebook", stk200_if_attr);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/stk200.xml", (char *)"info,notebook", stk200_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), stk200_event);
     return 0;
 }
@@ -189,8 +191,9 @@ static int stk200_gui(geepro *gep, const char *chip_name, const char *family)
 /*
     API API API API API API API API API API API API API API API API API API API API API API API API API API API API 
 */
-int stk200_api(en_hw_api func, int val, void *ptr)
+int stk200_api(void *g, en_hw_api func, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(func)
     {
 	case HW_IFACE: return IFACE_LPT;

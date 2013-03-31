@@ -19,10 +19,6 @@
  *
  */
 
-//#include <iostream>
-//#include <string>
-//#include <list>
-
 extern "C" {
 
 #include <stdio.h>
@@ -31,7 +27,7 @@ extern "C" {
 #include <unistd.h>
 #include <sys/stat.h>
 #include <pthread.h>
-//#include <signal.h>
+#include <signal.h>
 
 #include "src/config.h"
 #include "buffer.h"
@@ -40,7 +36,6 @@ extern "C" {
 #include "chip.h"
 #include "../intl/lang.h"
 #include "../drivers/hwdriver.h"
-#include "dummy.h"
 #include "geepro.h"
 #include "storings.h"
 #include "error.h"
@@ -58,36 +53,23 @@ extern "C" {
 #define DEFAULT_SHARE_PATH	"./"
 #endif
 
-// uchwyt api do wybranego sterownika, global na cały program 
-hw_driver_type ___hardware_driver___ = dummy_hardware_driver; 
-
-//global do zmiennych przechowywanych w pliku
-store_str store;
-
-// Ugly global variable to inform drivers of the location
-// of the xml gui file.
-const char *shared_drivers_xml_file = NULL;
-const char *shared_geepro_dir = NULL;
 }
 
-//#include <string>
-
-// globalna zmienna zawierająca uzytkownika 
-int ___uid___= -1;
+static geepro *__geepro_root__ = NULL; // data structure for system signals handling, local for this file
 
 // AA---> memory leak problem
 int test_uid(geepro *gep)
 {
-    if((___uid___ = getuid())) 
-	gui_dialog_box(gep, "[WN][TEXT]\n   For lower latency time \n please run program using \n                 sudo[/TEXT][BR]  OK  ");
-    return ___uid___;
+    if((gep->uid = getuid())) 
+	gui_dialog_box(gep, "[IF][TEXT]\n   For lower latency time \nis better to run program using \n                 sudo[/TEXT][BR]  OK  ");
+    return gep->uid;
 }
 
 char test_hw(void *wg, geepro *gep)
 {
-
+    if(!gep->ifc) return 0;
     for(;;)
-	if(hw_test_conn()){
+	if(gep->hw_test_conn()){
         	gui_dialog_box(gep,"[IF][TEXT]\n     Hardware present [/TEXT][BR]  OK  ");
 	    break;
 	}else{
@@ -195,46 +177,62 @@ static inline char load_variables(geepro *gep)
 
     // unfold stored variables
     cfp_heap_unfold( gep->cfg );
-    shared_drivers_xml_file = cfp_heap_get(gep->cfg, "shared_drv_xml_path");
-    shared_geepro_dir = cfp_heap_get(gep->cfg, "shared_geepro_directory");
+    gep->shared_drivers_xml_file = cfp_heap_get(gep->cfg, "shared_drv_xml_path");
+    gep->shared_geepro_dir = cfp_heap_get(gep->cfg, "shared_geepro_directory");
     return 0;
 }	
+
+template<class T> T *geep_alloc()
+{
+    T *tmp;
+    if(!(tmp = (T *)malloc( sizeof( T ) ))){
+	cmt_error(TR( MALLOC_ERR ));
+	return NULL;
+    }
+    memset(tmp, 0, sizeof( T ));    
+    return tmp;
+}
+
+static void geep_free(geepro *g)
+{
+    if( !g ) return;
+    if( g->gui ) free( g->gui );
+    if( g->store ) free( g->store );
+    free( g );
+}
 
 static inline geepro *geep_init(int argc, char **argv)
 {
     geepro *g;
-    
-    if(!(g = (geepro *)malloc( sizeof( geepro ) ))){
-	cmt_error(TR( MALLOC_ERR ));
-	return NULL;
-    }
-    memset(g, 0, sizeof( geepro ));
 
-    if(!(g->gui = (gui *)malloc( sizeof( gui ) ))){
-	cmt_error(TR( MALLOC_ERR ));
-	free( g );
+    if( !(g = geep_alloc< geepro >())) return NULL;
+    if( !(g->gui = geep_alloc<gui>())){
+	geep_free( g );
 	return NULL;
     }
-    memset(g->gui, 0, sizeof( gui ));
+    if( !(g->store = geep_alloc< store_str >())){
+	geep_free( g );
+	return NULL;
+    }
     g->argc = argc;
     g->argv = argv;
     return g;    
-}
-
-static inline void geep_free(geepro *g)
-{
-    if( !g ) return;
-    if( g->gui ) free( g->gui );
-    free( g );
 }
 
 static void destruct(geepro *geep)
 {
     // Destruct
     if( geep->ifc ) iface_destroy(geep->ifc);
-    store_destr( &store );
     if(geep->cfg) cfp_free( geep->cfg );
+    if(geep->store) store_destr( geep->store );
+
     if( geep ) geep_free( geep );
+}
+
+static void kill_me(int signal)
+{
+//__geepro_root__
+    printf("SIG INT -> KILL\n");
 }
 
 int main(int argc, char **argv)
@@ -242,6 +240,7 @@ int main(int argc, char **argv)
     geepro *geep = NULL;
 
     // Init
+    __geepro_root__ = geep;
     if(!(geep = geep_init( argc, argv ))) return -1;
     if(!(geep->cfg = cfp_init())){
 	destruct( geep );
@@ -252,7 +251,7 @@ int main(int argc, char **argv)
 	destruct( geep );
 	return -3;
     }
-    if(store_constr(&store, cfp_heap_get(geep->cfg, "store_vars_dir"), cfp_heap_get(geep->cfg, "store_vars_file"))){
+    if(store_constr(geep->store, cfp_heap_get(geep->cfg, "store_vars_dir"), cfp_heap_get(geep->cfg, "store_vars_file"))){
 	destruct( geep );
 	return -4;
     };
@@ -264,7 +263,7 @@ int main(int argc, char **argv)
 	iface_make_driver_list(geep->ifc, cfp_heap_get(geep->cfg, "drivers_path"), ".driver");
 	iface_make_modules_list( geep->ifc, cfp_heap_get(geep->cfg, "chips_path"), ".chip"); 
     }
-//    signal(SIGINT, kill_me);
+    signal(SIGINT, kill_me);
     gui_run( geep );
     destruct( geep );
     return 0;

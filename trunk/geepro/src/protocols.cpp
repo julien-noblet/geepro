@@ -32,102 +32,102 @@
 #define TI 16
 #define TIMEOUT	100
 
-void init_i2c()
+void init_i2c(geepro *gep)
 {
-    hw_set_sda(1);
-    hw_set_scl(1);
-    hw_set_hold(0);
-    hw_delay( TI );
-    hw_sw_vcc(1);
-    hw_delay( 10 * TI );  // time for POR (Power On Ready)
+    gep->hw_set_sda(1);
+    gep->hw_set_scl(1);
+    gep->hw_set_hold(0);
+    gep->hw_delay( TI );
+    gep->hw_sw_vcc(1);
+    gep->hw_delay( 10 * TI );  // time for POR (Power On Ready)
 }
 
-void scl_tik_i2c()
+void scl_tik_i2c(geepro *gep)
 {
-    hw_delay( TI / 2 );
-    hw_set_scl(1);
-    hw_delay( TI );
-    hw_set_scl(0);
-    hw_delay( TI / 2 );
+    gep->hw_delay( TI / 2 );
+    gep->hw_set_scl(1);
+    gep->hw_delay( TI );
+    gep->hw_set_scl(0);
+    gep->hw_delay( TI / 2 );
 }
 
-void start_i2c()
+void start_i2c(geepro *gep)
 {
-    hw_set_sda(1);
-    hw_delay( TI / 2 );    
-    hw_set_scl(1);
-    hw_delay( TI / 2 );    
+    gep->hw_set_sda(1);
+    gep->hw_delay( TI / 2 );    
+    gep->hw_set_scl(1);
+    gep->hw_delay( TI / 2 );    
 
-    hw_set_sda(0);
-    hw_delay( TI / 2 );
-    hw_set_scl(0);
-    hw_delay( TI / 2 );
+    gep->hw_set_sda(0);
+    gep->hw_delay( TI / 2 );
+    gep->hw_set_scl(0);
+    gep->hw_delay( TI / 2 );
 }
 
-void stop_i2c()
+void stop_i2c(geepro *gep)
 {
-    hw_set_sda(0);
-    hw_delay( TI );
-    hw_set_scl(0);
-    hw_delay( TI );
-    hw_set_scl(1);
-    hw_delay( TI );
-    hw_set_sda(1);
-    hw_delay( TI );
+    gep->hw_set_sda(0);
+    gep->hw_delay( TI );
+    gep->hw_set_scl(0);
+    gep->hw_delay( TI );
+    gep->hw_set_scl(1);
+    gep->hw_delay( TI );
+    gep->hw_set_sda(1);
+    gep->hw_delay( TI );
 }
 
-void send_bit_i2c( char bit )
+void send_bit_i2c(geepro *gep, char bit )
 {
-    hw_set_sda(bit);
-    scl_tik_i2c();
+    gep->hw_set_sda(bit);
+    scl_tik_i2c(gep);
 }
 
-char get_bit_i2c()
+char get_bit_i2c(geepro *gep)
 {
     char b;
     
-    hw_set_sda( 1 );
-    hw_set_scl(1);    
-    hw_delay( TI );    
+    gep->hw_set_sda( 1 );
+    gep->hw_set_scl(1);    
+    gep->hw_delay( TI );    
 
-    b = hw_get_sda();
-    hw_delay( TI);    
-    hw_set_scl(0);
+    b = gep->hw_get_sda();
+    gep->hw_delay( TI);    
+    gep->hw_set_scl(0);
     return b;
 }
 
-void send_byte_i2c( char byte )
+void send_byte_i2c(geepro *gep, char byte )
 {
     int i;
-    for( i = 0x80; i; i >>= 1 ) send_bit_i2c( (byte & i) ? 1:0 );
+    for( i = 0x80; i; i >>= 1 ) send_bit_i2c(gep, (byte & i) ? 1:0 );
 }
 
-char recv_byte_i2c()
+char recv_byte_i2c(geepro *gep)
 {
     int i;
     char b = 0;
 
     for( i = 8; i; i-- ){
 	b <<= 1;
-	b |= get_bit_i2c();
+	b |= get_bit_i2c(gep);
     }
 
     return b;
 }
 
-char wait_ack_i2c()
+char wait_ack_i2c(geepro *gep)
 {
     int i;
     char b;
     
-    hw_set_sda( 1 );		// release SDA
-    hw_delay( TI / 2 );    	// wait for stabilize
-    hw_set_scl(1);    		// SCL = 1
+    gep->hw_set_sda( 1 );		// release SDA
+    gep->hw_delay( TI / 2 );    	// wait for stabilize
+    gep->hw_set_scl(1);    		// SCL = 1
     for( b = 1, i = 0; (i < TIMEOUT) && b; i++){
-	hw_delay( TI / 2 );    	// wait for SDA = 0
-	b = hw_get_sda();
+	gep->hw_delay( TI / 2 );    	// wait for SDA = 0
+	b = gep->hw_get_sda();
     }
-    hw_set_scl(0);	
+    gep->hw_set_scl(0);	
     return (b != 0) ? 1:0;
 }
 
@@ -135,42 +135,42 @@ char wait_ack_i2c()
         µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire µWire
 ********************************************************************************************************************/
 
-void uWire_init(char org )
+void uWire_init(geepro *gep, char org )
 {
-//    hw_set_org( org == 16 ? 1:0);
-    hw_set_cs( 0 );
-    hw_set_clk( 0 );
-    hw_set_di( 0 );
-//    hw_set_do( 0 );
-    hw_ms_delay( 100 );    
-    hw_sw_vcc( 1 );
-    hw_ms_delay( 100 );
+//    gep->hw_set_org( org == 16 ? 1:0);
+    gep->hw_set_cs( 0 );
+    gep->hw_set_clk( 0 );
+    gep->hw_set_di( 0 );
+//    gep->hw_set_do( 0 );
+    gep->hw_ms_delay( 100 );    
+    gep->hw_sw_vcc( 1 );
+    gep->hw_ms_delay( 100 );
 }
 
-void uWire_cs( char state )
+void uWire_cs(geepro *gep, char state )
 {
-    hw_set_cs( state );
+    gep->hw_set_cs( state );
 }
 
 // send/receive in full duplex one bit
-char uWire_bit( char si, int us)
+char uWire_bit(geepro *gep,  char si, int us)
 {
-    hw_set_di( si ? 1 : 0);
-    hw_us_delay(us / 2);
-    hw_set_clk( 1 );    
-    hw_us_delay( us );
-    hw_set_clk( 0 );
-    hw_us_delay(us / 2);
-    return hw_get_do() ? 1 : 0;
+    gep->hw_set_di( si ? 1 : 0);
+    gep->hw_us_delay(us / 2);
+    gep->hw_set_clk( 1 );    
+    gep->hw_us_delay( us );
+    gep->hw_set_clk( 0 );
+    gep->hw_us_delay(us / 2);
+    return gep->hw_get_do() ? 1 : 0;
 }
 
 // send/receive in full duplex word
-unsigned int uWire_word( unsigned int si, int length, int us)
+unsigned int uWire_word(geepro *gep, unsigned int si, int length, int us)
 {
     int data;
 
     for(data = 0; length; length--){
-		    data |= uWire_bit((si >> (length - 1)) & 1, us) << (length - 1);
+		    data |= uWire_bit(gep,(si >> (length - 1)) & 1, us) << (length - 1);
 #ifdef DEBUG
 	printf("%i -> %i\n", length - 1, (si >> (length - 1)) & 1);
 #endif
@@ -181,69 +181,69 @@ unsigned int uWire_word( unsigned int si, int length, int us)
     return data;
 }
 
-void uWire_start(int opcode, int aaa_mask, int adrlen, int address, int us)
+void uWire_start(geepro *gep,int opcode, int aaa_mask, int adrlen, int address, int us)
 {
-    uWire_cs( 1 );
-    uWire_word(opcode, 3, us);
-    uWire_word((aaa_mask << (adrlen - 2)) | address, adrlen, us);
+    uWire_cs(gep, 1 );
+    uWire_word(gep,opcode, 3, us);
+    uWire_word(gep,(aaa_mask << (adrlen - 2)) | address, adrlen, us);
 }
 
-void uWire_stop(int us)
+void uWire_stop(geepro *gep, int us)
 {
-    hw_set_cs( 0 );
-    hw_set_clk( 0 );
-    hw_set_di( 0 );
-    hw_set_cs( 0 );    
-    hw_us_delay( us );
+    gep->hw_set_cs( 0 );
+    gep->hw_set_clk( 0 );
+    gep->hw_set_di( 0 );
+    gep->hw_set_cs( 0 );    
+    gep->hw_us_delay( us );
 }
 
 // return true if timeout
-int uWire_wait_busy(int us, int timeout)
+int uWire_wait_busy(geepro *gep, int us, int timeout)
 {
-    hw_set_cs( 1 );
+    gep->hw_set_cs( 1 );
     for(; timeout; timeout--)
-	if( hw_get_do() ) return 0;
-	hw_us_delay( us );
+	if( gep->hw_get_do() ) return 0;
+	gep->hw_us_delay( us );
     return 1;
 }
 
-void uWire_erase_cmd( int addr, int alen, int us)
+void uWire_erase_cmd(geepro *gep, int addr, int alen, int us)
 {
-    uWire_start( uWire_ERASE_OPC, uWire_ERASE_AAA, alen, addr, us );
-    uWire_stop( us );
+    uWire_start(gep, uWire_ERASE_OPC, uWire_ERASE_AAA, alen, addr, us );
+    uWire_stop(gep, us );
 }
 
-void uWire_eral_cmd( int alen, int us)
+void uWire_eral_cmd(geepro *gep, int alen, int us)
 {
-    uWire_start( uWire_ERAL_OPC, uWire_ERAL_AAA, alen, 0, us );
-    uWire_stop( us );
+    uWire_start(gep, uWire_ERAL_OPC, uWire_ERAL_AAA, alen, 0, us );
+    uWire_stop(gep, us );
 }
 
-void uWire_ewds_cmd( int alen, int us)
+void uWire_ewds_cmd(geepro *gep, int alen, int us)
 {
-    uWire_start( uWire_EWDS_OPC, uWire_EWDS_AAA, alen, 0, us );
-    uWire_stop( us );
+    uWire_start(gep, uWire_EWDS_OPC, uWire_EWDS_AAA, alen, 0, us );
+    uWire_stop(gep, us );
 }
 
-void uWire_ewen_cmd( int alen, int us)
+void uWire_ewen_cmd(geepro *gep, int alen, int us)
 {
-    uWire_start( uWire_EWEN_OPC, uWire_EWEN_AAA, alen, 0, us );
-    uWire_stop( us );
+    uWire_start(gep, uWire_EWEN_OPC, uWire_EWEN_AAA, alen, 0, us );
+    uWire_stop(gep, us );
 }
 
-void uWire_read_cmd( int addr, int alen, int us)
+void uWire_read_cmd(geepro *gep, int addr, int alen, int us)
 {
-    uWire_start( uWire_READ_OPC, uWire_READ_AAA, alen, addr, us );
+    uWire_start(gep, uWire_READ_OPC, uWire_READ_AAA, alen, addr, us );
 }
 
-void uWire_write_cmd( int addr, int alen, int us)
+void uWire_write_cmd(geepro *gep, int addr, int alen, int us)
 {
-    uWire_start( uWire_WRITE_OPC, uWire_WRITE_AAA, alen, addr, us );
+    uWire_start(gep, uWire_WRITE_OPC, uWire_WRITE_AAA, alen, addr, us );
 }
 
-void uWire_wral_cmd( int alen, int us)
+void uWire_wral_cmd(geepro *gep, int alen, int us)
 {
-    uWire_start( uWire_WRAL_OPC, uWire_WRAL_AAA, alen, 0, us );
+    uWire_start(gep, uWire_WRAL_OPC, uWire_WRAL_AAA, alen, 0, us );
 }
 
 /*******************************************************************************************************************

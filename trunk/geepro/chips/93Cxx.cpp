@@ -21,6 +21,8 @@
 
 #include "modules.h"
 
+static geepro *gep = NULL; // temp
+
 MODULE_IMPLEMENTATION
 
 // memory sizes
@@ -56,12 +58,12 @@ void read_93Cxx(int dev_size, int org, int alen)
     if(org == 16) n = 1;
     alen -= n;
     
-    uWire_init( org );
+    uWire_init(gep, org );
 
     progress_loop( addr, dev_size, "Reading..."){
-	uWire_read_cmd( addr >> n, alen, TS);
-	data = uWire_word( 0, org, TS);
-	uWire_stop( TS );
+	uWire_read_cmd(gep, addr >> n, alen, TS);
+	data = uWire_word(gep, 0, org, TS);
+	uWire_stop(gep, TS );
 	put_buffer( addr, LSB(data) );
 	if(org == 16)
 	    put_buffer( ++addr, MSB(data) );
@@ -80,11 +82,11 @@ void verify_93Cxx(int dev_size, int org, int alen)
     if(org == 16) n = 1;
     alen -= n;
     
-    uWire_init( org );
+    uWire_init(gep, org );
     progress_loop( addr, dev_size, "Veryfying..."){
-	uWire_read_cmd( addr >> n, alen, TS);
-	rdata = uWire_word( 0, org, TS);
-	uWire_stop( TS );
+	uWire_read_cmd(gep, addr >> n, alen, TS);
+	rdata = uWire_word(gep, 0, org, TS);
+	uWire_stop(gep, TS );
 	bdata = get_buffer( addr ) & 0xff;
 	break_if( bdata != LSB(rdata));
 	if(org == 16){
@@ -114,11 +116,11 @@ void test_blank_93Cxx(int dev_size, int org, int alen)
     if(org == 16) n = 1;
     alen -= n;
     
-    uWire_init( org );
+    uWire_init(gep, org );
     progress_loop( addr, dev_size, "Test blank..."){
-	uWire_read_cmd( addr >> n, alen, TS);
-	rdata = uWire_word( 0, org, TS);
-	uWire_stop( TS );
+	uWire_read_cmd(gep, addr >> n, alen, TS);
+	rdata = uWire_word(gep, 0, org, TS);
+	uWire_stop(gep, TS );
 	break_if( (rdata & 0xff) != 0xff );
 	if( org == 16 )
 	    break_if( (rdata & 0xff00) != 0xff00 );
@@ -152,16 +154,16 @@ void write_93Cxx(int dev_size, int org, int alen)
 
     alen -= n;
     
-    uWire_init( org );
-    uWire_ewen_cmd( alen, TS);
+    uWire_init(gep, org );
+    uWire_ewen_cmd(gep, alen, TS);
     progress_loop( addr, dev_size, "Writing..."){
-	uWire_write_cmd( addr >> n, alen, TS);
+	uWire_write_cmd(gep, addr >> n, alen, TS);
 	data = get_buffer( addr ) & 0xff;
 	if(org == 16)
 	    data |= (get_buffer( ++addr ) << 8) & 0xff00;
-	uWire_word( data, org, TS);
-	uWire_stop( TS );	
-	break_if( uWire_wait_busy( TS, TIMEOUT) ); // wait for end of write internal cycle
+	uWire_word(gep, data, org, TS);
+	uWire_stop(gep, TS );	
+	break_if( uWire_wait_busy(gep, TS, TIMEOUT) ); // wait for end of write internal cycle
     }
     finish_action();
     if( (*lb & 1) && !ERROR_VAL) 
@@ -182,10 +184,10 @@ void erase_93Cxx(int dev_size, int org, int alen)
 
     if(org == 16) alen--;
     
-    uWire_init( org );
-    uWire_ewen_cmd( alen, TS);
-    uWire_eral_cmd( alen, TS);
-    if( uWire_wait_busy( TS, TIMEOUT) ) ERROR_VAL = 1;
+    uWire_init(gep, org );
+    uWire_ewen_cmd(gep, alen, TS);
+    uWire_eral_cmd(gep, alen, TS);
+    if( uWire_wait_busy(gep, TS, TIMEOUT) ) ERROR_VAL = 1;
     finish_action();    
 
     if( (*lb & 1) && !ERROR_VAL) 

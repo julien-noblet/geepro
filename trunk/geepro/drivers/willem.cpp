@@ -21,6 +21,7 @@
 
 #include "drivers.h"
 
+static geepro *gep = NULL; // temporary variable, to remove in future versions
 static int addr_init_mask = 0x800000;    
 
 /* tabela poszukiwan identyfikatorow kontrolek */
@@ -82,9 +83,6 @@ static const char *data_pin_name[] = {"pin_13","pin_14","pin_15","pin_17","pin_1
 
 static int _addr=0;
 static int programmer_mode = 0;
-
-extern int ___uid___;
-extern const char *shared_drivers_xml_file;
 
 /**************************************************************************************************************************/
 /* sterownik */
@@ -368,7 +366,7 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 	/* ustawia nowa wartosc dla spinbuttona */
 	gui_xml_set_widget_value((gui_xml *)(ev->root_parent), GUI_XML_SPIN_BUTTON, (char *)"address",  &tmp);
 	/* ustaw port */
-	hw_set_addr(tmp);
+	gep->hw_set_addr(tmp);
     }
 
     /* jesli pin danej */
@@ -383,16 +381,16 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 	    tmp &= ~mask;	
 	/* ustawia nowa dana */
 	gui_xml_set_widget_value((gui_xml *)(ev->root_parent), GUI_XML_SPIN_BUTTON, (char *)"data",  &tmp);
-	hw_set_data(tmp);
+	gep->hw_set_data(tmp);
     }    
 
     switch(pin){
 	/* piny ZIF 32 */
-	case 1:  hw_sw_vpp(value); break;
-	case 22: hw_set_ce(value); break;
-	case 24: hw_set_oe(value); break;
-	case 31: hw_set_we(value); break;
-	case 32: hw_sw_vcc(value); break;
+	case 1:  gep->hw_sw_vpp( value); break;
+	case 22: gep->hw_set_ce( value); break;
+	case 24: gep->hw_set_oe( value); break;
+	case 31: gep->hw_set_we( value); break;
+	case 32: gep->hw_sw_vcc( value); break;
 	/* pozostale kontrolki */
 	case ADDRESS_SBT: /* Reczne ustawienie adresu za pomoca spin buttona */
 		    gui_xml_get_widget_value((gui_xml *)(ev->root_parent), GUI_XML_SPIN_BUTTON, (char *)"address", &gxvs);
@@ -402,7 +400,7 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 			z = tmp & mask;
 			gui_xml_set_widget_value((gui_xml *)(ev->root_parent), GUI_XML_CHECK_BUTTON, address_pin_name[i], &z);
 		    }
-		    hw_set_addr(tmp);
+		    gep->hw_set_addr( tmp);
 		    break;
 	case DATA_SBT: /* Reczne ustawienie danej za pomoca spin buttona */
 		    gui_xml_get_widget_value((gui_xml *)(ev->root_parent), GUI_XML_SPIN_BUTTON, (char *)"data", &gxvs);
@@ -411,21 +409,21 @@ static void willem_event(gui_xml_ev *ev, int value, const char *sval)
 			z = tmp & mask;		
 			gui_xml_set_widget_value((gui_xml *)(ev->root_parent), GUI_XML_CHECK_BUTTON, data_pin_name[i],  &z);
 		    }
-		    hw_set_data(tmp);
+		    gep->hw_set_data( tmp);
 		    break;
 
-	case RD_DATA_BT: tmp = hw_get_data();
+	case RD_DATA_BT: tmp = gep->hw_get_data();
 		    gui_xml_set_widget_value((gui_xml *)(ev->root_parent), GUI_XML_SPIN_BUTTON, (char *)"data",  &tmp); 
 		    for(i = 0, mask = 1; i < 8; i++, mask <<= 1){
 			z = tmp & mask;
 			gui_xml_set_widget_value((gui_xml *)(ev->root_parent), GUI_XML_CHECK_BUTTON, data_pin_name[i],  &z);
 		    }
 		    break;
-	case PIN_1_CS:  hw_set_cs(value); break;
-	case PIN_2_CLK: hw_set_clk(value); break;
-	case PIN_3_DI:  hw_set_di(value); break;
+	case PIN_1_CS:  gep->hw_set_cs( value); break;
+	case PIN_2_CLK: gep->hw_set_clk( value); break;
+	case PIN_3_DI:  gep->hw_set_di( value); break;
 	case PIN_DO_BT:
-		tmpstr[0] = (hw_get_do() & 1) + '0'; 
+		tmpstr[0] = (gep->hw_get_do() & 1) + '0'; 
 		tmpstr[1] = 0;
 		gui_xml_set_widget_value((gui_xml *)(ev->root_parent), GUI_XML_ENTRY, (char *)"pin_do_et", (int*)tmpstr);
 		break;
@@ -445,7 +443,7 @@ static void willem_set_gui_main(geepro *gep, const char *chip_name, const char *
     willem_if_attr[0].val = chip_name;
     willem_if_attr[1].val = programmer;
     willem_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)shared_drivers_xml_file, (char *)"info,notebook", willem_if_attr);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)gep->shared_drivers_xml_file, (char *)"info,notebook", willem_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), willem_event);
 }
 
@@ -480,8 +478,9 @@ static void willem_set_addr_range(int val )
 
 /**************************************************************************************************************************/
 
-int willem_40_hardware_driver(en_hw_api funct, int val, void *ptr)
+int willem_40_hardware_driver(void *g,en_hw_api funct, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(funct){
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = (char *)"WILLEM 4.0"; return HW_SUCCESS;
@@ -522,7 +521,7 @@ int willem_40_hardware_driver(en_hw_api funct, int val, void *ptr)
 	case HW_SET_SDA:  return willem_set_sda_pin(val);
 	case HW_GET_SDA:  return willem_get_sda_pin();
 	case HW_DELAY:	  timer_us_delay(val); break;
-	case HW_LATENCY:  timer_latency(val, ___uid___); break;
+	case HW_LATENCY:  timer_latency(val, gep->uid); break;
 	default:  	  return HW_ERROR;
     }
     return -2;
@@ -531,8 +530,9 @@ int willem_40_hardware_driver(en_hw_api funct, int val, void *ptr)
 
 /**************************************************************************************************************/
 
-int willem4_hardware_driver(en_hw_api funct, int val, void *ptr)
+int willem4_hardware_driver(void *g,en_hw_api funct, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(funct){
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = (char *)"PCB 3"; return 0;
@@ -572,7 +572,7 @@ int willem4_hardware_driver(en_hw_api funct, int val, void *ptr)
 	case HW_SET_SDA:  return willem_set_sda_pin(val);
 	case HW_GET_SDA:  return willem_get_sda_pin();
 	case HW_DELAY:	  timer_us_delay(val); break;
-	case HW_LATENCY:  timer_latency(val, ___uid___); break;
+	case HW_LATENCY:  timer_latency(val, gep->uid); break;
 	default:  	  return HW_ERROR;
     }
     return -2;
@@ -580,8 +580,9 @@ int willem4_hardware_driver(en_hw_api funct, int val, void *ptr)
 
 /**************************************************************************************************************/
 
-int willempro2_hardware_driver(en_hw_api funct, int val, void *ptr)
+int willempro2_hardware_driver(void *g, en_hw_api funct, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(funct){
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = (char *)"WILLEM PRO 2"; return 0;
@@ -621,7 +622,7 @@ int willempro2_hardware_driver(en_hw_api funct, int val, void *ptr)
 	case HW_SET_SDA:  return willem_set_sda_pin(val);
 	case HW_GET_SDA:  return willem_get_sda_pin();
 	case HW_DELAY:	  timer_us_delay(val); break;
-	case HW_LATENCY:  timer_latency(val, ___uid___); break;
+	case HW_LATENCY:  timer_latency(val, gep->uid); break;
 	default:  	  return HW_ERROR;
     }
     return -2;

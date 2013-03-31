@@ -28,7 +28,7 @@ extern "C" {
 #include "iface.h"
 }
 
-int dummy_hardware_driver(en_hw_api funct, int val, void *ptr)
+int dummy_hardware_driver(void *,en_hw_api funct, int val, void *ptr)
 {
     printf("[MSG] Adding dummy module\n");
     switch(funct){

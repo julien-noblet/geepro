@@ -28,9 +28,7 @@
 //#define DEBUG(fmt, p...)	printf("|-- DEBUG --> " fmt "\n", ## p)
 #define DEBUG(fmt, p...)
 
-extern const char *shared_geepro_dir;
-
-static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, gui_xml_ifattr *parm);
+static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, gui_xml_ifattr *parm, const char *);
 
 static void gui_xml_event_default(gui_xml_ev *ev, int val, const char *sval)
 {
@@ -117,15 +115,20 @@ static void gui_xml_signal_register(gui_xml *g, GtkWidget *wg, char *id, const c
     }
 }
 
-static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWidget *parent, GtkWidget *child, char recursive, gui_xml_ifattr *parm)
+static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWidget *parent, GtkWidget *child, char recursive, gui_xml_ifattr *parm, const char *sgd)
 {
     int b0=0, b1=0, b2=0, b3=0, flagx, flagy, spx, spy;
     char *pos;
+    
+    if( !sgd ){
+	ERR("No shared_xml_dir defined!\n");
+        return;    
+    }
 
     if(recursive && cur->xmlChildrenNode){
-	gui_xml_parse_element(g, child, doc, cur->xmlChildrenNode, parm );
+	gui_xml_parse_element(g, child, doc, cur->xmlChildrenNode, parm, sgd );
     }
-    
+
     b0 = b1 = b2 = b3 = spx = 0;
     pos = (char *)xmlGetProp(cur, (unsigned char *)"expand");
     if(pos) b0 = !strcmp(pos, "true");
@@ -440,16 +443,19 @@ static GtkWidget *gui_xml_entry(gui_xml *g, xmlNode *cur)
     return tmp;
 }
 
-static GtkWidget *gui_xml_image(gui_xml *g, xmlNode *cur)
+static GtkWidget *gui_xml_image(gui_xml *g, xmlNode *cur, const char *shared_geepro_dir)
 {
     char imagefile[256];
-    unsigned int x = strlen(shared_geepro_dir);
+    unsigned int x;
 
+    if( !shared_geepro_dir ) return NULL;
+    x = strlen(shared_geepro_dir);
     if( x > 255) x = 255;
     memset(imagefile, 0, 256);
+
     strncat(imagefile, shared_geepro_dir, x);
     strncat(imagefile, (char *)xmlGetProp(cur, (unsigned char *)"src"), 256 - strlen(imagefile));
-    
+
     return gtk_image_new_from_file(imagefile);
 }
 
@@ -467,12 +473,17 @@ static GtkWidget *gui_xml_label(gui_xml *g, xmlNode *cur)
     }
     return tmp;
 }
-
-static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, gui_xml_ifattr *parm)
+//!!!
+static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, gui_xml_ifattr *parm, const char *shared_geepro_dir)
 {
     char *arg0;
     int n, q, i;
 
+    if( !shared_geepro_dir ){
+	ERR("No shared_xml_dir defined!\n");
+        return;
+    }
+    
     for(; cur != NULL; cur = cur->next){
 	/* tagi kluczowe */
 	if(!strcmp((char*)cur->name,"if")){
@@ -488,7 +499,7 @@ static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlN
 		    }
 		}
 	    }
-	    if(n == q) gui_xml_parse_element(g, wg, doc, cur->xmlChildrenNode, parm );
+	    if(n == q) gui_xml_parse_element(g, wg, doc, cur->xmlChildrenNode, parm, shared_geepro_dir );
 	} 
 	else if(!strcmp((char*)cur->name,"description")){
 	    arg0 = (char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
@@ -497,40 +508,44 @@ static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlN
 	/**** elementy GUI ****/
 	/* kontenery */
 	else if(!strcmp((char*)cur->name,"frame"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_frame_new(cur), 1, parm);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_frame_new(cur), 1, parm, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name,"vbox"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_box_new(cur, 0), 1, parm);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_box_new(cur, 0), 1, parm, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name,"hbox"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_box_new(cur, 1), 1, parm);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_box_new(cur, 1), 1, parm, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name, "table"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_table(g, cur), 1, parm);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_table(g, cur), 1, parm, shared_geepro_dir);
 	/* kontrolki */
 	else if(!strcmp((char*)cur->name,"jumper"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_jumper(g, cur), 0, NULL);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_jumper(g, cur), 0, NULL, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name, "dipswitch"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_dipsw(g, cur), 0, NULL);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_dipsw(g, cur), 0, NULL, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name,"image"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_image(g, cur), 0, NULL);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_image(g, cur, shared_geepro_dir), 0, NULL, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name,"label"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_label(g, cur), 0, NULL);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_label(g, cur), 0, NULL, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name, "button"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_button(g, cur), 0, NULL);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_button(g, cur), 0, NULL, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name, "chbutton"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_chbutton(g, cur), 0, NULL);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_chbutton(g, cur), 0, NULL, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name, "spinbutton"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_spinbutton(g, cur), 0, NULL);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_spinbutton(g, cur), 0, NULL, shared_geepro_dir);
 	else if(!strcmp((char*)cur->name, "entry"))
-	    gui_xml_container_add(g, cur, doc, wg, gui_xml_entry(g, cur), 0, NULL);
+	    gui_xml_container_add(g, cur, doc, wg, gui_xml_entry(g, cur), 0, NULL, shared_geepro_dir);
 /* w przyszlosci dodac pozostale elementy w razie potrzeby */	
-
     }    
 }
 
 /* parsowanie glównego poziomu */
-static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, const char *section )
+static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, const char *section, const char *shared_geepro_dir )
 {
     xmlNode *cur;
     GtkWidget *tmp, *lab;
+
+    if( !shared_geepro_dir ){
+	ERR("No shared_xml_dir defined!\n");
+        return;
+    }
 
     if(!(cur = xmlDocGetRootElement(doc))) return;
     
@@ -539,7 +554,7 @@ static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, cons
 	    g_return_if_fail(g->info != NULL);
 	    tmp = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
 	    gui_xml_signal_register(g, tmp, NULL, NULL, GUI_XML_INFO_ROOT);    
-	    gui_xml_parse_element(g, GTK_WIDGET(tmp), doc, cur->xmlChildrenNode, parm);
+	    gui_xml_parse_element(g, GTK_WIDGET(tmp), doc, cur->xmlChildrenNode, parm, shared_geepro_dir);
 	    gtk_table_attach_defaults(GTK_TABLE(g->info), tmp, 1,2, 0, 2);
 	    gtk_widget_show_all(GTK_WIDGET(g->info));
 	}
@@ -547,7 +562,7 @@ static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, cons
 	    lab = gtk_label_new((char *)xmlGetProp(cur, (unsigned char *)"name"));
 	    tmp = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	    gui_xml_signal_register(g, tmp, NULL, NULL, GUI_XML_NOTEBOOK_ROOT);
-	    gui_xml_parse_element(g, tmp, doc, cur->xmlChildrenNode, parm);
+	    gui_xml_parse_element(g, tmp, doc, cur->xmlChildrenNode, parm, shared_geepro_dir);
 	    gtk_notebook_append_page(GTK_NOTEBOOK(g->notebook), tmp, lab);
 	    gtk_widget_show_all(GTK_WIDGET(g->notebook));
 	}
@@ -567,10 +582,15 @@ void gui_xml_destroy(gui_xml *g)
     gui_xml_event_destroy(g);
 }
 
-int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *parm)
+int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *parm, const char *shared_geepro_dir)
 {
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
+
+    if( !shared_geepro_dir ){
+	ERR("No shared_xml_dir defined!\n");
+        return;
+    }
 
     if(!g) return -1;
     /* usuniecie istniejacego GUI */
@@ -582,7 +602,7 @@ int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *pa
 	printf("Error {gui_xml.c} --> gui_xml_create(): Failed to allocate xml parser context.\n");
 	return -1;
     };
-    
+
     if(!strncmp(xml, "file://", 7))
 	doc = xmlCtxtReadFile(ctxt, xml + 7, NULL, XML_PARSE_DTDVALID);
     else
@@ -592,7 +612,7 @@ int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *pa
 	printf("Error {gui_xml.c} --> gui_xml_create(): Failed to parse xml string\n");
     } else {
 	if(ctxt->valid)
-	    gui_xml_parser(g, doc, parm, section);
+	    gui_xml_parser(g, doc, parm, section, shared_geepro_dir);
 	else 
 	    printf("Error {gui_xml.c} --> gui_xml_create(): Failed to validate xml.\n");
 	xmlFreeDoc(doc);

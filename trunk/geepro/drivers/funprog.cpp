@@ -23,6 +23,8 @@
 
 #include "drivers.h"
 
+static geepro *gep = NULL;
+
 static int funprog_get_miso()
 {
     return parport_get_bit(PB, PP_10);
@@ -132,7 +134,7 @@ static int funprog_gui(geepro *gep, const char *chip_name, const char *family)
     // HW test page
     funprog_if_attr[0].val = chip_name;
     funprog_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/funprog.xml", (char *)"info,notebook", funprog_if_attr);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/funprog.xml", (char *)"info,notebook", funprog_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), funprog_event);
     return 0;
 }
@@ -140,8 +142,9 @@ static int funprog_gui(geepro *gep, const char *chip_name, const char *family)
 /*
     API API API API API API API API API API API API API API API API API API API API API API API API API API API API 
 */
-int funprog_api(en_hw_api func, int val, void *ptr)
+int funprog_api(void *g, en_hw_api func, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(func)
     {
 	case HW_IFACE: return IFACE_LPT;

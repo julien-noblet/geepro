@@ -23,6 +23,8 @@
 
 #include "drivers.h"
 
+static geepro *gep = NULL;
+
 static int altera_bb_test_connected()
 {
     if( parport_clr_bit(PA, PP_07) ) return 0;
@@ -128,7 +130,7 @@ static int altera_bb_gui(geepro *gep, const char *chip_name, const char *family)
     // HW test page
     altera_bb_if_attr[0].val = chip_name;
     altera_bb_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/altera_byteblaster.xml", (char *)"info,notebook", altera_bb_if_attr);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/altera_byteblaster.xml", (char *)"info,notebook", altera_bb_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), altera_bb_event);
     return 0;
 }
@@ -136,8 +138,9 @@ static int altera_bb_gui(geepro *gep, const char *chip_name, const char *family)
 /*
     API API API API API API API API API API API API API API API API API API API API API API API API API API API API 
 */
-int altera_bb_api(en_hw_api func, int val, void *ptr)
+int altera_bb_api(void *g,en_hw_api func, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(func)
     {
 	case HW_IFACE: return IFACE_LPT;

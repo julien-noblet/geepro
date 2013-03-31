@@ -21,6 +21,8 @@
 
 #include "modules.h"
 
+static geepro *gep = NULL; // temp
+
 MODULE_IMPLEMENTATION
 
 #define LF002_SIZE	KB_SIZE( 256 )
@@ -36,37 +38,37 @@ MODULE_IMPLEMENTATION
 #define TT			50	// cycle time
 #define TIMEOUT			500
 
-#define WE_HUB( state )		hw_set_ce( state )
-#define OE_HUB( state )		hw_set_oe( state )
-#define RC_HUB( state )		hw_sw_vcc( state ) // as RC signal in adapter
-#define VCC_HUB( state )	hw_sw_vpp( state ) // as VCC in adapter
+#define WE_HUB( state )		gep->hw_set_ce( state )
+#define OE_HUB( state )		gep->hw_set_oe( state )
+#define RC_HUB( state )		gep->hw_sw_vcc( state ) // as RC signal in adapter
+#define VCC_HUB( state )	gep->hw_sw_vpp( state ) // as VCC in adapter
 
 /********************************* LOW LEVEL OPERATIONS ******************************************************/
 void init_HUB()
 {
-    hw_set_vcc( 500  );
-    hw_set_vpp( 1200 );
+    gep->hw_set_vcc( 500  );
+    gep->hw_set_vpp( 1200 );
     WE_HUB( 1 );
     OE_HUB( 1 );    
     RC_HUB( 1 );    
     VCC_HUB( 1 );    
-    hw_ms_delay(200); // time for reset
+    gep->hw_ms_delay(200); // time for reset
 }
 
 void write_data_HUB( unsigned int addr, unsigned char data)
 {
-    hw_set_addr( addr & 0x7ff );
-    hw_us_delay( TT );    
+    gep->hw_set_addr( addr & 0x7ff );
+    gep->hw_us_delay( TT );    
     RC_HUB( 0 );	 // store low 11 bits of address
     OE_HUB( 1 );    
     WE_HUB( 0 );
-    hw_us_delay( TT );
-    hw_set_addr( (addr >> 11) & 0x7ff );
+    gep->hw_us_delay( TT );
+    gep->hw_set_addr( (addr >> 11) & 0x7ff );
     RC_HUB( 1 );	 // store high 11 bits of address    
-    hw_set_data( data ); // set data
-    hw_us_delay( TT );
+    gep->hw_set_data( data ); // set data
+    gep->hw_us_delay( TT );
     WE_HUB( 1 );	// store data
-    hw_us_delay( TT );
+    gep->hw_us_delay( TT );
 }
 
 unsigned char read_data_HUB( unsigned int addr)
@@ -76,16 +78,16 @@ unsigned char read_data_HUB( unsigned int addr)
     RC_HUB( 1 );	
     OE_HUB( 1 );    
     WE_HUB( 1 );
-    hw_set_addr( addr & 0x7ff ); // low 11 bits
+    gep->hw_set_addr( addr & 0x7ff ); // low 11 bits
     RC_HUB( 0 );	 	 // store low 11 bits of address
-    hw_us_delay( TT );
-    hw_set_addr( (addr >> 11) & 0x7ff );
+    gep->hw_us_delay( TT );
+    gep->hw_set_addr( (addr >> 11) & 0x7ff );
     RC_HUB( 1 );	 // store high 11 bits of address    
-    hw_us_delay( TT );
+    gep->hw_us_delay( TT );
     OE_HUB( 0 );    
-    hw_us_delay( TT );
-    data = hw_get_data();
-    hw_us_delay( TT );
+    gep->hw_us_delay( TT );
+    data = gep->hw_get_data();
+    gep->hw_us_delay( TT );
     OE_HUB( 1 );        
     return data;
 }
@@ -93,11 +95,11 @@ unsigned char read_data_HUB( unsigned int addr)
 unsigned char poll_data_HUB()
 {
     unsigned char data;
-    hw_us_delay( TT );
+    gep->hw_us_delay( TT );
     OE_HUB( 0 );    
-    hw_us_delay( TT );
-    data = hw_get_data();
-    hw_us_delay( TT );
+    gep->hw_us_delay( TT );
+    data = gep->hw_get_data();
+    gep->hw_us_delay( TT );
     OE_HUB( 1 );        
     return data;
 }
@@ -214,10 +216,10 @@ void lock_HUB()
     write_data_HUB( 0x2aaa, 0x55);    
     write_data_HUB( 0x5555, 0x40);
 
-    progress_loop(i, 50, "Chip erasing...") hw_ms_delay(20);
+    progress_loop(i, 50, "Chip erasing...") gep->hw_ms_delay(20);
 
     finish_action();        
-    hw_ms_delay(200);
+    gep->hw_ms_delay(200);
 
     show_dialog("[IF][TEXT]BOOT BLOCK LOCKED[/TEXT][BR]OK","");
 }
@@ -244,9 +246,9 @@ void erase_HUB(unsigned int dev_size, unsigned int start)
     write_data_HUB( 0x5555, 0xaa);    
     write_data_HUB( 0x2aaa, 0x55);    
     write_data_HUB( 0x5555, 0x10);    
-    progress_loop(i, 100, "Chip erasing...") hw_ms_delay(20);
+    progress_loop(i, 100, "Chip erasing...") gep->hw_ms_delay(20);
     finish_action();        
-    hw_ms_delay(200);
+    gep->hw_ms_delay(200);
     
     if( (*lb & 1) && !ERROR_VAL) 
 	test_blank_HUB( dev_size, start);
@@ -257,7 +259,7 @@ char wait_HUB( unsigned char d, char mode) // 0 for polling, 1 for toggle
     int i;
     for(i = 0; i < TIMEOUT; i++){
 	if((poll_data_HUB() & 0x80) == (d & 0x80)) return 0;
-	hw_us_delay(5 * TT);
+	gep->hw_us_delay(5 * TT);
     }
     return 1;
 }
@@ -289,7 +291,7 @@ void prog_HUB(unsigned int dev_size, unsigned int start)
     }
     
     finish_action();        
-    hw_ms_delay(200);
+    gep->hw_ms_delay(200);
     
     if( (*lb & 1) && !ERROR_VAL) 
 	verify_HUB( dev_size, start);

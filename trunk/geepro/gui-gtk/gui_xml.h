@@ -104,7 +104,7 @@ extern void gui_xml_register_event_func(gui_xml *g, gui_xml_event ev);
      Na samym poczatku likwiduje poprzednie GUI    
     jesli blad zwraca -1, inaczej 0
 */
-extern int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *ifattr);
+extern int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *ifattr, const char *shared_geepro_dir);
 
 /*
     likwiduje GUI, nie zwalnia pamieci na strukture gui_xml

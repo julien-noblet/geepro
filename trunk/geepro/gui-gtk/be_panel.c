@@ -223,10 +223,10 @@ static void gui_bineditor_clear_exec( GuiBineditor *be, GtkWidget *ctx, gui_clea
     pattern = gtk_entry_get_text(GTK_ENTRY(str->pattern));
     gui_bineditor_buff_clr(be->priv->buff, from, to, pattern);
     if( str->last_pattern == NULL ) 
-	store_set(&store, "CLEAR_PATTERN", pattern);
+	store_set(be->priv->store, "CLEAR_PATTERN", pattern);
     else {
 	if( strcmp(str->last_pattern, pattern) ) 
-	    store_set(&store, "CLEAR_PATTERN", pattern);
+	    store_set(be->priv->store, "CLEAR_PATTERN", pattern);
     }
     gui_bineditor_redraw( be );
 }
@@ -360,9 +360,9 @@ static void gui_bineditor_find_exec( GuiBineditor *be, GtkWidget *ctx, gui_find_
 
     /* store entries*/
     if( find )
-	store_set( &store, "FIND_LAST_PATTERN", find);
+	store_set( be->priv->store, "FIND_LAST_PATTERN", find);
     if( replace )
-	store_set( &store, "REPLACE_LAST_PATTERN", replace);
+	store_set( be->priv->store, "REPLACE_LAST_PATTERN", replace);
 
     /* do "find and replace" */
     gui_bineditor_lookup(be, ctx, find_data, replace_data, find_size, replace_size, from, to, ci, repl);
@@ -827,8 +827,8 @@ static void gui_bineditor_build_find_string( GuiBineditor *be, GtkWidget *ctx, g
     char *tmp0, *tmp1;
 
     /* get last entered text into entries */
-    store_get( &store, "FIND_LAST_PATTERN", &str->last_fstr);
-    store_get( &store, "REPLACE_LAST_PATTERN", &str->last_rstr);
+    store_get( be->priv->store, "FIND_LAST_PATTERN", &str->last_fstr);
+    store_get( be->priv->store, "REPLACE_LAST_PATTERN", &str->last_rstr);
 
     /* entries */
     gtk_box_pack_start(GTK_BOX(ctx), gtk_label_new(TXT_BE_FIND_ENTRY), FALSE, FALSE, 2);
@@ -1059,7 +1059,7 @@ static void gui_bineditor_build_clear( GuiBineditor *be, GtkWidget *ctx,  gui_cl
 	gtk_container_add(GTK_CONTAINER(hb), str->to);            
 	gtk_widget_set_sensitive(str->to, 0);    
     /* Pattern */
-    store_get(&store, "CLEAR_PATTERN", &str->last_pattern); // global !
+    store_get(be->priv->store, "CLEAR_PATTERN", &str->last_pattern); // global !
     hb = gtk_label_new(TXT_BE_PATTERN);
     gtk_box_pack_start(GTK_BOX(ctx), hb, FALSE, FALSE, 2);
     str->pattern = gtk_entry_new();
@@ -1557,8 +1557,8 @@ void gui_bineditor_open(GtkWidget *wg, GuiBineditor *be)
     str.r_ins = 0;
     str.r_count = 1;
 
-    store_get(&store, "BINEDITOR_OPEN_FNAME", &name);
-    store_get(&store, "BINEDITOR_OPEN_ARGS", &args);
+    store_get(be->priv->store, "BINEDITOR_OPEN_FNAME", &name);
+    store_get(be->priv->store, "BINEDITOR_OPEN_ARGS", &args);
         
     if( name )
 	if( *name ){
@@ -1579,13 +1579,13 @@ void gui_bineditor_open(GtkWidget *wg, GuiBineditor *be)
 	gui_bineditor_open_(be, &str);
 	if( name ){
 	    if( strcmp(name, str.fname) )
-	        store_set(&store, "BINEDITOR_OPEN_FNAME", str.fname);
+	        store_set(be->priv->store, "BINEDITOR_OPEN_FNAME", str.fname);
 	} else
-	     store_set(&store, "BINEDITOR_OPEN_FNAME", str.fname);
+	     store_set(be->priv->store, "BINEDITOR_OPEN_FNAME", str.fname);
 	if( ( str.l_offs != str.r_offs) || ( str.l_ins != str.r_ins) || ( str.l_count != str.r_count) ){
 	     *tmp = 0;
 	     sprintf( tmp, "%u %u %u", str.r_offs, str.r_ins, str.r_count);
-	     store_set(&store, "BINEDITOR_OPEN_ARGS", tmp);
+	     store_set(be->priv->store, "BINEDITOR_OPEN_ARGS", tmp);
 	}
 	g_free( str.fname );
     }
@@ -1614,8 +1614,8 @@ void gui_bineditor_write(GtkWidget *wg, GuiBineditor *be)
 	NULL
     );
 
-    store_get(&store, "BINEDITOR_SAVE_FNAME", &name);
-    store_get(&store, "BINEDITOR_SAVE_ARGS", &args);
+    store_get(be->priv->store, "BINEDITOR_SAVE_FNAME", &name);
+    store_get(be->priv->store, "BINEDITOR_SAVE_ARGS", &args);
     if( name )
 	if( *name ){
 	    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), name);
@@ -1633,14 +1633,14 @@ void gui_bineditor_write(GtkWidget *wg, GuiBineditor *be)
 	gui_bineditor_save_(be, &str);
 	if( name ){
 	    if( strcmp(name, str.fname) )
-	        store_set(&store, "BINEDITOR_SAVE_FNAME", str.fname);
+	        store_set(be->priv->store, "BINEDITOR_SAVE_FNAME", str.fname);
 	} else
-	     store_set(&store, "BINEDITOR_SAVE_FNAME", str.fname);
+	     store_set(be->priv->store, "BINEDITOR_SAVE_FNAME", str.fname);
 
 	if( ( str.l_ins != str.r_ins) || ( str.l_count != str.r_count) ){
 	     *tmp = 0;
 	     sprintf( tmp, "%u %u", str.r_ins, str.r_count);
-	     store_set(&store, "BINEDITOR_SAVE_ARGS", tmp);
+	     store_set(be->priv->store, "BINEDITOR_SAVE_ARGS", tmp);
 	}
 
 	g_free( str.fname );
@@ -1661,7 +1661,7 @@ void gui_bineditor_bined(GtkWidget *wg, GuiBineditor *be)
     str.l_rev = 0;
 
     args = NULL;
-    store_get(&store, "BINEDITOR_BMP_ARGS", &args);
+    store_get(be->priv->store, "BINEDITOR_BMP_ARGS", &args);
     if( args )
 	if( *args ){
 	    sscanf(args, "%u %u %u %u", &str.l_width, &str.l_height, &str.l_mask, &str.l_rev);
@@ -1677,7 +1677,7 @@ void gui_bineditor_bined(GtkWidget *wg, GuiBineditor *be)
     if( ( str.l_width != str.r_width) || ( str.l_height != str.r_height) || ( str.l_mask != str.r_mask) || ( str.l_rev != str.r_rev) ){
 	     *tmp = 0;
 	     sprintf( tmp, "%u %u %u %u", str.r_width, str.r_height, str.r_mask, str.r_rev);
-	     store_set(&store, "BINEDITOR_BMP_ARGS", tmp);
+	     store_set(be->priv->store, "BINEDITOR_BMP_ARGS", tmp);
     }
 
     if( args ) free( args );

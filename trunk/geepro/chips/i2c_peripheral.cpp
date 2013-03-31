@@ -21,6 +21,8 @@
 
 #include "modules.h"
 
+static geepro *gep= NULL; // temp
+
 MODULE_IMPLEMENTATION
 
 #define M52749FP_SIZE	10
@@ -31,22 +33,22 @@ MODULE_IMPLEMENTATION
 
 static void send_m52749(char func, char val)
 {
-    hw_ms_delay( 5 );
-    start_i2c();    
-    send_byte_i2c( M52749FP_ADDR );
-    if( wait_ack_i2c() ) throw "Chip select address";
-    send_byte_i2c( func ); // function select
-    if( wait_ack_i2c() ) throw "Function select";
-    send_byte_i2c( val ); // value
-    if( wait_ack_i2c() ) throw "Value set";
-    stop_i2c();        
-    hw_ms_delay( 5 );
+    gep->hw_ms_delay( 5 );
+    start_i2c(gep);    
+    send_byte_i2c(gep, M52749FP_ADDR );
+    if( wait_ack_i2c(gep) ) throw "Chip select address";
+    send_byte_i2c(gep, func ); // function select
+    if( wait_ack_i2c(gep) ) throw "Function select";
+    send_byte_i2c(gep, val ); // value
+    if( wait_ack_i2c(gep) ) throw "Value set";
+    stop_i2c(gep);        
+    gep->hw_ms_delay( 5 );
 }
 
 static void m52749_value_set(int val, void *ptr, int ipar)
 {
     try{
-	init_i2c();
+	init_i2c(gep);
 	switch( ipar ){
 	    case 0: put_buffer(0, val); send_m52749( 0,  get_buffer(0) ); break; // Main contrast
 	    case 1: put_buffer(1, val); send_m52749( 1,  get_buffer(1) ); break; // Sub contrast R
@@ -93,16 +95,16 @@ void write_m52749_()
 // ------------------------------------------------------------- M62392 --------
 static void send_m62392(char ch, char val)
 {
-    hw_ms_delay( 5 );
-    start_i2c();    
-    send_byte_i2c(  0x90 | ((get_buffer( 0 ) && 0x07) << 1) ); 
-    if( wait_ack_i2c() ) throw "Chip select address";
-    send_byte_i2c( ch ); // function select
-    if( wait_ack_i2c() ) throw "Channel select";
-    send_byte_i2c( val ); // value
-    if( wait_ack_i2c() ) throw "Value set";
-    stop_i2c();        
-    hw_ms_delay( 5 );
+    gep->hw_ms_delay( 5 );
+    start_i2c(gep);    
+    send_byte_i2c(gep,  0x90 | ((get_buffer( 0 ) && 0x07) << 1) ); 
+    if( wait_ack_i2c(gep) ) throw "Chip select address";
+    send_byte_i2c(gep, ch ); // function select
+    if( wait_ack_i2c(gep) ) throw "Channel select";
+    send_byte_i2c(gep, val ); // value
+    if( wait_ack_i2c(gep) ) throw "Value set";
+    stop_i2c(gep);        
+    gep->hw_ms_delay( 5 );
 }
 
 static void m62392_value_set(int val, void *ptr, int ipar)
@@ -111,7 +113,7 @@ static void m62392_value_set(int val, void *ptr, int ipar)
 	if(ipar == 0 )
 	    put_buffer(0, val);
 	else{
-	    init_i2c();
+	    init_i2c(gep);
 	    put_buffer(ipar, val); send_m62392( ipar,  get_buffer(ipar) ); // Main contrast
 	    finish_action();
 	}

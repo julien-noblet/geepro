@@ -26,7 +26,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern int dummy_hardware_driver(en_hw_api func, int val, void *ptr);
+extern int dummy_hardware_driver(void *, en_hw_api func, int val, void *ptr);
 
 #ifdef __cplusplus
 };

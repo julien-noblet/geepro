@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include "dummy.h"
 
 extern "C" {
     #include "iface.h"
@@ -47,6 +48,7 @@ iface *iface_init()
 	return NULL;
     }
     memset(ifc->plugins, 0, sizeof(chip_plugins));
+    ifc->hwd = dummy_hardware_driver;
     chip_init_qe(ifc->plugins);
     return ifc;
 }
@@ -135,6 +137,7 @@ char *iface_get_dev(iface *ifc, char *name)
 int iface_select_iface(iface *ifc, char *name)
 {
     char *dev;
+    geepro *gep = GEEPRO(ifc->gep);
     iface *ifct = ifc;    
     dev = iface_get_dev(ifc, name);
     printf("Opening interface '%s' (device: '%s')\n", name, dev);
@@ -152,7 +155,7 @@ int iface_prg_add(iface *ifc, iface_prg_api api, char on)
     char *d_name = NULL;
     if(!api) return -1;
 
-    api(HW_NAME, 0, &d_name);
+    api(ifc->gep, HW_NAME, 0, &d_name);
     if(!d_name) {
 	printf("{iface.h} iface_add() -> driver rejected due to missing name !\n");
 	return -1; /* brak nazwy */
@@ -164,7 +167,7 @@ int iface_prg_add(iface *ifc, iface_prg_api api, char on)
     }
 
     new_tie->next = NULL;
-    api(HW_NAME, 0, &new_tie->name);
+    api(ifc->gep, HW_NAME, 0, &new_tie->name);
     new_tie->api = api;
     new_tie->on = on;
 
@@ -390,6 +393,7 @@ void iface_rmv_modules(iface *ifc)
 
 void iface_destroy(iface *ifc)
 {
+    geepro *gep = GEEPRO(ifc->gep);
     if(!ifc) return;
     hw_close();
     iface_rmv_ifc(ifc);
@@ -463,14 +467,14 @@ int iface_load_config(iface *ifc, void *cfg)
 
     ifc->prog_sel = 0;    
     tmp = NULL;
-    if(!store_get(&store, "LAST_SELECTED_PROGRAMMER", &tmp)){
+    if(!store_get(GEEPRO(ifc->gep)->store, "LAST_SELECTED_PROGRAMMER", &tmp)){
 	if( tmp ){
 	    ifc->prog_sel = strtol(tmp, NULL, 0);
 	    free(tmp);
 	}
     }
     tmp = NULL;
-    if(!store_get(&store, "LAST_SELECTED_IFACE", &tmp)){
+    if(!store_get(GEEPRO(ifc->gep)->store, "LAST_SELECTED_IFACE", &tmp)){
 	if( tmp ){
 	    ifc->ifc_sel = strtol(tmp, NULL, 0);
 	    free(tmp);

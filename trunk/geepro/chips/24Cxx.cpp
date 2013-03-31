@@ -21,6 +21,8 @@
 
 #include "modules.h"
 
+static geepro *gep = NULL; // temporary
+
 /**********************************************************************************************
 *
 * VERY IMPORTANT !!!!
@@ -66,8 +68,8 @@ MODULE_IMPLEMENTATION
 
 char devsel_24Cxx( char rw, char addr )
 {
-    send_byte_i2c( 0xa0 | (rw & 1) | ((addr << 1) & 0x0e));
-    if( wait_ack_i2c() ) return 1;
+    send_byte_i2c(gep, 0xa0 | (rw & 1) | ((addr << 1) & 0x0e));
+    if( wait_ack_i2c(gep) ) return 1;
     return 0;
 }
 
@@ -81,21 +83,21 @@ char transm_seq_hdr_24Cxx(int addr, char mode, char addr_mode) // mode = 0 -> wr
     // send devsel WRITE
     timeout = TIMEOUT;
     do{
-	start_i2c();
+	start_i2c(gep);
 	if(--timeout == 0) return 1;
     }while(devsel_24Cxx( 0, page_nb ));
 
     // send address
     if( addr_mode ){
-	send_byte_i2c( msb );    
-	if( wait_ack_i2c() ) return 2;
+	send_byte_i2c(gep, msb );    
+	if( wait_ack_i2c(gep) ) return 2;
     }
-    send_byte_i2c( addr_byte & 0xff);
-    if( wait_ack_i2c() ) return 2;
+    send_byte_i2c(gep, addr_byte & 0xff);
+    if( wait_ack_i2c(gep) ) return 2;
 
     if( mode ){ // skip for WRITE
 	// repeated start + send devsel READ
-	start_i2c();
+	start_i2c(gep);
 	if(devsel_24Cxx( 1, page_nb )) return 3;
     }
     return 0;
@@ -105,17 +107,17 @@ int rd_byte_24Cxx(int addr, char addr_mode)
 {
     char data;
     if( transm_seq_hdr_24Cxx( addr, 1, addr_mode) ) return -1;
-    data = recv_byte_i2c();
-    stop_i2c();    
+    data = recv_byte_i2c(gep);
+    stop_i2c(gep);    
     return data & 0xff;
 }
 
 char write_byte_24Cxx( int addr, char byte, char addr_mode)
 {
     if( transm_seq_hdr_24Cxx( addr, 0, addr_mode) ) return 1;
-    send_byte_i2c( byte );
-    if( wait_ack_i2c() ) return 1;
-    stop_i2c();
+    send_byte_i2c(gep, byte );
+    if( wait_ack_i2c(gep) ) return 1;
+    stop_i2c(gep);
     return 0;
 }
 
@@ -130,7 +132,7 @@ void read_24Cxx(unsigned int dev_size, char addr_mode)
 {
     int i, data;
 
-    init_i2c();
+    init_i2c(gep);
     progress_loop(i, dev_size, "Reading ..."){
 	data = rd_byte_24Cxx(i, addr_mode);
 	break_if( data < 0 );
@@ -144,7 +146,7 @@ void verify_24Cxx(unsigned int dev_size, char addr_mode)
     int i, rdata = 0, bdata = 0;
     char text[256];
 
-    init_i2c();
+    init_i2c(gep);
     progress_loop(i, dev_size, "Verify ..."){
 	bdata = get_buffer( i );
 	rdata = rd_byte_24Cxx(i, addr_mode);
@@ -175,13 +177,13 @@ void write_24Cxx(int dev_size, char addr_mode, char n)
     if( !lb ) return; // resignation by button
     if( !(*lb & 2) ) return; // Not checked
     
-    init_i2c();
-    hw_set_hold( n );
+    init_i2c(gep);
+    gep->hw_set_hold( n );
     progress_loop(i, dev_size, "Writing ...")
 	    break_if( write_byte_24Cxx(i, get_buffer(i), addr_mode) );
     // wait to end of last write cycle
     if( transm_seq_hdr_24Cxx( 0, 1, 0) ) ERROR_VAL = 1;
-    stop_i2c();        
+    stop_i2c(gep);        
 
     finish_action();
     
