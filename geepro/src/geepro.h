@@ -25,6 +25,7 @@
 #include "chip.h"
 #include "autors"
 #include "cfp.h"
+#include "storings.h"
 
 /* Informacje o wersji */
 #define EPROGRAM_NAME "Geepro"
@@ -58,12 +59,16 @@ typedef char boolean;
 typedef struct
 {
     int   argc;		
+    int   uid;
     char  forbid; // forbidding action
     char  **argv;
     iface *ifc;	/* plugins queue */
     void  *gui;
     chip_desc  *chp;
     s_cfp *cfg;
+    store_str *store; // variables stored after close program
+    const char *shared_drivers_xml_file;
+    const char *shared_geepro_dir;
 } geepro;
 
 #ifdef __cplusplus

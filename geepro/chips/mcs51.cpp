@@ -21,6 +21,8 @@
 
 #include "modules.h"
 
+static geepro *gep = NULL; // temp
+
 MODULE_IMPLEMENTATION
 
 // AT90S1200 Commands
@@ -125,9 +127,9 @@ void AT89Cx051_mux(int mode) // Sets A15,A16,A17,A18
 void AT89Cx051_RST(char state )
 {
     switch(state){
-	case AT89Cx051_RST_LOW:	 hw_sw_vpp(0); ce(0, 1); AT89Cx051_mux(AT89Cx051_RST_MUX);  break;
-	case AT89Cx051_RST_HIGH: hw_sw_vpp(0); ce(1, 1); AT89Cx051_mux(AT89Cx051_RST_MUX);  break;
-	case AT89Cx051_RST_VPP:  ce(1, 1); AT89Cx051_mux(AT89Cx051_PROG_MUX); hw_sw_vpp(1); break;
+	case AT89Cx051_RST_LOW:	 gep->hw_sw_vpp(0); ce(0, 1); AT89Cx051_mux(AT89Cx051_RST_MUX);  break;
+	case AT89Cx051_RST_HIGH: gep->hw_sw_vpp(0); ce(1, 1); AT89Cx051_mux(AT89Cx051_RST_MUX);  break;
+	case AT89Cx051_RST_VPP:  ce(1, 1); AT89Cx051_mux(AT89Cx051_PROG_MUX); gep->hw_sw_vpp(1); break;
     }        
 }
 
@@ -159,7 +161,7 @@ unsigned char AT89Cx051_transcode1(unsigned char data)
 
 unsigned char AT89Cx051_get_data()
 {
-    return AT89Cx051_transcode0(hw_get_data());
+    return AT89Cx051_transcode0(gep->hw_get_data());
 }
 
 void AT89Cx051_put_data(char data)
@@ -174,19 +176,19 @@ int test_blank_AT89Cx051(int size, char mode)
     int addr = 0;
     int tmp = 0;
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
     AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode
-    hw_delay(1000); // 1ms    
+    gep->hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, size, "Checking blank"){
-	hw_delay(100);
+	gep->hw_delay(100);
 	tmp = AT89Cx051_get_data();
 	break_if( tmp != 0xff);
 	AT89Cx051_pulse( 150 );
@@ -201,19 +203,19 @@ void read_AT89Cx051(int size)
 {
     int addr = 0;
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
     AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode
-    hw_delay(1000); // 1ms    
+    gep->hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, size, "Reading"){
-	hw_delay(100);
+	gep->hw_delay(100);
 	put_buffer( addr, AT89Cx051_get_data());
 	AT89Cx051_pulse( 150 );
     }
@@ -227,19 +229,19 @@ void sign_AT89Cx051(int size)
     int signature = 0;
     char text[256];
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilisation
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilisation
     AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
     AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     set_AT89Cx051_mode(AT89Cx051_SIGN_MODE); // set mode
-    hw_delay(1000); // 1ms    
+    gep->hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, 3, "Reading"){
-	hw_delay(100);
+	gep->hw_delay(100);
 	signature |= AT89Cx051_get_data() << (addr * 8);
 	AT89Cx051_pulse( 150 );
     }
@@ -261,19 +263,19 @@ void verify_AT89Cx051(int size, char silent)
     char rdata = 0, wdata = 0;
     char text[256];
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
     AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode
-    hw_delay(1000); // 1ms    
+    gep->hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_X1_MUX); // X1 as pulse
     progress_loop(addr, size, "Veryfying"){
-	hw_delay(100);
+	gep->hw_delay(100);
 	rdata = AT89Cx051_get_data();
 	wdata = get_buffer(addr);
 	break_if( rdata != wdata);
@@ -293,18 +295,18 @@ void verify_AT89Cx051(int size, char silent)
 
 void erase_AT89Cx051(int size)
 {
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
     AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     set_AT89Cx051_mode(AT89Cx051_ERA_MODE); // set mode to erase
-    hw_delay(1000); // 1ms    
+    gep->hw_delay(1000); // 1ms    
     AT89Cx051_mux(AT89Cx051_PROG_MUX); // X1 as pulse
-    hw_sw_vpp(1);	// set VPP    
+    gep->hw_sw_vpp(1);	// set VPP    
     // erase pulse
     AT89Cx051_pulse( 11000 ); // 11ms
     set_address(0);
@@ -322,35 +324,35 @@ void write_AT89Cx051(int size)
        SET_ERROR;
        return;
     }
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
     AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     progress_loop(addr, size, "Writing"){
 	set_AT89Cx051_mode(AT89Cx051_WR_MODE); // set mode to write
-	hw_delay(100); // 100µs    
+	gep->hw_delay(100); // 100µs    
 	AT89Cx051_mux(AT89Cx051_PROG_MUX); // PROG as pulse
 	wdata = get_buffer(addr);	   // get data from buffer and store it for veryfication
 	AT89Cx051_put_data(wdata);	   // out data
-	hw_delay(10);
-	hw_sw_vpp(1);			   // VPP ON
-	hw_delay(20);
+	gep->hw_delay(10);
+	gep->hw_sw_vpp(1);			   // VPP ON
+	gep->hw_delay(20);
 	AT89Cx051_pulse( 1250 );           // 1.25 ms program pulse
-	hw_delay(20);
-	hw_sw_vpp(0);			   // VPP OFF
-	hw_delay(500); 			   // 100µs    
+	gep->hw_delay(20);
+	gep->hw_sw_vpp(0);			   // VPP OFF
+	gep->hw_delay(500); 			   // 100µs    
 	set_AT89Cx051_mode(AT89Cx051_RD_MODE); // set mode to read for veryfication
-	hw_delay(500); 			   // 500µs    
+	gep->hw_delay(500); 			   // 500µs    
 	rdata = AT89Cx051_get_data();
 	break_if(rdata != wdata);                // veryfication
 	AT89Cx051_mux(AT89Cx051_X1_MUX);   // X1 as pulse
-	hw_delay(20);
+	gep->hw_delay(20);
 	AT89Cx051_pulse( 150 );		   // address increment
-	hw_delay(20);
+	gep->hw_delay(20);
     }
     if(rdata != wdata){
 	sprintf(
@@ -377,38 +379,38 @@ void lock_bit_AT89Cx051(int size)
     );
     if(!lb) return;
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     if(*lb & 1){
 	AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
 	AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
-	hw_delay(1000); // 1ms
+	gep->hw_delay(1000); // 1ms
 	AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
-	hw_delay(1000); // 1ms
+	gep->hw_delay(1000); // 1ms
 	set_AT89Cx051_mode(AT89Cx051_LB1_MODE); // set mode to erase
-	hw_delay(1000); // 1ms    
+	gep->hw_delay(1000); // 1ms    
 	AT89Cx051_mux(AT89Cx051_PROG_MUX); // X1 as pulse
-	hw_sw_vpp(1);	// set VPP    
+	gep->hw_sw_vpp(1);	// set VPP    
 	// erase pulse
 	AT89Cx051_pulse( 1250 ); // 1,25ms
-	hw_delay(1000);
-	hw_sw_vpp(0);
+	gep->hw_delay(1000);
+	gep->hw_sw_vpp(0);
     }
     if(*lb & 2){
 	AT89Cx051_RST(AT89Cx051_RST_LOW);    // RST to GND
 	AT89Cx051_mux(AT89Cx051_X1_OFF_MUX); // X1  to GND
-	hw_delay(1000); // 1ms
+	gep->hw_delay(1000); // 1ms
 	AT89Cx051_RST(AT89Cx051_RST_HIGH);    // RST to H, clear internal address counter
-	hw_delay(1000); // 1ms
+	gep->hw_delay(1000); // 1ms
 	set_AT89Cx051_mode(AT89Cx051_LB2_MODE); // set mode to erase
-	hw_delay(1000); // 1ms    
+	gep->hw_delay(1000); // 1ms    
 	AT89Cx051_mux(AT89Cx051_PROG_MUX); // X1 as pulse
-	hw_sw_vpp(1);	// set VPP    
+	gep->hw_sw_vpp(1);	// set VPP    
 	// erase pulse
 	AT89Cx051_pulse( 1250 ); // 1,25ms
-	hw_delay(1000);
-	hw_sw_vpp(0);
+	gep->hw_delay(1000);
+	gep->hw_sw_vpp(0);
     }
     set_address(0);
     finish_action();
@@ -433,12 +435,12 @@ void set_AT89C5x_addr(int addr)
 unsigned char read_byte_AT89C5x(int addr, int mode)
 {
     set_AT89C5x_mode( mode | AT89C5x_P27_H_MODE);
-    hw_delay(1); // 1us 
+    gep->hw_delay(1); // 1us 
     set_AT89C5x_addr(addr);
-    hw_delay(1); // 1us 
+    gep->hw_delay(1); // 1us 
     set_AT89C5x_mode( mode );	
-    hw_delay(1); // 1us 
-    return hw_get_data();
+    gep->hw_delay(1); // 1us 
+    return gep->hw_get_data();
 }
 
 void read_AT89C5x(int size)
@@ -447,9 +449,9 @@ void read_AT89C5x(int size)
 //    int signature;
     addr_state = 0;
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
 //    signature = 0;
     progress_loop(addr, size, "Reading")
@@ -468,9 +470,9 @@ void sign_AT89C5x(int size)
     char text[256];
 
     addr_state = 0;
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
     signature = 0;
     progress_loop(addr, 3, "Reading")
@@ -495,9 +497,9 @@ void verify_AT89C5x(int size, char silent)
     addr_state = 0;
     char rdata = 0, wdata = 0;
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
     progress_loop(addr, size, "Verifying"){
 	rdata = read_byte_AT89C5x(addr, AT89C5x_READ_MODE);
@@ -526,9 +528,9 @@ void test_blank_AT89C5x(int size, char silent)
     addr_state = 0;
     unsigned char rdata = 0;
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
     progress_loop(addr, size, "Test blank"){
 	rdata = read_byte_AT89C5x(addr, AT89C5x_READ_MODE);
@@ -547,12 +549,12 @@ void test_blank_AT89C5x(int size, char silent)
 }
 /*
     set_AT89C5x_mode( mode | AT89C5x_P27_H_MODE);
-    hw_delay(1); // 1us 
+    gep->hw_delay(1); // 1us 
     set_AT89C5x_addr(addr);
-    hw_delay(1); // 1us 
+    gep->hw_delay(1); // 1us 
     set_AT89C5x_mode( mode );	
-    hw_delay(1); // 1us 
-    return hw_get_data();
+    gep->hw_delay(1); // 1us 
+    return gep->hw_get_data();
 */
 #define AT89C5x_pulse	AT89Cx051_pulse
 
@@ -563,9 +565,9 @@ void write_AT89C5x(int size)
     char text[256];
     addr_state = 0;
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
     progress_loop(addr, size, "Writing"){
         wdata = get_buffer(addr);
@@ -574,17 +576,17 @@ void write_AT89C5x(int size)
     	    continue; // skip 0xff
         }
 	set_AT89C5x_mode( AT89C5x_WRITE_MODE);
-	hw_sw_vpp(1);
-	hw_delay(1); // 1us 
+	gep->hw_sw_vpp(1);
+	gep->hw_delay(1); // 1us 
         set_AT89C5x_addr(addr);
         set_data(wdata);
-	hw_delay(1); // 1us 
+	gep->hw_delay(1); // 1us 
 	AT89C5x_pulse( 1250 );   // 1.25 ms program pulse
-	hw_sw_vpp(0);
-	hw_delay(400); // 400us 
+	gep->hw_sw_vpp(0);
+	gep->hw_delay(400); // 400us 
 	set_AT89C5x_mode( AT89C5x_READ_MODE );	
-	hw_delay(400); // 400us 
-	rdata = hw_get_data();
+	gep->hw_delay(400); // 400us 
+	rdata = gep->hw_get_data();
 	break_if(rdata != wdata);
     }
     if(rdata != wdata){
@@ -605,12 +607,12 @@ void write_AT89C5x(int size)
 
 void erase_AT89C5x(int size)
 { 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
     set_AT89C5x_mode( AT89C5x_ERASE_MODE);
-    hw_sw_vpp(1);	// set VPP    
+    gep->hw_sw_vpp(1);	// set VPP    
     // erase pulse
     AT89C5x_pulse( 11000 ); // 11ms
     set_address(0);
@@ -629,34 +631,34 @@ void lock_bit_AT89C5x(int size)
     );
     if(!lb) return;
 
-    hw_sw_vpp(0);    // VPP OFF
-    hw_sw_vcc(1);    // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);    // VPP OFF
+    gep->hw_sw_vcc(1);    // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     if(*lb & 1){
 	ce(1,100);
 	set_AT89C5x_mode( AT89C5x_LB1_MODE);
-	hw_sw_vpp(1);	// set VPP    
+	gep->hw_sw_vpp(1);	// set VPP    
 	AT89C5x_pulse( 11000 ); // 11ms
 	set_address(0);
-	hw_sw_vpp(0);	// set VPP    
+	gep->hw_sw_vpp(0);	// set VPP    
     }
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     if(*lb & 2){
 	ce(1,100);
 	set_AT89C5x_mode( AT89C5x_LB2_MODE);
-	hw_sw_vpp(1);	// set VPP    
+	gep->hw_sw_vpp(1);	// set VPP    
 	AT89C5x_pulse( 11000 ); // 11ms
 	set_address(0);
-	hw_sw_vpp(0);	// set VPP    
+	gep->hw_sw_vpp(0);	// set VPP    
     }
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     if(*lb & 4){
 	ce(1,100);
 	set_AT89C5x_mode( AT89C5x_LB3_MODE);
-	hw_sw_vpp(1);	// set VPP    
+	gep->hw_sw_vpp(1);	// set VPP    
 	AT89C5x_pulse( 11000 ); // 11ms
 	set_address(0);
-	hw_sw_vpp(0);	// set VPP    
+	gep->hw_sw_vpp(0);	// set VPP    
     }
     finish_action();
 }
@@ -664,16 +666,16 @@ void lock_bit_AT89C5x(int size)
 /***************************************************************************/
 void AT90S1200_enter_program_mode()
 {
-    hw_sw_vpp( 0 );
-    hw_sw_vcc( 1 );
-    hw_delay(100); // wait 100µs
+    gep->hw_sw_vpp( 0 );
+    gep->hw_sw_vcc( 1 );
+    gep->hw_delay(100); // wait 100µs
     ce( 1, 1 );
     set_address( 1 << 17 ); // select RESET pin
     ce( 0, 1 ); // set RESET pin to "0"
-    hw_delay(100); // wait 100µs
-    hw_sw_vpp( 1 );
+    gep->hw_delay(100); // wait 100µs
+    gep->hw_sw_vpp( 1 );
     ce( 1, 1 ); // RESET PIN to H, ignoring value, VPP override it
-    hw_delay(100); // wait 100µs
+    gep->hw_delay(100); // wait 100µs
 }
 
 unsigned char AT90S1200_get_data( int bs )
@@ -917,7 +919,7 @@ void chiperase_AT90S1200_(int size)
     AT90S1200_enter_program_mode();
     AT90S1200_load_cmd( AT90S1200_CHIP_ERASE );
     AT90S1200_WR_pulse( 0 );
-    hw_delay(10000);
+    gep->hw_delay(10000);
     set_address(0);
     set_data(0);
     finish_action();
@@ -937,10 +939,10 @@ void write_flash_AT90S1200_(int size)
 	AT90S1200_load_address_low_byte( addr & 0xff);
 	AT90S1200_load_data_low_byte( get_buffer(addr * 2) );
 	AT90S1200_write_data_low_byte();
-	hw_delay(1500);
+	gep->hw_delay(1500);
 	AT90S1200_load_data_high_byte( get_buffer(addr * 2 + 1) );
 	AT90S1200_write_data_high_byte();
-	hw_delay(1500);
+	gep->hw_delay(1500);
     }    
     set_address(0);
     set_data(0);
@@ -959,7 +961,7 @@ void write_eeprom_AT90S1200_(int size)
 	AT90S1200_load_address_low_byte( addr & 0xff);
 	AT90S1200_load_data_low_byte( get_buffer(addr) );
 	AT90S1200_write_data_low_byte();
-	hw_delay(1500);
+	gep->hw_delay(1500);
     }    
 
     set_address(0);
@@ -1015,7 +1017,7 @@ void AT90S1200_set_fuse_bits( char bytes)
     ce( 0, 2000 ); // /WR pulse 2ms
     ce( 1, 100 );
 
-    hw_delay( 10000 );
+    gep->hw_delay( 10000 );
     set_address(0);
     set_data(0);
 }
@@ -1030,7 +1032,7 @@ void AT90S1200_set_lock_bits( char locks )
     set_address( (1 << 17) | (1 << 18)); // XA1, XA0 = "00", BS = 0, /OE = 1, XTAL_MUX = WR,    
     ce( 0, 10000 ); // /WR pulse
     ce( 1, 100 );
-    hw_delay( 10000 );
+    gep->hw_delay( 10000 );
     set_address(0);
     set_data(0);
     finish_action();
@@ -1084,9 +1086,9 @@ void write_i87xx( int size, char mode_p )
     char text[256];
     addr_state = 0;
 
-    hw_sw_vpp(0);   // VPP OFF
-    hw_sw_vcc(1);   // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);   // VPP OFF
+    gep->hw_sw_vcc(1);   // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
     err_counter = 0;
     rpt = 0;
@@ -1098,21 +1100,21 @@ i875x_REPEAT:
     	    continue; // skip 0xff
         }
 	set_AT89C5x_mode( AT89C5x_WRITE_MODE);
-	hw_sw_vpp(1);
-	hw_delay(1); // 1us 
+	gep->hw_sw_vpp(1);
+	gep->hw_delay(1); // 1us 
         set_AT89C5x_addr(addr);
         set_data(wdata);
-	hw_delay(1); // 1us 
+	gep->hw_delay(1); // 1us 
 	if(mode_p)
 	for(n = 0; n < 5; n++)
 	    AT89C5x_pulse( 100 );   // 5 x 100µs program pulse
 	else
 	    AT89C5x_pulse( 50000 );   // 50ms program pulse	
-	hw_sw_vpp(0);
-	hw_delay(400); // 400us 
+	gep->hw_sw_vpp(0);
+	gep->hw_delay(400); // 400us 
 	set_AT89C5x_mode( AT89C5x_READ_MODE );	
-	hw_delay(400); // 400us 
-	rdata = hw_get_data();
+	gep->hw_delay(400); // 400us 
+	rdata = gep->hw_get_data();
 	if(rdata == wdata){
 	    err_counter = 0;
 	    continue;
@@ -1157,16 +1159,16 @@ void lock_i87xx( int size )
     if( !lb ) return;
     if( *lb != 1) return;
 
-    hw_sw_vpp(0);    // VPP OFF
-    hw_sw_vcc(1);    // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);    // VPP OFF
+    gep->hw_sw_vcc(1);    // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     ce(1,100);
     set_AT89C5x_mode( I87C5x_LB_MODE);
-    hw_sw_vpp(1);	// set VPP    
+    gep->hw_sw_vpp(1);	// set VPP    
     AT89C5x_pulse( 50000 ); // 50ms
     set_address(0);
-    hw_sw_vpp(0);	// set VPP    
-    hw_delay(1000); // 1ms
+    gep->hw_sw_vpp(0);	// set VPP    
+    gep->hw_delay(1000); // 1ms
     finish_action();
 }
 
@@ -1181,34 +1183,34 @@ void lock_p87xx( int size )
     );
     if(!lb) return;
 
-    hw_sw_vpp(0);    // VPP OFF
-    hw_sw_vcc(1);    // VCC ON
-    hw_delay(10000); // 10ms for power stabilise
+    gep->hw_sw_vpp(0);    // VPP OFF
+    gep->hw_sw_vcc(1);    // VCC ON
+    gep->hw_delay(10000); // 10ms for power stabilise
     if(*lb & 1){
 	ce(1,100);
 	set_AT89C5x_mode( AT89C5x_LB1_MODE);
-	hw_sw_vpp(1);	// set VPP    
+	gep->hw_sw_vpp(1);	// set VPP    
 	AT89C5x_pulse( 50000 ); // 50ms
 	set_address(0);
-	hw_sw_vpp(0);	// set VPP    
+	gep->hw_sw_vpp(0);	// set VPP    
     }
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     if(*lb & 2){
 	ce(1,100);
 	set_AT89C5x_mode( AT89C5x_LB2_MODE);
-	hw_sw_vpp(1);	// set VPP    
+	gep->hw_sw_vpp(1);	// set VPP    
 	AT89C5x_pulse( 50000 ); // 50ms
 	set_address(0);
-	hw_sw_vpp(0);	// set VPP    
+	gep->hw_sw_vpp(0);	// set VPP    
     }
-    hw_delay(1000); // 1ms
+    gep->hw_delay(1000); // 1ms
     if(*lb & 4){
 	ce(1,100);
 	set_AT89C5x_mode( AT89C5x_LB3_MODE);
-	hw_sw_vpp(1);	// set VPP    
+	gep->hw_sw_vpp(1);	// set VPP    
 	AT89C5x_pulse( 50000 ); // 50ms
 	set_address(0);
-	hw_sw_vpp(0);	// set VPP    
+	gep->hw_sw_vpp(0);	// set VPP    
     }
     finish_action();
 }

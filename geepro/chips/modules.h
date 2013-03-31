@@ -33,29 +33,29 @@
 
 
 #define ms_delay(ms)	\
-    hw_delay((ms)*1000)
+    gep->hw_delay((ms)*1000)
     
 #define set_data(value)\
-    hw_set_data((value) & 0xff)
+    gep->hw_set_data((value) & 0xff)
     
 #define set_address(a)	\
-    hw_set_addr(a)
+    gep->hw_set_addr(a)
 
 #define oe(state, delay)	\
-    hw_set_oe(state);\
-    hw_delay(delay)
+    gep->hw_set_oe(state);\
+    gep->hw_delay(delay)
     
 #define ce(state, delay)	\
-    hw_set_ce(state);\
-    hw_delay(delay)
+    gep->hw_set_ce(state);\
+    gep->hw_delay(delay)
 
 #define we(state, delay)	\
-    hw_set_we(state);\
-    hw_delay(delay)
+    gep->hw_set_we(state);\
+    gep->hw_delay(delay)
 
 #define pgm(state, delay)	\
-    hw_set_pgm(state);\
-    hw_delay(delay)
+    gep->hw_set_pgm(state);\
+    gep->hw_delay(delay)
 
 #define progress_loop(cn, rounds, title)		\
 	for(cn = 0, gui_progress_bar_init(___geep___,title, rounds);\
@@ -68,24 +68,24 @@
 	}
 
 #define finish_action()	\
-    hw_sw_vpp(0);\
-    hw_set_oe(0);\
-    hw_set_ce(0);\
-    hw_sw_vcc(0);\
+    gep->hw_sw_vpp(0);\
+    gep->hw_set_oe(0);\
+    gep->hw_set_ce(0);\
+    gep->hw_sw_vcc(0);\
     set_address(0);\
     set_data(0);\
     buffer_checksum(___geep___);\
     gui_stat_rfsh(___geep___)
 
 #define start_action(oe_,ce_)   \
-    hw_sw_vpp(0);\
-    hw_sw_vcc(1);\
-    hw_set_oe(oe_);\
-    hw_set_ce(ce_);\
-    hw_delay(5000)
+    gep->hw_sw_vpp(0);\
+    gep->hw_sw_vcc(1);\
+    gep->hw_set_oe(oe_);\
+    gep->hw_set_ce(ce_);\
+    gep->hw_delay(5000)
 
 #define copy_data_to_buffer(addr)	\
-    buffer_write(___geep___,addr, hw_get_data())
+    buffer_write(___geep___,addr, gep->hw_get_data())
 
 #define put_buffer( addr, data) buffer_write(___geep___,addr, data)
 
@@ -96,7 +96,7 @@
 #define progressbar_free() gui_progress_bar_free(___geep___)
 
 #define cmp_data_and_buffer_ploop(addr, error) \
-	if(hw_get_data() != buffer_read(___geep___,addr)){\
+	if(gep->hw_get_data() != buffer_read(___geep___,addr)){\
 	    error = 0;\
 	    gui_progress_bar_free(___geep___);\
 	    break;\
@@ -130,13 +130,14 @@
 
 #define MODULE_IMPLEMENTATION	\
     static geepro *___geep___ = ((geepro*)0);\
-    static int ___error___ = 0;\
-
+    static int ___error___ = 0;
+    
 #define VOID
 
 #define REG_FUNC_BEGIN(name)	\
     static int name (geepro *gep___)\
     {\
+	gep = gep___;\
 	___geep___ = gep___;\
 	___error___ = 0;
 
@@ -151,8 +152,8 @@
 
 #define to_hex(value, digit)	((value >> (digit * 4)) & 0x0f)
 
-#define ERROR	\
-    return -1
+//#define ERROR	\
+//    return -1
 
 #define register_chip_begin(path, name, family, size)	\
     memset(&__init_struct__, 0, sizeof(chip_desc));\
@@ -190,8 +191,8 @@
 #define MODULE_VERIFY_EEPROM_ACTION 	"geepro-verify-eeprom-action", "Verify EEPROM chip memory with buffer"
 #define MODULE_LOCKBIT_ACTION		"geepro-lockbit-action", "Set lock-bits and fuses"
 
-#define SET_Vcc_VOLTAGE( x )	hw_set_vcc( (int)((x) * 100.00) )
-#define SET_Vpp_VOLTAGE( x )	hw_set_vpp( (int)((x) * 100.00) )
+#define SET_Vcc_VOLTAGE( x )	gep->hw_set_vcc( (int)((x) * 100.00) )
+#define SET_Vpp_VOLTAGE( x )	gep->hw_set_vpp( (int)((x) * 100.00) )
 
 #define REGISTER_FUNCTION_( registered_func, exec_func, call_parameters... )	\
     REG_FUNC_BEGIN( registered_func )	\

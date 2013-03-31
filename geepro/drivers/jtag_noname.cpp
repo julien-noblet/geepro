@@ -23,6 +23,8 @@
 
 #include "drivers.h"
 
+static geepro *gep=NULL;
+
 static int xyz_sw_vcc( char state )
 {
     if( state )
@@ -118,7 +120,7 @@ static int xyz_gui(geepro *gep, const char *chip_name, const char *family)
     // HW test page
     xyz_if_attr[0].val = chip_name;
     xyz_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/jtag_noname.xml", (char *)"info,notebook", xyz_if_attr);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/jtag_noname.xml", (char *)"info,notebook", xyz_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), xyz_event);
     return 0;
 }
@@ -126,8 +128,9 @@ static int xyz_gui(geepro *gep, const char *chip_name, const char *family)
 /*
     API API API API API API API API API API API API API API API API API API API API API API API API API API API API 
 */
-int xyz_api(en_hw_api func, int val, void *ptr)
+int xyz_api(void *g, en_hw_api func, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(func)
     {
 	case HW_IFACE: return IFACE_LPT;

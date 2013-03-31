@@ -17,8 +17,8 @@ def options(opt):
 def configure(conf):
   print('→ configuring the project')
   conf.check_tool('gcc g++ intltool')
-  conf.env.CPPFLAGS  = ['-O2','-Wall']
-  conf.env.CXXFLAGS  = ['-O2','-Wall']
+  conf.env.CPPFLAGS  = ['-O2','-Wall', '-g']
+  conf.env.CXXFLAGS  = ['-O2','-Wall', '-g']
   conf.recurse('gui-gtk')
   conf.env.APPNAME     = APPNAME
   conf.env.LIB_C       = 'c'

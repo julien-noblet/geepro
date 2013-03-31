@@ -21,6 +21,8 @@
 
 #include "modules.h"
 
+static geepro *gep=NULL; // temp
+
 MODULE_IMPLEMENTATION
 
 // 24 pin
@@ -53,7 +55,7 @@ char read_byte_2716( int addr )
     char data;
     set_address( addr );
     oe(0, 1);
-    data = hw_get_data();
+    data = gep->hw_get_data();
     oe(1, 1);
     return data;
 }
@@ -120,9 +122,9 @@ void write_byte_2716(int addr, char data)
 {
     oe(1, 1);
     set_address( addr );
-    hw_delay(100);
+    gep->hw_delay(100);
     set_data(data);    
-    hw_delay(100);
+    gep->hw_delay(100);
     ce(1, 50000); // positive program pulse 50ms
     ce(0, 1000); 
 }
@@ -148,7 +150,7 @@ void prog_2716_(int size)
 	if(test_2716_(size, 0, 1)) return;
 
     start_action(0, 0);
-    hw_sw_vpp(1);
+    gep->hw_sw_vpp(1);
     progress_loop(addr, size, "Writing data"){
         tries = 0;
 	do{
@@ -179,15 +181,15 @@ void write_byte_2732(int addr, char data)
 {
     oe(0, 1);
     ce(1, 100);
-    hw_sw_vpp(1);
-    hw_delay( 100 );
+    gep->hw_sw_vpp(1);
+    gep->hw_delay( 100 );
     set_address( addr );
     set_data(data);    
-    hw_delay( 5 );
-    hw_delay( 100 );
+    gep->hw_delay( 5 );
+    gep->hw_delay( 100 );
     ce(0, 50000);
     ce(1, 5);
-    hw_sw_vpp(0);   
+    gep->hw_sw_vpp(0);   
     ce(0, 1);
     oe(1, 100); 
 }
@@ -198,7 +200,7 @@ void write_eprom(int addr, char data, int time, char ce_pgm)
     oe(1, 10);
     set_address( addr );
     set_data(data);    
-    hw_delay( 2 ); 	// data and address valid, oe = 1, PGM = 1
+    gep->hw_delay( 2 ); 	// data and address valid, oe = 1, PGM = 1
     if( ce_pgm ){
 	ce(0, time);	// ce = 0
 	ce(1, 100);	// ce = 1
@@ -212,16 +214,16 @@ char read_eprom(int addr, char oe_vpp)
 {
     char data;
     set_address(addr);
-    hw_delay(5); // tPHQX + tQXGL
+    gep->hw_delay(5); // tPHQX + tQXGL
     oe(0, 5);
     if(oe_vpp){
-        hw_sw_vpp(0);
+        gep->hw_sw_vpp(0);
         ce(0, 1);
     }
-    data = hw_get_data();
+    data = gep->hw_get_data();
     if(oe_vpp){
       ce(1, 1);
-      hw_sw_vpp(1);
+      gep->hw_sw_vpp(1);
     }
     oe(1, 2);
     return data;
@@ -249,12 +251,12 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
     if(!(( x == 1) || (x == 2) || (x == 4))) return; // missing algorithm choice
     if( *lb & 0x08 )	// test blank
 	if(test_2716_(size, !ce_pgm, 1)) return;
-    if( !ce_pgm ) hw_pragma( PRAGMA_CE_EQ_PGM ); // if set, ignoring ce() command for programmers like willem, PROG() will be CE
+    if( !ce_pgm ) gep->hw_pragma( PRAGMA_CE_EQ_PGM ); // if set, ignoring ce() command for programmers like willem, PROG() will be CE
     ce(ce_pgm, 10);
     pgm(1, 10 );
-    hw_set_vcc( 6 );
-    hw_sw_vcc(1);
-    hw_sw_vpp( 1 );
+    gep->hw_set_vcc( 6 );
+    gep->hw_sw_vcc(1);
+    gep->hw_sw_vpp( 1 );
     progress_loop(addr, size, "Writing data"){
 	wdata = get_buffer( addr );	
 	if(wdata != 0xff){
@@ -284,8 +286,8 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
 	    rdata = read_eprom( addr, oe_vpp );
 	break_if( rdata != wdata );
     }    
-    hw_sw_vpp(0);
-    hw_sw_vcc(0);    
+    gep->hw_sw_vpp(0);
+    gep->hw_sw_vcc(0);    
     set_address(0);
     set_data(0);
     if(rdata != wdata ){
@@ -296,12 +298,12 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
 	    to_hex(wdata, 1), to_hex(wdata, 0)
 	);    
 	show_message(0, (rdata == wdata) ? "[IF][TEXT]Chip program OK.[/TEXT][BR]OK" : text, NULL, NULL);
-	hw_pragma( 0 );
+	gep->hw_pragma( 0 );
 	return;
     }
     if( *lb & 0x10 )
 	verify_2716_( size, !ce_pgm );
-    hw_pragma( 0 );
+    gep->hw_pragma( 0 );
 }
 
 /*********************************************************************************************************/

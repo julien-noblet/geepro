@@ -21,6 +21,8 @@
 
 #include "modules.h"
 
+static geepro *gep=NULL;
+
 #define MODULE_TRANSMIT_ACTION MODULE_WRITE_ACTION
 #define MODULE_RESET_ACTION MODULE_VERIFY_ACTION
 #define MODULE_SETTINGS_ACTION MODULE_READ_ACTION
@@ -40,38 +42,38 @@ static void send_data(int size)
 {
     int addr;
     
-    hw_set_pgm( 0 );
-    hw_set_addr_range( (size - 1) >> 10 );
-    hw_sw_dpsw( 1 );        
+    gep->hw_set_pgm( 0 );
+    gep->hw_set_addr_range( (size - 1) >> 10 );
+    gep->hw_sw_dpsw( 1 );        
     progress_loop(addr, size, "Transmission..."){
-	hw_set_addr( addr );
-	hw_set_data( get_buffer( addr ) );
+	gep->hw_set_addr( addr );
+	gep->hw_set_data( get_buffer( addr ) );
     }
-    hw_sw_dpsw( 0 );
+    gep->hw_sw_dpsw( 0 );
     finish_action();
-    hw_set_pgm( 1 );
+    gep->hw_set_pgm( 1 );
 }
 
 static void send_rst()
 {
-    hw_rst_addr();
+    gep->hw_rst_addr();
 }
 
 static void rst_polarity(int val, void *ptr, int id)
 {
-    hw_set_cs( val );    
+    gep->hw_set_cs( val );    
 }
 
 static void rst_time(int val, void *ptr, int id)
 {
-    hw_set_we( val );
+    gep->hw_set_we( val );
 }
 
 static void settings_y()
 {
     dialog_start("Reset pin settings", 300, 200);
-	spin_add("Polarity", 0, 1, hw_get_do(), rst_polarity, 0, NULL);
-	slider_add("Time [ms]", 0, 2000, hw_get_data(), rst_time, 0, NULL);
+	spin_add("Polarity", 0, 1, gep->hw_get_do(), rst_polarity, 0, NULL);
+	slider_add("Time [ms]", 0, 2000, gep->hw_get_data(), rst_time, 0, NULL);
     dialog_end();
 }
 

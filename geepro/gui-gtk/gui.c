@@ -75,7 +75,7 @@ void gui_action_icon_set()
 
 char gui_test_connection(geepro *gep)
 {
-    if(hw_test_conn()) return 0;
+    if(gep->hw_test_conn()) return 0;
     gui_dialog_box(gep, "[ER][TEXT]Programmer unplugged![/TEXT][BR]OK", NULL, NULL);
     return -1;
 }
@@ -206,7 +206,7 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
 
     if(!flag){
 	tmp = NULL;
-	if(store_get(&store, "LAST_OPENED_PATH", &tmp) == 0){
+	if(store_get(gep->store, "LAST_OPENED_PATH", &tmp) == 0){
 	    if( tmp ){
 		gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
 		free(tmp);
@@ -214,7 +214,7 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
 	}
 
       tmp = NULL;
-	if(store_get(&store, "LAST_OPENED_FILE", &tmp) == 0){
+	if(store_get(gep->store, "LAST_OPENED_FILE", &tmp) == 0){
 	    if( tmp ){
 		gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(wg), tmp);
 		free(tmp);
@@ -226,8 +226,8 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
 	const char *err;
 
         if(!flag){
-	    store_set(&store, "LAST_OPENED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
-    	    store_set(&store, "LAST_OPENED_FILE", gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg)));
+	    store_set(gep->store, "LAST_OPENED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
+    	    store_set(gep->store, "LAST_OPENED_FILE", gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg)));
 	    gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->file_entry), fname);
 	    gtk_editable_set_position(GTK_EDITABLE(GUI(gep->gui)->file_entry), -1);
 	}
@@ -354,7 +354,7 @@ static void gui_save_file(GtkWidget *w, geepro *gep)
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
 
     tmp = NULL;
-    if(store_get(&store, "LAST_SAVED_PATH", &tmp) == 0){
+    if(store_get(gep->store, "LAST_SAVED_PATH", &tmp) == 0){
 	if( tmp ){
 	    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
 	    free(tmp);
@@ -363,7 +363,7 @@ static void gui_save_file(GtkWidget *w, geepro *gep)
 
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
 	char *fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
-	store_set(&store, "LAST_SAVED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
+	store_set(gep->store, "LAST_SAVED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
 	if(file_save(gep, fname)){
 	    gui_error_box(gep, "Error saving file");
 	}
@@ -524,7 +524,7 @@ static void gui_chip_select(geepro *gep, const char *name)
     gep->chp = tmp; 
 
     /* ustawienie programatora pod wybrany uklad, test czy programator go obsluguje */
-    if(hw_set_chip(gep) < 0){
+    if(gep->hw_set_chip(gep) < 0){
 	gui_dialog_box( gep,
 	    "[ER][TEXT]Chip %s not supported by current programmer.[/TEXT][BR] OK ",
 	    tmp->chip_name
@@ -570,7 +570,7 @@ static void gui_device_sel(GtkWidget *wg, geepro *gep)
     /* pobierz nazwe wybranego ukladu */
     name = gtk_label_get_text( GTK_LABEL(gtk_bin_get_child(GTK_BIN(wg))) );
 
-    store_set(&store, "LAST_CHIP_SELECTED", name);
+    store_set(gep->store, "LAST_CHIP_SELECTED", name);
     gui_chip_select(gep, name);
 }
 
@@ -647,7 +647,7 @@ static int gui_iface_sel(GtkWidget *wg, geepro *gep)
     gui_stat_rfsh(gep);
     test_hw(NULL, gep);
     sprintf(tmp,"%i", gep->ifc->ifc_sel);
-    if(GUI(gep->gui)->gui_run) store_set(&store, "LAST_SELECTED_IFACE", tmp);
+    if(GUI(gep->gui)->gui_run) store_set(gep->store, "LAST_SELECTED_IFACE", tmp);
     return 0;
 }
 
@@ -687,24 +687,24 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     gep->ifc->prog_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
     /* usuniecie listy interfejsów*/
     gtk_widget_destroy(GUI(gep->gui)->iface);
-    hw_destroy(gep);
+    gep->hw_destroy(gep);
 
-    ___hardware_driver___ = api;
+    gep->ifc->hwd= api;
 
-    gep->ifc->cl = hw_get_iface();
+    gep->ifc->cl = gep->hw_get_iface();
 
     /* utworzenie wyboru interfaców */
     gui_add_iface_combox(gep);
     /* usuniecie menu */
     gui_xml_destroy(GUI(gep->gui)->xml);    
     /* wywolanie gui dla programatora */
-    hw_gui_init(gep);
+    gep->hw_gui_init(gep);
 
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
     g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->iface), "changed");    
     sprintf(tmp,"%i", gtk_combo_box_get_active(GTK_COMBO_BOX(wg)));
 
-    if(GUI(gep->gui)->gui_run) store_set(&store, "LAST_SELECTED_PROGRAMMER", tmp);
+    if(GUI(gep->gui)->gui_run) store_set(gep->store, "LAST_SELECTED_PROGRAMMER", tmp);
 }
 
 
@@ -964,7 +964,7 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     GUI(gep->gui)->file_entry = wg1;
     tmp = NULL;
-    if(!store_get(&store, "LAST_OPENED_FILE", &tmp)){
+    if(!store_get(gep->store, "LAST_OPENED_FILE", &tmp)){
 	if(tmp){
 	    gtk_entry_set_text(GTK_ENTRY(wg1), tmp);
 	    gtk_editable_set_position(GTK_EDITABLE(wg1), -1);
@@ -1012,6 +1012,7 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
 /* ======================================= */
     wg1 = GUI(gep->gui)->notebook;
     wg0 = gui_bineditor_new(GUI(gep->gui)->wmain);
+    GUI_BINEDITOR(wg0)->priv->store = gep->store;
     gui_bineditor_set_icon( GUI_BINEDITOR(wg0), LOGO_ICON );
     wg3 = gtk_label_new(TXT_BUFFER);
     gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg3);
@@ -1038,7 +1039,7 @@ void gui_run(geepro *gep)
     g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->prog_combox), "changed");
     // default combox setting
     tmp = NULL;
-    if(!store_get(&store, "LAST_CHIP_SELECTED", &tmp)){
+    if(!store_get(gep->store, "LAST_CHIP_SELECTED", &tmp)){
 	if( tmp ) gui_chip_select(gep, tmp);
     }
     GUI(gep->gui)->gui_run = 1;

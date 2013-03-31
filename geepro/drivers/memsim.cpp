@@ -38,6 +38,8 @@
 
 #define BX(d, sh)	((d >> sh) & 0xff)
 
+static geepro *gep = NULL; // temporary
+
 static char memsim_ctrl = 0;
 static char reset_state = 0;
 static char reset_duration = 1; // ms
@@ -145,10 +147,10 @@ static int memsim_test_connected()
 {
     if( memsim_set_test( 0 ) ) return 0;
     if( memsim_get_test() ) return 0;
-    hw_delay( 1000 );
+    gep->hw_delay( 1000 );
     if( memsim_set_test( 1 ) ) return 0;
     if( !memsim_get_test() ) return 0;
-    hw_delay( 1000 );
+    gep->hw_delay( 1000 );
     if( memsim_set_test( 0 ) ) return 0;
     return 1;
 }
@@ -232,7 +234,7 @@ static int memsim_gui(geepro *gep, const char *chip_name, const char *family)
     // HW test page
     memsim_if_attr[0].val = chip_name;
     memsim_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/memsim.xml", (char *)"info,notebook", memsim_if_attr);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/memsim.xml", (char *)"info,notebook", memsim_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), memsim_event);
     return 0;
 }
@@ -240,8 +242,9 @@ static int memsim_gui(geepro *gep, const char *chip_name, const char *family)
 /*
     API API API API API API API API API API API API API API API API API API API API API API API API API API API API 
 */
-int memsim_api(en_hw_api func, int val, void *ptr)
+int memsim_api(void *g,en_hw_api func, int val, void *ptr)
 {
+    gep = GEEPRO(g);
     switch(func)
     {
 	case HW_IFACE: return IFACE_LPT;

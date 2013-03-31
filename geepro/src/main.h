@@ -29,7 +29,6 @@
 extern "C" {
 #endif
 
-extern store_str store;
 extern void error(void);
 extern char test_hw(void *, geepro*);
 extern int  test_uid(geepro *gep);

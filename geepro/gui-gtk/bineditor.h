@@ -28,6 +28,7 @@
 #include <gtk/gtk.h>
 
 #include "be_buffer.h"
+#include "../src/storings.h"
 
 
 G_BEGIN_DECLS
@@ -227,6 +228,7 @@ struct _GuiBineditorPrivate
     void *bmp;
     void *user_ptr1;
     void *user_ptr2;    
+    store_str *store;
 };
 
 struct _GuiBineditor

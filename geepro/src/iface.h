@@ -46,7 +46,7 @@ enum{
     IFACE_PS2,
 };
 
-typedef int  (*iface_prg_api)(en_hw_api func, int arg, void *ptr);
+typedef int  (*iface_prg_api)(void *, en_hw_api func, int arg, void *ptr);
 typedef struct iface_qe iface_qe;
 typedef struct iface_prg iface_prg;
 typedef struct iface_driver iface_driver;
@@ -88,6 +88,7 @@ typedef struct
 //    iface_prg_api api;  // wybrany programator - dla przyszłej wersji geepro, na razie jest zmienna globalna __hardware_modules__
     int cl;		/* klasa urządzenia */
     void *gep;		/* wskaźnik na główną strukturę danych */
+    hw_driver_type hwd;
 } iface;
 
 

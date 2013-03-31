@@ -20,6 +20,8 @@
 
 #include "modules.h"
 
+static geepro *gep=NULL;//temp
+
 MODULE_IMPLEMENTATION
 
 #define SIZE_29F010	KB_SIZE( 128 )
@@ -37,46 +39,46 @@ MODULE_IMPLEMENTATION
 
 void read_data_init_flash()
 {
-//    hw_set_ce( 0 );
-    hw_set_oe( 0 );
-    hw_set_we( 1 );
+//    gep->hw_set_ce( 0 );
+    gep->hw_set_oe( 0 );
+    gep->hw_set_we( 1 );
 }
 
 void write_data_init_flash()
 {
-//    hw_set_ce( 0 );
-    hw_set_oe( 1 );
-    hw_set_we( 1 );
-    hw_us_delay(1);
+//    gep->hw_set_ce( 0 );
+    gep->hw_set_oe( 1 );
+    gep->hw_set_we( 1 );
+    gep->hw_us_delay(1);
 }
 
 unsigned char read_data_flash(unsigned int addr)
 {
-    hw_set_addr( addr );
-    hw_us_delay( 1 );
-    return hw_get_data();
+    gep->hw_set_addr( addr );
+    gep->hw_us_delay( 1 );
+    return gep->hw_get_data();
 }
 
 void write_data_flash(unsigned int addr, unsigned char data, unsigned int us)
 {
 //printf("%x %x\n", addr, data);
-    hw_set_oe( 1 );    
-    hw_set_addr( addr );
-    hw_set_we( 0 );  
-    hw_set_data( data );
-    hw_us_delay( us );
-    hw_set_we( 1 );      
-    hw_us_delay( 1 );
+    gep->hw_set_oe( 1 );    
+    gep->hw_set_addr( addr );
+    gep->hw_set_we( 0 );  
+    gep->hw_set_data( data );
+    gep->hw_us_delay( us );
+    gep->hw_set_we( 1 );      
+    gep->hw_us_delay( 1 );
 }
 
 void init_flash()
 {
-    hw_set_ce( 1 );
-    hw_set_oe( 1 );
-    hw_set_we( 1 );
-    hw_set_vcc( 500 );
-    hw_sw_vcc( 1 );
-    hw_ms_delay( 200 );
+    gep->hw_set_ce( 1 );
+    gep->hw_set_oe( 1 );
+    gep->hw_set_we( 1 );
+    gep->hw_set_vcc( 500 );
+    gep->hw_sw_vcc( 1 );
+    gep->hw_ms_delay( 200 );
 }
 
 /*********************************************************************************************************/
@@ -85,7 +87,7 @@ void read_flash(unsigned int dev_size, unsigned int range)
     unsigned int addr;
 
     init_flash();
-    hw_set_addr_range( range );
+    gep->hw_set_addr_range( range );
     read_data_init_flash();
     progress_loop(addr, dev_size, "Reading...")
 	put_buffer( addr, read_data_flash( addr ) );
@@ -99,7 +101,7 @@ void verify_flash(unsigned int dev_size, unsigned int range)
     unsigned char rdata = 0, bdata = 0;
 
     init_flash();
-    hw_set_addr_range( range );
+    gep->hw_set_addr_range( range );
     read_data_init_flash();
     progress_loop(addr, dev_size, "Veryfying..."){
 	rdata = read_data_flash( addr );
@@ -124,7 +126,7 @@ void test_blank_flash(unsigned int dev_size, unsigned int range)
     unsigned char rdata = 0;
 
     init_flash();
-    hw_set_addr_range( range );
+    gep->hw_set_addr_range( range );
     read_data_init_flash();
     progress_loop(addr, dev_size, "Test Blank..."){
 	rdata = read_data_flash( addr );
@@ -148,18 +150,18 @@ void sign_28xx_flash( int vpp_req )
     
     init_flash();
     if( vpp_req ){
-	 hw_set_vpp( vpp_req );
-	 hw_sw_vpp( 1 );
-	 hw_us_delay( 100 );
+	 gep->hw_set_vpp( vpp_req );
+	 gep->hw_sw_vpp( 1 );
+	 gep->hw_us_delay( 100 );
     }
 
     write_data_init_flash();
     write_data_flash( 0x0000, 0x90, 1 );
-    hw_set_oe( 0 );
-    man = hw_get_data();
+    gep->hw_set_oe( 0 );
+    man = gep->hw_get_data();
     write_data_flash( 0x0001, 0x90, 1 );
-    hw_set_oe( 0 );
-    id = hw_get_data();
+    gep->hw_set_oe( 0 );
+    id = gep->hw_get_data();
     finish_action();        
 
     loockup_signature( "FLASH", man, id, vendor, chip);
@@ -180,43 +182,43 @@ void clean_28xx_flash(unsigned int vpp_req, unsigned int dev_size, unsigned int 
     int addr, n;
     
     init_flash();
-    hw_set_addr_range( range );
+    gep->hw_set_addr_range( range );
 
     if( vpp_req ){
-	 hw_set_vpp( vpp_req );
-	 hw_sw_vpp( 1 );
+	 gep->hw_set_vpp( vpp_req );
+	 gep->hw_sw_vpp( 1 );
     }
 
     progress_loop(addr, dev_size, "Cleaning chip..."){
 	for(n = 0; n < 26; n++){
 	    // send command
-	    hw_set_oe( 1 );    
-	    hw_set_addr( addr );
-	    hw_set_we( 0 );  
-	    hw_set_data( 0x40 );
-	    hw_us_delay( 1 );
-	    hw_set_we( 1 );      
-	    hw_us_delay( 1 );
+	    gep->hw_set_oe( 1 );    
+	    gep->hw_set_addr( addr );
+	    gep->hw_set_we( 0 );  
+	    gep->hw_set_data( 0x40 );
+	    gep->hw_us_delay( 1 );
+	    gep->hw_set_we( 1 );      
+	    gep->hw_us_delay( 1 );
             // send data
-	    hw_set_we( 0 );  
-	    hw_set_data( 0x00 );
-	    hw_us_delay( 1 );
-	    hw_set_we( 1 );      
-	    hw_us_delay( 10 ); // Time for program
+	    gep->hw_set_we( 0 );  
+	    gep->hw_set_data( 0x00 );
+	    gep->hw_us_delay( 1 );
+	    gep->hw_set_we( 1 );      
+	    gep->hw_us_delay( 10 ); // Time for program
             // veryfication command
-	    hw_set_we( 0 );  
-	    hw_set_data( 0x0C );
-	    hw_us_delay( 1 );
-	    hw_set_we( 1 );      
-	    hw_us_delay( 6 );
+	    gep->hw_set_we( 0 );  
+	    gep->hw_set_data( 0x0C );
+	    gep->hw_us_delay( 1 );
+	    gep->hw_set_we( 1 );      
+	    gep->hw_us_delay( 6 );
 	    // read data
-	    hw_set_oe( 0 );    
-	    if( hw_get_data() == 0) break;	    	    
+	    gep->hw_set_oe( 0 );    
+	    if( gep->hw_get_data() == 0) break;	    	    
 	}
 	break_if( n == 25 ); // Fail after 25 tries
     }
     finish_action();        
-    hw_ms_delay(200);
+    gep->hw_ms_delay(200);
 }
 
 void erase_28xx_flash(unsigned int vpp_req, unsigned int dev_size, unsigned int range)
@@ -239,40 +241,40 @@ void erase_28xx_flash(unsigned int vpp_req, unsigned int dev_size, unsigned int 
     init_flash();
 
     if( vpp_req ){
-	 hw_set_vpp( vpp_req );
-	 hw_sw_vpp( 1 );
+	 gep->hw_set_vpp( vpp_req );
+	 gep->hw_sw_vpp( 1 );
     }
 
     n = 0; k = 1;
     progress_loop(addr, dev_size, "Chip erasing..."){
 	for(; n < 26; n++){
 	    if( k ){
-		hw_set_oe( 1 );    
+		gep->hw_set_oe( 1 );    
 		// ERASE SET-UP 
-		hw_set_we( 0 );  
-		hw_set_data( 0x20 );
-		hw_us_delay( 1 );
-		hw_set_we( 1 );      
-		hw_us_delay( 1 );
-		hw_set_we( 0 );  
-		hw_set_data( 0x20 );
-		hw_us_delay( 1 );
-		hw_set_we( 1 );      
-		hw_ms_delay( 10 );
+		gep->hw_set_we( 0 );  
+		gep->hw_set_data( 0x20 );
+		gep->hw_us_delay( 1 );
+		gep->hw_set_we( 1 );      
+		gep->hw_us_delay( 1 );
+		gep->hw_set_we( 0 );  
+		gep->hw_set_data( 0x20 );
+		gep->hw_us_delay( 1 );
+		gep->hw_set_we( 1 );      
+		gep->hw_ms_delay( 10 );
 		k = 0;
 	    }
 	    // ERASE VERIFY
-	    hw_set_addr( addr ); // set address 
-	    hw_set_oe( 0 );    
-	    hw_us_delay( 6 );
-	    if( hw_get_data() == 0xff ) break;
+	    gep->hw_set_addr( addr ); // set address 
+	    gep->hw_set_oe( 0 );    
+	    gep->hw_us_delay( 6 );
+	    if( gep->hw_get_data() == 0xff ) break;
 	    k = 1; // repeat erase command
 	}
         break_if( n == 25 );
     }
     finish_action();        
 
-    hw_ms_delay(200);
+    gep->hw_ms_delay(200);
     
     if( (*lb & 1) && !ERROR_VAL) 
 	test_blank_flash( dev_size, range );
@@ -294,46 +296,46 @@ void write_28xx_flash(unsigned int vpp_req, unsigned int dev_size, unsigned int 
     if( !(*lb & 2) ) return; // Not checked
 
     init_flash();
-    hw_set_addr_range( range );
+    gep->hw_set_addr_range( range );
 
     if( vpp_req ){
-	 hw_set_vpp( vpp_req );
-	 hw_sw_vpp( 1 );
+	 gep->hw_set_vpp( vpp_req );
+	 gep->hw_sw_vpp( 1 );
     }
 
     progress_loop(addr, dev_size, "Writing chip..."){
 	for(n = 0; n < 26; n++){
 	    data = get_buffer( addr );
 	    // send command
-	    hw_set_oe( 1 );    
-	    hw_set_addr( addr );
-	    hw_set_we( 0 );  
-	    hw_set_data( 0x40 );
-	    hw_us_delay( 1 );
-	    hw_set_we( 1 );      
-	    hw_us_delay( 1 );
+	    gep->hw_set_oe( 1 );    
+	    gep->hw_set_addr( addr );
+	    gep->hw_set_we( 0 );  
+	    gep->hw_set_data( 0x40 );
+	    gep->hw_us_delay( 1 );
+	    gep->hw_set_we( 1 );      
+	    gep->hw_us_delay( 1 );
             // send data
-	    hw_set_we( 0 );  
-	    hw_set_data( data );
-	    hw_us_delay( 1 );
-	    hw_set_we( 1 );      
-	    hw_us_delay( 10 ); // Time for program
+	    gep->hw_set_we( 0 );  
+	    gep->hw_set_data( data );
+	    gep->hw_us_delay( 1 );
+	    gep->hw_set_we( 1 );      
+	    gep->hw_us_delay( 10 ); // Time for program
             // veryfication command
-	    hw_set_we( 0 );  
-	    hw_set_data( 0x0C );
-	    hw_us_delay( 1 );
-	    hw_set_we( 1 );      
-	    hw_us_delay( 6 );
+	    gep->hw_set_we( 0 );  
+	    gep->hw_set_data( 0x0C );
+	    gep->hw_us_delay( 1 );
+	    gep->hw_set_we( 1 );      
+	    gep->hw_us_delay( 6 );
 	    // read data
-	    hw_set_oe( 0 );    
-	    d = hw_get_data();
+	    gep->hw_set_oe( 0 );    
+	    d = gep->hw_get_data();
 	    if( data == d) break;	    	    
 	}
 	break_if( n == 25 ); // Fail after 25 tries
     }
     finish_action();        
 
-    hw_ms_delay(200);
+    gep->hw_ms_delay(200);
     
     if( (*lb & 1) && !ERROR_VAL) 
 	verify_flash( dev_size, range );

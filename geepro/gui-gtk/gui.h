@@ -78,6 +78,7 @@ typedef struct
     /* MISC */
     long long fct;		/* Last loaded file creation/modify time to detect file change during program run */
     int	 cbtable[MAX_CB_TABLE];	/* checkbox values */
+//    const char *shared_geepro_dir;
 } gui;
 
 
