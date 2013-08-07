@@ -121,7 +121,7 @@
 #define FSEL_LOAD		"Read file"
 #define FSEL_SAVE		"Write file"
 #define MISSING_PROG_PLUGIN	"Missing programmer plugin\n"
-#define CHIP_DESCRIPTION	"Chip description"
+#define CHIP_SELECTION		"Chip selection"
 #define TXT_MISSING		"missing"
 #define TXT_PROGRAMMER		"Programmer:"
 #define TXT_INTERFACE		"Device:"
