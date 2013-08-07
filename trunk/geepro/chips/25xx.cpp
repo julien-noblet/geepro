@@ -39,6 +39,7 @@ MODULE_IMPLEMENTATION
 */
 
 #define L2005_SIZE	KB_SIZE( 256 )
+#define L4005_SIZE	KB_SIZE( 512 )
 
 #define CMD_WREN	0x06
 #define CMD_WRDI	0x04
@@ -432,16 +433,23 @@ void write_25lcxx(unsigned int dev_size)
 *
 */
 
-REGISTER_FUNCTION( read,  25xx, 25lcxx, L2005_SIZE );
-REGISTER_FUNCTION( write, 25xx, 25lcxx, L2005_SIZE );
-REGISTER_FUNCTION( verify, 25xx, 25lcxx, L2005_SIZE );
-REGISTER_FUNCTION( sign, 25xx, 25lcxx);
-REGISTER_FUNCTION( erase, 25xx, 25lcxx);
-REGISTER_FUNCTION( test, 25xx, 25lcxx, L2005_SIZE);
+REGISTER_FUNCTION( read,  25L2005, 25lcxx, L2005_SIZE );
+REGISTER_FUNCTION( write, 25L2005, 25lcxx, L2005_SIZE );
+REGISTER_FUNCTION( verify, 25L2005, 25lcxx, L2005_SIZE );
+REGISTER_FUNCTION( sign, 25L2005, 25lcxx);
+REGISTER_FUNCTION( erase, 25L2005, 25lcxx);
+REGISTER_FUNCTION( test, 25L2005, 25lcxx, L2005_SIZE);
+
+REGISTER_FUNCTION( read,  25l4005, 25lcxx, L4005_SIZE );
+REGISTER_FUNCTION( write, 25l4005, 25lcxx, L4005_SIZE );
+REGISTER_FUNCTION( verify, 25l4005, 25lcxx, L4005_SIZE );
+REGISTER_FUNCTION( sign, 25l4005, 25lcxx);
+REGISTER_FUNCTION( erase, 25l4005, 25lcxx);
+REGISTER_FUNCTION( test, 25l4005, 25lcxx, L4005_SIZE);
 
 /******************************************************************************************************
 *
-* Chip plugin initialisation. It defines actions possible on the chip, buffer size and callback funcion for action on given chip. It also sets
+* Chip plugin initialization. It defines actions possible on the chip, buffer size and callback funcion for action on given chip. It also sets
 * menu path, chip name and chip family. Chip family is an identifier used by device driver to identify chip (e.g. show proper switch settings, picture etc).
 * Device actions for family is described in <device>.xml file.
 *
@@ -449,12 +457,21 @@ REGISTER_FUNCTION( test, 25xx, 25lcxx, L2005_SIZE);
 REGISTER_MODULE_BEGIN(25xx)
 
     register_chip_begin("/Serial EEPROM/25Lxx", "MX25L2005", "25Cxx", L2005_SIZE);
-	add_action(MODULE_READ_ACTION, read_25xx);
-	add_action(MODULE_PROG_ACTION, write_25xx);
-	add_action(MODULE_VERIFY_ACTION, verify_25xx);
-	add_action(MODULE_TEST_ACTION, test_25xx);
-	add_action(MODULE_SIGN_ACTION, sign_25xx);
-	add_action(MODULE_ERASE_ACTION, erase_25xx);
+	add_action(MODULE_READ_ACTION, read_25L2005);
+	add_action(MODULE_PROG_ACTION, write_25L2005);
+	add_action(MODULE_VERIFY_ACTION, verify_25L2005);
+	add_action(MODULE_TEST_ACTION, test_25L2005);
+	add_action(MODULE_SIGN_ACTION, sign_25L2005);
+	add_action(MODULE_ERASE_ACTION, erase_25L2005);
+    register_chip_end;
+
+    register_chip_begin("/Serial EEPROM/25Lxx", "MX25L4005", "25Cxx", L4005_SIZE);
+	add_action(MODULE_READ_ACTION, read_25l4005);
+	add_action(MODULE_PROG_ACTION, write_25l4005);
+	add_action(MODULE_VERIFY_ACTION, verify_25l4005);
+	add_action(MODULE_TEST_ACTION, test_25l4005);
+	add_action(MODULE_SIGN_ACTION, sign_25l4005);
+	add_action(MODULE_ERASE_ACTION, erase_25l4005);
     register_chip_end;
 
 REGISTER_MODULE_END

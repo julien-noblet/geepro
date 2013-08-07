@@ -1,0 +1,34 @@
+﻿							GEEPRO VERSION 0.1
+
+
+
+							BEFORE USING GEEPRO
+
+	Restart your computer, go into the BIOS or SETUP: press F2, F10, F12, or DELETE (depending
+on your computer) as soon as it boots. There should be a setting somewhere for the parallel or LPT
+port. Set this to EPP or ECP, not to Normal. If your computer does not have a parallel port setting,
+Geepro may not work at all.
+
+							USING GEEPRO
+
+	Using Geepro is fairly self explanatory. There are read, write, verify, etc. buttons relative
+to the chip that you selected in the chip selection box. The black on the dip switch is the actual
+switch knob as of Geepro version 0.1. 
+							ADDING CHIPS
+
+	There is a "readme_plugins" file in the doc directory that gives a tutorial on adding chips.
+The basics of most chip families are written already, feel free to add any chips you need or email the
+developer. A lot of chips have a bigger or smaller chip already written to give you somewhere to start.
+Please notify the developer of any chips you get to work. Do not report chips just because they might
+work. Chips are added to Geepro only after they have been tested.
+
+							TROUBLESHOOTING
+
+	To ensure Geepro can access the parallel port you should add your user to group "lp". This
+varies from distribution to distribution, most Linux distros have a Users And Groups program for that
+purpose, otherwise Google it. 
+
+	Timing and sequences can be improved by running Geepro as root. This is done by using 
+the command "cd /your_folder_path/build_directory/" and then "sudo ./geepro" in a terminal window. 
+Ordinarily you will not have to run Geepro as root. Use this if Geepro has trouble with read/write
+errors or programming problems.

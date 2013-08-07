@@ -1,0 +1,169 @@
+## Rev 0.2
+Short guide on how to write chip modules.
+
+1.
+Each chip module is a C/C++ file with syntax extensions done by macros from "modules.h", so we must first include "modules.h". 
+After that should we add a bunch of declarations, local variables, etc. It will all be done by macro "MODULE_IMPLEMENTATION". 
+The chip is registered by "MODULE_IMPLEMENTATION". 
+
+Register chip:
+Geepro starts by reading /cfg/geepro.cfg file and looks for line chips=".." it contains module names separated by colons. Modules are invoked
+to register available chips, so that each module has its own name during register time. 
+Our chip registering starts with "REGISTER_MODULE_BEGIN( module name )" and ends with "REGISTER_MODULE_END". It is a block similar to Pascal syntax. 
+(This is actually a function invoked automatically by geepro during module scanning to add information to data queue of chips, 
+and it provides a clean API for chip registering - you do not need to know how it works).
+Inside "REGISTER_MODULE" are sequences. "register_chip" is to register a chip (also a macro and starts with "register_chip_begin()")
+and stops with "register_chip_end". It works as a block.
+
+	"register_chip_begin(path, chip_name, family, size)" has parameters described below:
+ 		path - is a path in geepro's chip menu. It has to begin from '/'.
+ 		chip_name - chip name that appears in the menu
+ 		family - information for the geepro driver on how to treat given group of chips (programmer picture, setting switch etc - it uses the 'driver.xml' file)
+ 		size - buffer size for chip (it can be changed in the future, as geepro will support multiple buffers)  
+ 
+In that block we can determine what actions are available for the chip, assigning action to handler functions. The macro that does that is named 
+"add_action()". Actions will be visible in geepro as buttons in toolbar menu.
+
+	"add_action(action_macro, handler)" has following parameters:
+
+	action_macro - contains two parameters: action name and description. (add_action takes 3 parameters). Possible action are (0.0.4):
+		MODULE_READ_ACTION		- read memory
+		MODULE_READ_FLASH_ACTION	- read flash memory in µC
+		MODULE_READ_EEPROM_ACTION	- read eeprom memory in µC
+		MODULE_SIGN_ACTION		- read signature bits
+		MODULE_PROG_ACTION		- write data to device
+		MODULE_PROG_FLASH_ACTION	- write flash data to device
+		MODULE_PROG_EEPROM_ACTION	- write eeprom data to device
+		MODULE_ERASE_ACTION		- erase memory device
+		MODULE_TEST_ACTION		- test blank, check if device is cleared
+		MODULE_VERIFY_ACTION		- verify device memory and buffer
+		MODULE_VERIFY_FLASH_ACTION	- verify device flash memory and buffer
+		MODULE_VERIFY_EEPROM_ACTION	- verify device eeprom memory and buffer
+		MODULE_LOCKBIT_ACTION		- set/reset lock bits
+
+	handler - is a callback to function of prototype: static int handler(geepro *);
+		the handler returns an error code or 0 for success. Usually used with macro REGISTER_FUNCTION().
+		When the user presses the action button, the function will be invoked.
+
+Example code:
+	--->start file
+	#include "modules.h"
+
+	MODULE_IMPLEMENTATION
+
+	static int my_handler(geepro *gep)
+	{
+ 	   printf("foo\n");
+	}
+
+	REGISTER_MODULE_BEGIN( example )
+  	register_chip_begin( "/Example", "first chip", "our_family", 256);
+		add_action( MODULE_READ_ACTION, my_handler);	
+		add_action( MODULE_PROG_ACTION, my_handler);	
+  	 register_chip_end;
+  	 register_chip_begin( "/Example", "second chip", "our_family", 256);
+		add_action( MODULE_READ_ACTION, my_handler);	
+   	register_chip_end;
+	REGISTER_MODULE_END
+	<--- end file
+
+2.
+Now that we know how to register a function, it is time to write implementation for actions. The macro to do that is called "REGISTER_FUNCTION()"
+It creates callback functions for us. Functions names for it should have the format of "action_chipname".
+
+example:
+if we name callback as "read_my_chip"
+	add_action( MODULE_READ_ACTION, read_my_chip);
+
+macro "REGISTER_FUNCTION" will look as below:
+	REGISTER_FUNCTION( read, my_chip, exec_name, list_of_parameters );
+
+action function:
+  	static void read_exec_name( list_of_parameters ){ ... }
+    
+list_of_parameters is optional, it usually contain size of device, flags, etc
+
+Example code:
+	--->start file
+	#include "modules.h"
+
+	MODULE_IMPLEMENTATION
+
+	static void read_my_chip(int size, int id)
+	{
+ 		printf("foo %i id = %i\n", size, id);
+	}
+
+	REGISTER_FUNCTION( read, my_handler1, my_chip, SIZE_256b, 0 );
+	REGISTER_FUNCTION( read, my_handler2, my_chip, SIZE_256b, 1 );
+	REGISTER_FUNCTION( read, my_handler3, my_chip, SIZE_256b, 2 );
+
+	REGISTER_MODULE_BEGIN( example )
+  		register_chip_begin( "/Example", "first chip", "our_family", SIZE_256b);
+		add_action( MODULE_READ_ACTION, my_handler1);	
+		add_action( MODULE_PROG_ACTION, my_handler1);	
+    		register_chip_end;
+   		register_chip_begin( "/Example", "second chip", "our_family", SIZE_256b);
+		add_action( MODULE_READ_ACTION, my_handler3);	
+   		register_chip_end;
+	REGISTER_MODULE_END
+	<--- end file
+
+Size definitions are as follows:
+	bytes      : SIZE_16b, SIZE_32b, SIZE_64b, SIZE_128b, SIZE_256b, SIZE_512b
+	kilo bytes : SIZE_16K, SIZE_32K, SIZE_64K, SIZE_128K, SIZE_256K, SIZE_512K
+	mega bytes : SIZE_16M, SIZE_32M, SIZE_64M, SIZE_128M, SIZE_256M, SIZE_512M
+	giga bytes : SIZE_16G, SIZE_32G, SIZE_64G, SIZE_128G, SIZE_256G, SIZE_512G
+
+Size macros for bytes:
+	kilo bytes : KB_SIZE( n )
+	mega bytes : MB_SIZE( n )
+	giga bytes : GB_SIZE( n )
+	tera bytes : TB_SIZE( n )
+	peta bytes : PB_SIZE( n )
+
+Size macros for bits:
+	kilo bits : Kb_SIZE( n )
+	mega bits : Mb_SIZE( n )
+	giga bits : Gb_SIZE( n )
+	tera bits : Tb_SIZE( n )
+	peta bits : Pb_SIZE( n )
+
+
+3. Action function
+
+3.1 Pseudo instruction progress_loop()
+    	progress_loop() is a macro that create "for()" loop with progress bar popup window. It substitutes for() instructions from C.
+
+    	Format:
+		progress_loop( iterator_variable, max, popup_title) instruction;
+
+	where:
+		iterator variable - is an integer variable that counts from 0 to max, eg address
+		max - count cycles, eg 10 (for 0..9)
+		popup_title - cstring constant, window popup title eg "Reading ..."
+3.2 Pseudo instruction	break_if( condition )
+     	breaks progress_loop() if condition is true.
+
+4. Hardware connection macros and functions
+    	finish_action() - set programmer to normal state.
+    	get_buffer(address) - returns data from buffer at address
+    	put_buffer(address, data) - put data to buffer at address
+// gep must be declared    
+    	gep->hw_set_addr_range( range ) - set the address range for driver (for serial programmer like willem - yes, serial)
+    	gep->hw_us_delay( us ) - delay time in µs
+    	gep->hw_ms_delay( us ) - delay time in ms
+    	...
+    
+
+
+
+
+
+
+
+    
+    
+
+
+

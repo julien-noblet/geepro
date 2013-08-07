@@ -36,6 +36,8 @@ extern "C" {
 
 #define CHIP_ERROR		-1
 
+#define CHIP_CALLBACK( x )	(( chip_callback )x)
+
 typedef struct chip_plugins chip_plugins;
 
 typedef struct{
@@ -56,6 +58,8 @@ typedef struct
     void *wg;
     void *next;
 } chip_menu_qe;
+
+
 
 typedef int (*chip_act_func)(void *);
 typedef struct _chip_action chip_action;
@@ -95,6 +99,8 @@ struct _chip_desc
     chip_desc  *next;		/* pointer to next chip structure */
 };
 
+typedef void (*chip_callback)(chip_desc *, void *, void *);
+
 /* inicjowanie i usuwanie kolejek */
 extern void chip_init_qe(chip_plugins *plg);
 extern void chip_rmv_qe(chip_plugins *plg);
@@ -111,15 +117,14 @@ extern chip_desc *chip_get_chip(chip_plugins *plg);
 
 /* struktura menu układów */
 extern void chip_rm_path(chip_plugins *plg);
-extern int chip_add_path(chip_plugins *plg, char *path, void *wg);
+extern int chip_add_path(chip_plugins *plg, char *path);
 extern void *chip_find_path(chip_plugins *plg, char *path);
 
 /* operacje tekstowe */
 extern char chip_cmp(char *name1, char *name2);
 extern char *chip_last_pth(char *pth);
 
-extern void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void *, char *, void *), 
-								    void (*item)(chip_plugins *, void *, void*), void*);
+extern void chip_menu_create(chip_plugins *plg, chip_callback, void *, void*);
 /* Akcje */
 extern void chip_add_action(chip_desc *chip, const char *bt_name, const char *bt_tip, chip_act_func action);
 extern int  chip_list_action(chip_desc *chip, int (*cb)(chip_desc *, chip_action *, void *ptr), void *ptr);

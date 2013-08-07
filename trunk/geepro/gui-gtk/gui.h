@@ -62,7 +62,8 @@ typedef struct
     void *buffer_entry; /* pole rozmiaru bufora */
     void *crc_entry;    /* pole sumy CRC */
     void *file_entry;    /* pole sumy CRC */
-    void *chip_desc;    /* pole opisu ukladu */
+    void *chip_select_store; // chip selection tree container
+//    void *chip_desc;    /* pole opisu ukladu */
 //    void *status_bar;   /* pasek statusu u dolu okna */
 
     void *bineditor;	/* edytor binarny bufora */

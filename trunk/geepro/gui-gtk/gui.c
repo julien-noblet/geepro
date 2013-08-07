@@ -48,9 +48,23 @@ typedef struct
     long size;
 } gui_ins_file_str;
 
+typedef struct chip_tree_ chip_tree;
+struct chip_tree_
+{
+    char *name;
+    chip_tree  *branch;
+    char branch_flag;
+//    void *key;
+    chip_tree *next;
+};
 
 void gui_refresh_button(GtkWidget *, geepro *);
 static void gui_checksum_recalculate( geepro * );
+static void gui_chip_tree_add(geepro *gep, const char *path, char *name, chip_tree **tree);
+static void gui_chip_tree_view_create(geepro *gep, chip_tree *tree);
+static void gui_chip_tree_view_free( chip_tree *tree );
+static void gui_help(geepro *gep);
+static void gui_chip_tree_add_node(const char *path, char *name, chip_tree **br, int col);
 
 /***************************************************************************************************/
 void gui_action_icon_set()
@@ -98,11 +112,22 @@ static void gui_checksum_recalculate(geepro *gep)
 
 void gui_stat_rfsh(geepro *gep)
 {
+    const char kx[5] = {'k','M','G','T','P'};
     char tmp_str[40];
+    unsigned int a, i;
+    char  b[3] = {'B',0,0};
 
     if(gep->chp){
 	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), gep->chp->chip_name);
-	sprintf(tmp_str, "0x%x", (unsigned int)gep->chp->dev_size); 
+	a = (unsigned int)gep->chp->dev_size;
+	i = 0;
+	while( (a >= 1024) && (i < 5)){
+	    b[0] = kx[i];
+	    b[1] = 'B';
+	    a = a / 1024;
+	    i++;
+	}
+	sprintf(tmp_str, "0x%x (%i %s)", (unsigned int)gep->chp->dev_size, a, b); 
 	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->buffer_entry), tmp_str);  
 	gui_checksum_rfsh( gep );
     } else {
@@ -559,21 +584,6 @@ static void gui_chip_select(geepro *gep, const char *name)
     gui_stat_rfsh(gep);
 }
 
-
-static void gui_device_sel(GtkWidget *wg, geepro *gep) 
-{ 
-    const char *name = NULL;
-    
-    /* jesli nie mozna pobrac nazwy ukladu to wyjdz */
-    if( !gtk_bin_get_child(GTK_BIN(wg)) ) return;
-    if(!GTK_IS_LABEL(gtk_bin_get_child(GTK_BIN(wg)))) return;
-    /* pobierz nazwe wybranego ukladu */
-    name = gtk_label_get_text( GTK_LABEL(gtk_bin_get_child(GTK_BIN(wg))) );
-
-    store_set(gep->store, "LAST_CHIP_SELECTED", name);
-    gui_chip_select(gep, name);
-}
-
 static void gui_rfsh_gtk(void)
 {
     while(gtk_events_pending()) gtk_main_iteration();
@@ -597,33 +607,19 @@ static void gui_about(GtkWidget *wg, geepro *gep)
     
 }
 
-/************************************************************************************************************************/
-
-static void *gui_submenu_add(void *op, char *name, void *gep)
+static void gui_chip_callback(chip_desc *chp, geepro *gep, chip_tree **tree)
 {
-    GtkWidget *p, *grp;
-    
-    grp = gtk_menu_item_new_with_label(name);
-    gtk_menu_shell_append(GTK_MENU_SHELL(op), grp);
-    p = gtk_menu_new();
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(grp), p);
-    return p;
-}
-
-static void gui_menu_chip_add(chip_plugins *plg, void *sm, void *gep)
-{
-    GtkWidget *tt;
-    tt = gtk_menu_item_new_with_label(plg->menu_sel->chip_name);
-    gtk_menu_shell_append(GTK_MENU_SHELL(sm), tt);
-    g_signal_connect(G_OBJECT(tt), "activate", G_CALLBACK(gui_device_sel), gep);
+    gui_chip_tree_add( gep, chp->chip_path, chp->chip_name, tree);
 }
 
 static void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep)
 {
-    chip_menu_create(plg, wg, gui_submenu_add, gui_menu_chip_add, gep);
-}
+    chip_tree *tree = NULL;    
 
-/***************************************************************************************************************************/
+    chip_menu_create( plg, CHIP_CALLBACK(gui_chip_callback), (void *)gep, (void *)&tree);
+    gui_chip_tree_view_create( gep, tree);
+    gui_chip_tree_view_free( tree );
+}
 
 static void gui_build_iface_menu(iface *ifc, int cl, char *name, char *dev, GtkWidget *wg)
 {
@@ -802,9 +798,43 @@ void gui_refresh_button(GtkWidget *wg, geepro *gep)
     gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
 }
 
-void gui_help(geepro *gep)
+static void gui_select_chip(geepro *gep, const char *name)
 {
-printf("Help\n");
+    store_set(gep->store, "LAST_CHIP_SELECTED", name);
+    gui_chip_select(gep, name);
+}
+
+static void gui_chip_tree_selected(GtkTreeSelection *tree, geepro *gep)
+{
+    GtkTreeIter iter;
+    GtkTreeModel *model = NULL;
+    char *name = NULL;
+    char flag = 0;
+    
+    if( gtk_tree_selection_get_selected(tree, &model, &iter) ) 
+	    gtk_tree_model_get( model, &iter, 0, &name, 1, &flag, -1);
+    if( !name ) return;
+    if( flag ) gui_select_chip( gep, name);
+    g_free( name );        
+}
+
+void gui_setup_chip_selection_tree(geepro *gep, GtkWidget *wg )
+{
+    GtkWidget *view;
+    GtkTreeModel *model;
+
+    view = gtk_tree_view_new();
+//    gtk_tree_view_set_headers_visible( GTK_TREE_VIEW( view ), FALSE );
+    gtk_tree_view_set_enable_tree_lines( GTK_TREE_VIEW( view ), TRUE );
+    gtk_tree_view_insert_column_with_attributes( GTK_TREE_VIEW( view ), -1, CHIP_SELECTION, gtk_cell_renderer_text_new(), "text", 0, NULL);
+
+    model = GTK_TREE_MODEL( gtk_tree_store_new( 2, G_TYPE_STRING, G_TYPE_BOOLEAN ) );
+    gtk_tree_view_set_model( GTK_TREE_VIEW( view ), model);        
+    g_object_unref( model );
+    GUI(gep->gui)->chip_select_store = gtk_tree_view_get_model( GTK_TREE_VIEW( view ) );
+
+    g_signal_connect( G_OBJECT( gtk_tree_view_get_selection(GTK_TREE_VIEW( view))), "changed", G_CALLBACK( gui_chip_tree_selected ), gep);
+    gtk_container_add(GTK_CONTAINER( wg ), view);
 }
 
 void gui_menu_setup(geepro *gep)
@@ -830,7 +860,7 @@ void gui_menu_setup(geepro *gep)
     wg0 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);    
     gtk_container_add(GTK_CONTAINER(GUI(gep->gui)->wmain), wg0);
 
-/* pasek Menu Bar */
+/* stripe Menu Bar */
     wg1 = gtk_menu_bar_new();
     gtk_box_pack_start(GTK_BOX(wg0), wg1, FALSE, FALSE, 0);
 
@@ -862,11 +892,11 @@ void gui_menu_setup(geepro *gep)
     g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_exit_program), gep);
 
 /* Menu device */
-    wg2 = gtk_menu_item_new_with_label(MB_DEVICE);    
-    gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
-    wg3 = gtk_menu_new();
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(wg2), wg3);
-    GUI(gep->gui)->mb_dev = wg3;
+//    wg2 = gtk_menu_item_new_with_label(MB_DEVICE);    
+//    gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
+//    wg3 = gtk_menu_new();
+//    gtk_menu_item_set_submenu(GTK_MENU_ITEM(wg2), wg3);
+//    GUI(gep->gui)->mb_dev = wg3;
 
 /* Menu Help */
     wg2 = gtk_menu_item_new_with_label( MB_HELP );    
@@ -980,12 +1010,10 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     gtk_widget_set_tooltip_text(wg1, TEXT(GUI_RELOAD));
     g_signal_connect(G_OBJECT(wg1), "pressed", G_CALLBACK(gui_refresh_button), gep);
 
-    /* opis ukladu */
-    wg1 = gtk_frame_new(CHIP_DESCRIPTION);
+    // Chip selection tree
+    wg1 = gtk_scrolled_window_new( NULL, NULL);
     gtk_table_attach_defaults(GTK_TABLE(wg3), wg1,  0, 3, 4, 5);
-    wg3 = gtk_label_new(TXT_MISSING);
-    gtk_container_add(GTK_CONTAINER(wg1), wg3);
-    GUI(gep->gui)->chip_desc = wg3;
+    gui_setup_chip_selection_tree( gep, wg1 );
 
 /* Ramka programatora */
     /* opcje programatora */
@@ -1602,5 +1630,165 @@ void spin_add(const char *label, int min, int max, int def, dlg_slider_cb cb, in
     gtk_container_add(GTK_CONTAINER( gui_get_stack( gstk ) ), tmp );
 }
 
+/***********************************************************************************************************************************/
 
+static void gui_chip_tree_view_free( chip_tree *tree )
+{
+    chip_tree *tmp;
+    while( tree ){
+	if( tree->branch ) gui_chip_tree_view_free( tree->branch );		     
+	if( tree->branch_flag ) free( tree->name );
+	tmp = tree->next;
+	free( tree );
+	tree = tmp;	
+    }
+}
+
+static void gui_chip_tree_view_create_node(geepro *gep, chip_tree *tree, GtkTreeStore *ts, GtkTreeIter *it)
+{
+    GtkTreeIter iter;    
+
+    for( ;tree; tree = tree->next ){
+	gtk_tree_store_append(ts, &iter, it);
+	gtk_tree_store_set( ts, &iter, 0, tree->name, 1, !tree->branch_flag, -1);	
+	if( tree->branch ){
+	    gui_chip_tree_view_create_node(gep, tree->branch, ts, &iter);    
+	    continue;
+	}
+    }
+}
+
+static void gui_chip_tree_view_create(geepro *gep, chip_tree *tree)
+{
+    GtkTreeStore *ts;
+
+    ts = GTK_TREE_STORE(GUI(gep->gui)->chip_select_store);
+    gui_chip_tree_view_create_node(gep, tree, ts, NULL);    
+}
+
+/**********************************************************************************************************************************/
+static void gui_chip_tree_add(geepro *gep, const char *path, char *name, chip_tree **br)
+{
+    if(*path != '/'){
+	printf("[WN] incorrect chip path name (expected '/'): \"%s\"", path);
+	return;
+    }        
+    gui_chip_tree_add_node( path, name, br, 0);
+}
+
+static chip_tree *chip_add_node(chip_tree **br, char *name, chip_tree *branch_, void *key, char brf, int col)
+{
+    chip_tree *tm, *it;
+    if(!( tm = (chip_tree *)malloc( sizeof(chip_tree)))){
+	printf("ERR malloc\n");
+	return *br;    
+    }
+    tm->branch = branch_;    
+    tm->branch_flag = brf;
+    tm->name = name;
+//    tm->key = key;
+    tm->next = NULL;
+    if( *br == NULL ){
+	*br = tm;
+    } else {
+	for( it = (*br); it->next; it = it->next);
+	it->next = tm;
+    }
+    return tm;
+}
+
+// decomposing paths
+static void gui_chip_tree_add_node(const char *path, char *name, chip_tree **br, int col)
+{
+    const char *tmp;
+    char *link;
+    int len;
+    chip_tree *chpos, *tm;
+
+    if(*path != '/'){ // finish
+	tm = chip_add_node( br, name, NULL, NULL, 0, col);
+	return;
+    }
+    path++;
+    // take first link
+    tmp = path;        
+    for( ; *path; path++){
+	if( *path != '/') continue;
+	if( path == tmp ) break;	// first character
+	if( *(path - 1) != '\\') break; // test if precedent character is '\', if so, ignore it
+    }
+    len = path - tmp;
+    if(!(link = (char *)malloc( len + 1))){ // +1 for 0 flag
+	printf("ERR malloc\n");
+	return;
+    };
+    memset(link, 0, len + 1);
+    strncpy(link, tmp, len);
+    // now link is is acquired
+
+    // looking link in queue
+    for( chpos = *br; chpos; chpos = chpos->next){
+	if( !chpos->branch_flag ) continue; // skip test if not branch
+	if( !strcmp(chpos->name, link) ) break; // chpos will be branch address, or NULL if link not found
+    }
+    if( !chpos ){ // add new branch, and go deeper
+	tm = chip_add_node( br, link, NULL, NULL, 1, col);	
+	gui_chip_tree_add_node( path, name, &tm->branch, ++col);
+	return;
+    }
+    // go deeper
+    gui_chip_tree_add_node( path, name, &chpos->branch, ++col);
+}
+
+/*********************************************************************************************/
+
+static void gui_help(geepro *gep)
+{
+    GtkWidget *wg, *wg1, *cta;
+    GtkTextMark *gtm;
+    GtkTextBuffer *gtb;
+    GtkTextIter iter;
+    FILE *f;
+    char *text = NULL;    
+    int len;
+
+    wg = gtk_dialog_new();
+    gtk_widget_set_size_request(wg, 640, 480); // default window size
+    gtk_window_set_title(GTK_WINDOW( wg), "Help");        
+    cta = gtk_dialog_get_content_area( GTK_DIALOG( wg ) );
+    wg1 = gtk_scrolled_window_new( NULL, NULL);
+    gtk_box_pack_start(GTK_BOX(cta), wg1, TRUE, TRUE, 0);
+    cta =  gtk_text_view_new_with_buffer( NULL );
+    gtk_container_add(GTK_CONTAINER( wg1 ), cta);
+    gtk_text_view_set_editable( GTK_TEXT_VIEW( cta ), FALSE);
+    gtk_text_view_set_cursor_visible( GTK_TEXT_VIEW( cta ), FALSE);
+    gtb = gtk_text_view_get_buffer( GTK_TEXT_VIEW( cta ));
+    // read file, temporary fixed path
+    if(!(f = fopen( "./doc/doc_eng.txt", "r"))){ 
+	printf("[ERR] Missing help file\n");
+    } else {
+	fseek(f, 0L, SEEK_END);    
+	len = ftell( f );
+	fseek(f, 0L, SEEK_SET);
+	if(len){
+	    text = (char *)malloc( len + 1 );
+	    if(fread( text, len, 1, f) != len){
+		printf("[ERR] Read help file error\n");
+	    };	
+	    text[len] = 0;
+	}	
+	fclose( f );
+    }
+    if( text ){
+	// set marker
+	gtk_text_view_get_iter_at_location( cta, &iter, 0, 0);
+    	gtk_text_view_scroll_to_iter( cta, &iter, 0,0,0,0 );
+	
+	gtk_text_buffer_set_text( gtb, text, len );
+	free( text );
+	gtk_widget_show_all( wg );
+	gtk_dialog_run( GTK_DIALOG( wg ) );    
+    }
+    gtk_widget_destroy( wg );
+}
 

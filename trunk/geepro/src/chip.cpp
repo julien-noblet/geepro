@@ -264,7 +264,7 @@ void chip_rm_path(chip_plugins *plg)
     plg->menu_qe = NULL;
 }
 
-int chip_add_path(chip_plugins *plg, char *path, void *wg)
+int chip_add_path(chip_plugins *plg, char *path)
 {
     chip_menu_qe *new_tie, *tmp;
 
@@ -273,10 +273,10 @@ int chip_add_path(chip_plugins *plg, char *path, void *wg)
 	return CHIP_ERROR;
     }
     
-    if(!(path && wg)){ 
-	printf("[!!] chip_add_path(plugin, path, widget) -> (path || widget) == NULL !!!\n"); 
-	return CHIP_ERROR; 
-    }
+//    if(!(path && wg)){ 
+//	printf("[!!] chip_add_path(plugin, path, widget) -> (path || widget) == NULL !!!\n"); 
+//	return CHIP_ERROR; 
+//    }
 
     MSG_2DEBUG("{chip.c} MENU: add queue -> %s\n", path);
     if(!(new_tie = (chip_menu_qe *)malloc(sizeof(chip_menu_qe)))){
@@ -291,7 +291,7 @@ int chip_add_path(chip_plugins *plg, char *path, void *wg)
     }
 
     strcpy(new_tie->name, path);
-    new_tie->wg = wg;
+//    new_tie->wg = wg;
     new_tie->next = NULL;
 
     if(!plg->menu_qe){
@@ -377,17 +377,22 @@ char *chip_last_pth(char *pth)
     return pth + 1;
 }
 
-/*************************************************************************************************************************/
-/* tworzenie menu */
+static char chip_test_supported( chip_plugins *plg )
+{
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    return 0;
+}
 
-void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void *, char *, void *), void (*item)(chip_plugins *, void *, void *), void *ptr)
+void chip_menu_create(chip_plugins *plg, chip_callback cc, void *ptr1, void *ptr2)
 {
     chip_desc *chp;
     char *tmp, t;
     void *p,*op;
-
-    chip_add_path(plg, (char *)"/", wg);
+// have to add release list
+    chip_add_path(plg, (char *)"/");
     for(chp = plg->chip_qe; chp; chp = chp->next ){
+	if(chip_test_supported( plg )) continue;
+	if( cc ) cc( chp, ptr1, ptr2);
 	tmp = chp->chip_path + 1;
 	op = chip_find_path(plg, (char *)"/");
 	for(;*tmp; tmp++){
@@ -395,15 +400,13 @@ void chip_menu_create(chip_plugins *plg, void *wg, void *(*submenu)(void *, char
 	    t = *tmp;
 	    *tmp = 0;
 	    if(!(p = chip_find_path(plg, chp->chip_path))){
-		p = submenu(op, chip_last_pth(chp->chip_path), ptr);
-		chip_add_path(plg, chp->chip_path, p);
+		chip_add_path(plg, chp->chip_path);
 	    }
 	    op = p;
 	    *tmp = t;
 	}
 	if((p = chip_find_path(plg, chp->chip_path))){
 	    plg->menu_sel = chp;
-	    item(plg, p, ptr);
 	}
     }
 }

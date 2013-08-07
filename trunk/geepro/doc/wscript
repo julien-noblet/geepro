@@ -2,3 +2,8 @@
 # doc
 def build(bld):
   print('→ building doc')
+  docs=["doc_eng.txt"]
+  for doc in docs:
+    bld.copy_to_build(geefile=doc)
+
+  bld.install_files("${PREFIX}/share/geepro/doc",docs)

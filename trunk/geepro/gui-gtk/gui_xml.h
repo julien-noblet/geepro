@@ -72,7 +72,7 @@ typedef struct
     char suppress;  /* flaga stlumienia echa sygnalu */
     void *notebook;
     void *info;
-    void *description;
+//    void *description;
     int  sw_size;
     gui_xml_event ev;
     gui_xml_ev *event;

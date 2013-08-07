@@ -502,8 +502,8 @@ static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlN
 	    if(n == q) gui_xml_parse_element(g, wg, doc, cur->xmlChildrenNode, parm, shared_geepro_dir );
 	} 
 	else if(!strcmp((char*)cur->name,"description")){
-	    arg0 = (char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-	    gtk_label_set_text(GTK_LABEL(g->description), arg0);
+//	    arg0 = (char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+//	    gtk_label_set_text(GTK_LABEL(g->description), arg0);
 	} 
 	/**** elementy GUI ****/
 	/* kontenery */
@@ -574,7 +574,7 @@ static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, cons
 void gui_xml_destroy(gui_xml *g)
 {
     gui_xml_ev *tmp;
-    gtk_label_set_text(GTK_LABEL(g->description), "None");
+//    gtk_label_set_text(GTK_LABEL(g->description), "None");
     /* usuniecie drzewa widgetów - wywołąnie destroy dla kazdego korzenia */
     for(tmp = g->event; tmp; tmp = tmp->next)
 				if(!tmp->id) gtk_widget_destroy(GTK_WIDGET(tmp->widget));
@@ -589,7 +589,7 @@ int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *pa
 
     if( !shared_geepro_dir ){
 	ERR("No shared_xml_dir defined!\n");
-        return;
+        return -1;
     }
 
     if(!g) return -1;
@@ -637,7 +637,7 @@ void *gui_xml_new(gui *g)
     tmp->parent = (void *)g;
     tmp->notebook = (void *)g->notebook;
     tmp->info = (void *)g->main_table;
-    tmp->description = (void *)g->chip_desc;
+//    tmp->description = (void *)g->chip_desc;
     tmp->sw_size = g->icon_size;
     tmp->event = NULL;
     tmp->ev = gui_xml_event_default;
