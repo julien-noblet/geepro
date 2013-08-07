@@ -249,6 +249,43 @@
 #define RANGE_8M	BIT_POS( 22 )
 #define RANGE_16M	BIT_POS( 23 )
 
+#define SIZE_16b	16
+#define SIZE_32b	32
+#define SIZE_64b	64
+#define SIZE_128b	128
+#define SIZE_256b	256
+#define SIZE_512b	512
+#define SIZE_1K		Kb_SIZE(1)
+#define SIZE_2K		Kb_SIZE(2)
+#define SIZE_4K		Kb_SIZE(4)
+#define SIZE_8K		Kb_SIZE(8)
+#define SIZE_16K	Kb_SIZE(16)
+#define SIZE_32K	Kb_SIZE(32)
+#define SIZE_64K	Kb_SIZE(64)
+#define SIZE_128K	Kb_SIZE(128)
+#define SIZE_256K	Kb_SIZE(256)
+#define SIZE_512K	Kb_SIZE(512)
+#define SIZE_1M		Mb_SIZE(1)
+#define SIZE_2M		Mb_SIZE(2)
+#define SIZE_4M		Mb_SIZE(4)
+#define SIZE_8M		Mb_SIZE(8)
+#define SIZE_16M	Mb_SIZE(16)
+#define SIZE_32M	Mb_SIZE(32)
+#define SIZE_64M	Mb_SIZE(64)
+#define SIZE_128M	Mb_SIZE(128)
+#define SIZE_256M	Mb_SIZE(256)
+#define SIZE_512M	Mb_SIZE(512)
+#define SIZE_1G		Gb_SIZE(1)
+#define SIZE_2G		Gb_SIZE(2)
+#define SIZE_4G		Gb_SIZE(4)
+#define SIZE_8G		Gb_SIZE(8)
+#define SIZE_16G	Gb_SIZE(16)
+#define SIZE_32G	Gb_SIZE(32)
+#define SIZE_64G	Gb_SIZE(64)
+#define SIZE_128G	Gb_SIZE(128)
+#define SIZE_256G	Gb_SIZE(256)
+#define SIZE_512G	Gb_SIZE(512)
+
 #endif
 
 

@@ -20,383 +20,277 @@
 
 #include "modules.h"
 
-static geepro *gep=NULL;//temp
+static geepro *gep=NULL;
 
 MODULE_IMPLEMENTATION
 
-#define SIZE_29F010	KB_SIZE( 128 )
-#define SIZE_29F020	KB_SIZE( 256 )
-#define SIZE_29F040	KB_SIZE( 512 )
-#define SIZE_29F080	MB_SIZE(  1  )
-
-#define SIZE_49F512	KB_SIZE( 64  )
-#define SIZE_49F010	KB_SIZE( 128 )
-#define SIZE_49F020	KB_SIZE( 256 )
-#define SIZE_49F040	KB_SIZE( 512 )
-
-#define TIMEOUT		500
-#define TT		1
-
-void read_data_init_flash()
+static void init_flash5V()
 {
-//    gep->hw_set_ce( 0 );
-    gep->hw_set_oe( 0 );
-    gep->hw_set_we( 1 );
+    gep->hw_set_ce(1);
+    gep->hw_set_oe(1);
+    gep->hw_set_we(1);
+    gep->hw_set_vcc(500);
+    gep->hw_sw_vcc(1);
+    gep->hw_ms_delay(200);
 }
 
-void write_data_init_flash()
+static void read_data_init_flash()
 {
-//    gep->hw_set_ce( 0 );
-    gep->hw_set_oe( 1 );
-    gep->hw_set_we( 1 );
-    gep->hw_us_delay(1);
+    gep->hw_set_ce(0);
+    gep->hw_set_oe(0);
+    gep->hw_set_we(1);
 }
 
-unsigned char read_data_flash(unsigned int addr)
+static char read_data_flash(int addr)
 {
     gep->hw_set_addr( addr );
-    gep->hw_us_delay( 1 );
+    gep->hw_us_delay(1);
     return gep->hw_get_data();
 }
 
-void write_data_flash(unsigned int addr, unsigned char data, unsigned int us)
+static void read_flash29C(int dev_size, int range)
 {
-//printf("%x %x\n", addr, data);
-    gep->hw_set_oe( 1 );    
-    gep->hw_set_addr( addr );
-    gep->hw_set_we( 0 );  
-    gep->hw_set_data( data );
-    gep->hw_us_delay( us );
-    gep->hw_set_we( 1 );      
-    gep->hw_us_delay( 1 );
-}
-
-void init_flash()
-{
-    gep->hw_set_ce( 1 );
-    gep->hw_set_oe( 1 );
-    gep->hw_set_we( 1 );
-    gep->hw_set_vcc( 500 );
-    gep->hw_sw_vcc( 1 );
-    gep->hw_ms_delay( 200 );
-}
-
-/*********************************************************************************************************/
-void read_flash(unsigned int dev_size, unsigned int range)
-{
-    unsigned int addr;
-
-    init_flash();
+    int addr;
+    init_flash5V();
     gep->hw_set_addr_range( range );
     read_data_init_flash();
-    progress_loop(addr, dev_size, "Reading...")
-	put_buffer( addr, read_data_flash( addr ) );
-    finish_action();    
+    progress_loop( addr, dev_size, "Reading...")
+	put_buffer( addr, read_data_flash(addr) );
+    finish_action();
 }
 
-void verify_flash(unsigned int dev_size, unsigned int range)
+static void verify_flash29C(int dev_size, int range)
 {
     char text[256];
-    unsigned int addr;
-    unsigned char rdata = 0, bdata = 0;
-
-    init_flash();
+    int addr;
+    unsigned char rdata = 0, bdata = 0, tries = 0;
+    
+    init_flash5V();
     gep->hw_set_addr_range( range );
     read_data_init_flash();
-    progress_loop(addr, dev_size, "Veryfying..."){
+    progress_loop( addr, dev_size, "Verify..."){
 	rdata = read_data_flash( addr );
 	bdata = get_buffer( addr );
-	break_if( rdata != bdata );
+	if( rdata != bdata ){
+	    if( tries > 8 ) break_if( 1 );
+	    if( addr ) addr--; else break_if( 1 );
+	    tries++;
+	} else {
+	    tries = 0;
+	}
     }
-    finish_action();    
-
+    finish_action();
     text[0] = 0;
     if( ERROR_VAL )
-	sprintf(text, "[WN][TEXT] Memory and buffer differ !!!\n Address = 0x%X\nBuffer=0x%X, Device=0x%X[/TEXT][BR]OK", addr, bdata & 0xff, rdata & 0xff);
-    if( rdata >= 0 ){
-	show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory and buffer are consitent[/TEXT][BR]OK", NULL, NULL);    
-	ERROR_VAL = 0;
-    }
+	sprintf( text, "[WN][TEXT] Memory and buffer differ !!!\n Address=0x%X\nBuffer=0x%X, Device=0x%X[/TEXT][BR]OK", addr, bdata & 0xff, rdata & 0xff);
+    show_message( 0, ERROR_VAL ? text : "[IF][TEXT] Memory and buffer are consistent[/TEXT][BR]OK", NULL, NULL );
+    ERROR_VAL = 0;
 }
 
-void test_blank_flash(unsigned int dev_size, unsigned int range)
+static void test_blank_flash29C(int dev_size, int range)
 {
     char text[256];
-    unsigned int addr;
+    int addr;
     unsigned char rdata = 0;
-
-    init_flash();
+    init_flash5V();
     gep->hw_set_addr_range( range );
     read_data_init_flash();
-    progress_loop(addr, dev_size, "Test Blank..."){
+    progress_loop( addr, dev_size, "Reading..."){
 	rdata = read_data_flash( addr );
 	break_if( rdata != 0xff );
     }
-    finish_action();    
-
-    text[0] = 0;
+    finish_action();
     if( ERROR_VAL )
-	sprintf(text, "[WN][TEXT] Memory is dirty !!!\n Address = 0x%X\nDevice=0x%X[/TEXT][BR]OK", addr, rdata & 0xff);
-    if( rdata >= 0 ){
-	show_message(0, ERROR_VAL ? text: "[IF][TEXT] Memory is clean[/TEXT][BR]OK", NULL, NULL);    
-	ERROR_VAL = 0;
-    }
+	sprintf( text, "[WN][TEXT] Memory and buffer differ !!!\n Address=0x%X\nDevice=0x%X[/TEXT][BR]OK", addr, rdata & 0xff);
+    show_message( 0, ERROR_VAL ? text : "[IF][TEXT] Memory and buffer are consistent[/TEXT][BR]OK", NULL, NULL );
+    ERROR_VAL = 0;
 }
 
-void sign_28xx_flash( int vpp_req )
+void load_byte( int addr, char data )
 {
-    unsigned char man, id;
-    char chip[256], vendor[256], text[1024];
-    
-    init_flash();
-    if( vpp_req ){
-	 gep->hw_set_vpp( vpp_req );
-	 gep->hw_sw_vpp( 1 );
-	 gep->hw_us_delay( 100 );
-    }
-
-    write_data_init_flash();
-    write_data_flash( 0x0000, 0x90, 1 );
-    gep->hw_set_oe( 0 );
-    man = gep->hw_get_data();
-    write_data_flash( 0x0001, 0x90, 1 );
-    gep->hw_set_oe( 0 );
-    id = gep->hw_get_data();
-    finish_action();        
-
-    loockup_signature( "FLASH", man, id, vendor, chip);
-    sprintf(text,
-	"[IF][TEXT]"
-	"Vendor ( 0x%x ): %s\n\n"
-	"Chip   ( 0x%x ): %s\n\n"
-	"[/TEXT][BR]OK",
-	man, vendor, 
-	id, chip
-    );
-
-    show_message(0, text, NULL, NULL);
+    gep->hw_set_we(1);    
+    gep->hw_set_oe(1); 
+    gep->hw_set_ce(0); // ignore in willem
+    gep->hw_set_addr( addr );
+    gep->hw_set_we(0);  // latch address on falling edge
+    gep->hw_set_data( data );
+    gep->hw_set_we(1);  // latch data on rising edge
+    gep->hw_set_ce(1); // ignore in willem
+    gep->hw_us_delay(200);
 }
 
-void clean_28xx_flash(unsigned int vpp_req, unsigned int dev_size, unsigned int range) // PRESTO Algorithm, write 0x00
+
+static void send_cmd_flash29C( char cmd )
 {
-    int addr, n;
-    
-    init_flash();
-    gep->hw_set_addr_range( range );
-
-    if( vpp_req ){
-	 gep->hw_set_vpp( vpp_req );
-	 gep->hw_sw_vpp( 1 );
-    }
-
-    progress_loop(addr, dev_size, "Cleaning chip..."){
-	for(n = 0; n < 26; n++){
-	    // send command
-	    gep->hw_set_oe( 1 );    
-	    gep->hw_set_addr( addr );
-	    gep->hw_set_we( 0 );  
-	    gep->hw_set_data( 0x40 );
-	    gep->hw_us_delay( 1 );
-	    gep->hw_set_we( 1 );      
-	    gep->hw_us_delay( 1 );
-            // send data
-	    gep->hw_set_we( 0 );  
-	    gep->hw_set_data( 0x00 );
-	    gep->hw_us_delay( 1 );
-	    gep->hw_set_we( 1 );      
-	    gep->hw_us_delay( 10 ); // Time for program
-            // veryfication command
-	    gep->hw_set_we( 0 );  
-	    gep->hw_set_data( 0x0C );
-	    gep->hw_us_delay( 1 );
-	    gep->hw_set_we( 1 );      
-	    gep->hw_us_delay( 6 );
-	    // read data
-	    gep->hw_set_oe( 0 );    
-	    if( gep->hw_get_data() == 0) break;	    	    
-	}
-	break_if( n == 25 ); // Fail after 25 tries
-    }
-    finish_action();        
-    gep->hw_ms_delay(200);
+    load_byte( 0x5555, 0xAA );
+    load_byte( 0x2AAA, 0x55 );
+    load_byte( 0x5555, cmd  );
+    gep->hw_ms_delay( 10 );
 }
 
-void erase_28xx_flash(unsigned int vpp_req, unsigned int dev_size, unsigned int range)
+static void sign_flash29C()
 {
-    unsigned long *lb;
-    int addr, n;
-    char k;
+    char text[256];
+    int addr;
+    unsigned char rdata = 0, manuf = 0, device = 0;
     
-    lb = checkbox(
-	"[TITLE]Erasing chip[/TITLE][TYPE:QS]"
-	"[CB:2:0: Are you sure ? (Tick if Yes)]"
-	"[CB:1:1: Test blank]"
-    );
+    init_flash5V();
 
-    if( !lb ) return; // resignation by button
-    if( !(*lb & 2) ) return; // Not checked
-    // write 0x00 to each cell
-    clean_28xx_flash(vpp_req, dev_size, range);
-
-    init_flash();
-
-    if( vpp_req ){
-	 gep->hw_set_vpp( vpp_req );
-	 gep->hw_sw_vpp( 1 );
-    }
-
-    n = 0; k = 1;
-    progress_loop(addr, dev_size, "Chip erasing..."){
-	for(; n < 26; n++){
-	    if( k ){
-		gep->hw_set_oe( 1 );    
-		// ERASE SET-UP 
-		gep->hw_set_we( 0 );  
-		gep->hw_set_data( 0x20 );
-		gep->hw_us_delay( 1 );
-		gep->hw_set_we( 1 );      
-		gep->hw_us_delay( 1 );
-		gep->hw_set_we( 0 );  
-		gep->hw_set_data( 0x20 );
-		gep->hw_us_delay( 1 );
-		gep->hw_set_we( 1 );      
-		gep->hw_ms_delay( 10 );
-		k = 0;
-	    }
-	    // ERASE VERIFY
-	    gep->hw_set_addr( addr ); // set address 
-	    gep->hw_set_oe( 0 );    
-	    gep->hw_us_delay( 6 );
-	    if( gep->hw_get_data() == 0xff ) break;
-	    k = 1; // repeat erase command
-	}
-        break_if( n == 25 );
-    }
-    finish_action();        
-
-    gep->hw_ms_delay(200);
-    
-    if( (*lb & 1) && !ERROR_VAL) 
-	test_blank_flash( dev_size, range );
-}
-
-void write_28xx_flash(unsigned int vpp_req, unsigned int dev_size, unsigned int range) // PRESTO Algorithm
-{
-    unsigned long *lb;
-    unsigned char d, data;
-    int addr, n;
-    
-    lb = checkbox(
-	"[TITLE]Writing chip[/TITLE][TYPE:QS]"
-	"[CB:2:0: Are you sure ? (Tick if Yes)]"
-	"[CB:1:1: Verify]"
-    );
-
-    if( !lb ) return; // resignation by button
-    if( !(*lb & 2) ) return; // Not checked
-
-    init_flash();
-    gep->hw_set_addr_range( range );
-
-    if( vpp_req ){
-	 gep->hw_set_vpp( vpp_req );
-	 gep->hw_sw_vpp( 1 );
-    }
-
-    progress_loop(addr, dev_size, "Writing chip..."){
-	for(n = 0; n < 26; n++){
-	    data = get_buffer( addr );
-	    // send command
-	    gep->hw_set_oe( 1 );    
-	    gep->hw_set_addr( addr );
-	    gep->hw_set_we( 0 );  
-	    gep->hw_set_data( 0x40 );
-	    gep->hw_us_delay( 1 );
-	    gep->hw_set_we( 1 );      
-	    gep->hw_us_delay( 1 );
-            // send data
-	    gep->hw_set_we( 0 );  
-	    gep->hw_set_data( data );
-	    gep->hw_us_delay( 1 );
-	    gep->hw_set_we( 1 );      
-	    gep->hw_us_delay( 10 ); // Time for program
-            // veryfication command
-	    gep->hw_set_we( 0 );  
-	    gep->hw_set_data( 0x0C );
-	    gep->hw_us_delay( 1 );
-	    gep->hw_set_we( 1 );      
-	    gep->hw_us_delay( 6 );
-	    // read data
-	    gep->hw_set_oe( 0 );    
-	    d = gep->hw_get_data();
-	    if( data == d) break;	    	    
-	}
-	break_if( n == 25 ); // Fail after 25 tries
-    }
-    finish_action();        
-
-    gep->hw_ms_delay(200);
-    
-    if( (*lb & 1) && !ERROR_VAL) 
-	verify_flash( dev_size, range );
+    send_cmd_flash29C( 0x90 );
+	manuf  = read_data_flash( 0x00000 );
+	device = read_data_flash( 0x00001 );
+    send_cmd_flash29C( 0xf0 );
+printf("--->%x, %x\n", manuf, device);
+    finish_action();
 }
 
 
-/*********************************************************************************************************/
+REGISTER_FUNCTION( read,	29C256, flash29C, SIZE_32K, RANGE_32K );
+REGISTER_FUNCTION( verify,	29C256, flash29C, SIZE_32K, RANGE_32K );
+REGISTER_FUNCTION( test_blank,	29C256, flash29C, SIZE_32K, RANGE_32K );
+REGISTER_FUNCTION( sign,	29C256, flash29C);
 
-//REGISTER_FUNCTION( read,	28F040, flash, SIZE_28F040, RANGE_512K );
-//REGISTER_FUNCTION( verify, 	28F040, flash, SIZE_28F040, RANGE_512K );
-//REGISTER_FUNCTION( test_blank, 	28F040, flash, SIZE_28F040, RANGE_512K );
-//REGISTER_FUNCTION( sign,   	28F040, 28xx_flash, 1250);
-//REGISTER_FUNCTION( erase,   	28F040, 28xx_flash, 1250, SIZE_28F040, RANGE_512K );
-//REGISTER_FUNCTION( write,   	28F040, 28xx_flash, 1250, SIZE_28F040, RANGE_512K );
+REGISTER_FUNCTION( read,	29EE020, flash29C, SIZE_256K, RANGE_256K );
+REGISTER_FUNCTION( verify,	29EE020, flash29C, SIZE_256K, RANGE_256K );
+REGISTER_FUNCTION( test_blank,	29EE020, flash29C, SIZE_256K, RANGE_256K );
+REGISTER_FUNCTION( sign,	29EE020, flash29C);
 
-
-REGISTER_FUNCTION( read,	49F010, flash, SIZE_49F010, RANGE_128K );
-//REGISTER_FUNCTION( verify, 	49F010, flash, SIZE_49F010, RANGE_128K );
-//REGISTER_FUNCTION( test_blank,49F010, flash, SIZE_49F010, RANGE_128K );
-//REGISTER_FUNCTION( sign,   	49F010, 28xx_flash);
-//REGISTER_FUNCTION( erase,   	49F010, 28xx_flash, SIZE_49F010, RANGE_128K );
-//REGISTER_FUNCTION( write,   	49F010, 28xx_flash, SIZE_49F010, RANGE_128K );
-
-REGISTER_MODULE_BEGIN( 29xx )
 /*
-    register_chip_begin("/EEPROM 28Fxx,28Cxx", "28F010, MX28F1000", "28512", SIZE_28F010);
-	add_action(MODULE_READ_ACTION, read_28F010);
-	add_action(MODULE_VERIFY_ACTION, verify_28F010);
-	add_action(MODULE_TEST_BLANK_ACTION, test_blank_28F010);
-	add_action(MODULE_SIGN_ACTION, sign_28F010);
-	add_action(MODULE_ERASE_ACTION, erase_28F010); // for macronix is much faster algorithms for erasure/writing, not implemented yet
-	add_action(MODULE_WRITE_ACTION, write_28F010);
+    register_chip_begin("/EEPROM 29EExx", "SST29EE010", "29x010", SIZE_29EE010);
+	add_action(MODULE_READ_ACTION, read_29EE010);
+	add_action(MODULE_VERIFY_ACTION, verify_29EE010);
+	add_action(MODULE_TEST_BLANK_ACTION, test_blank_29EE010);
+	add_action(MODULE_SIGN_ACTION, sign_29EE010);
+//	add_action(MODULE_ERASE_ACTION, erase_29EE010);
+//	add_action(MODULE_WRITE_ACTION, write_29EE010);
     register_chip_end;
 */
 
-//    register_chip_begin("/Flash 39SFxx,49Fxx", "39SF512,49F512", "39SF/49F", SIZE_49F512);
-//	add_action(MODULE_READ_ACTION, read_49F512);
-//	add_action(MODULE_SIGN_ACTION, sign_flash);
-//    register_chip_end;
-
-    register_chip_begin("/Flash 39SFxx,49Fxx", "39SF010,49F010", "39SF/49F", SIZE_49F010);
-	add_action(MODULE_READ_ACTION, read_49F010);
-//	add_action(MODULE_SIGN_ACTION, sign_flash);
+REGISTER_MODULE_BEGIN( 29xx )
+    register_chip_begin("/Flash 29Cxxx", "AT29C256", "29Cxx", SIZE_32K);
+	add_action(MODULE_READ_ACTION, read_29C256);
+	add_action(MODULE_VERIFY_ACTION, verify_29C256);
+	add_action(MODULE_TEST_BLANK_ACTION, test_blank_29C256);
+	add_action(MODULE_SIGN_ACTION, sign_29C256);
     register_chip_end;
 
-//    register_chip_begin("/Flash 39SFxx,49Fxx", "39SF020,49F020", "39SF/49F", SIZE_49F020);
-//	add_action(MODULE_READ_ACTION, read_49F020);
-//	add_action(MODULE_SIGN_ACTION, sign_flash);
+    register_chip_begin("/Flash 29EExxx", "SST29EE020", "29x010", SIZE_256K);
+	add_action(MODULE_READ_ACTION, read_29EE020);
+	add_action(MODULE_VERIFY_ACTION, verify_29EE020);
+	add_action(MODULE_TEST_BLANK_ACTION, test_blank_29EE020);
+	add_action(MODULE_SIGN_ACTION, sign_29EE020);
+    register_chip_end;
+
+
+/*
+// 29Fxxx
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "29F64", "zupa", SIZE_29F64);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "29F128", "zupa", SIZE_29F128);
+    register_chip_end;
+//    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "29F256", "zupa", SIZE_);
 //    register_chip_end;
-
-//    register_chip_begin("/Flash 39SFxx,49Fxx", "39SF040,49F040", "39SF/49F", SIZE_49F040);
-//	add_action(MODULE_READ_ACTION, read_49F040);
-//	add_action(MODULE_SIGN_ACTION, sign_flash);
-//    register_chip_end;
-
-//    register_chip_begin("/EEPROM 28xx/32 pin", "28F080,28F8000,28F8001", "28F080", SIZE_28F080);
-//	add_action(MODULE_READ_ACTION, read_28F080);
-//	add_action(MODULE_PROG_ACTION, prog_28F080);
-//	add_action(MODULE_ERASE_ACTION, erase_28F080);
-//	add_action(MODULE_VERIFY_ACTION, verify_28F080);
-//	add_action(MODULE_TEST_ACTION, test_28F080);
-
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "29F512", "zupa", SIZE_29F512);
+    register_chip_end;                                                    
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "29F010", "zupa", SIZE_29F010);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "29F020", "zupa", SIZE_29F020);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "29F040", "zupa", SIZE_29F040);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "M29F512B", "zupa", SIZE_M29F512);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "M29F010B", "zupa", SIZE_M29F010);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fxxx", "M29F040B", "zupa", SIZE_M29F040);
+    register_chip_end;
+// 39/49Fxxx
+    register_chip_begin("/Flash (29,39,49)Fxxx/(39,49)Fxxx", "39SF,49F512", "zupa", SIZE_49F512);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(39,49)Fxxx", "39SF,49F010", "zupa", SIZE_49F010);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(39,49)Fxxx", "39SF,49F020", "zupa", SIZE_49F020);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(39,49)Fxxx", "39SF,49F040", "zupa", SIZE_49F040);
+    register_chip_end;
+// MXIC 29FFxxx
+    register_chip_begin("/Flash (29,39,49)Fxxx/MXIC 29Fxxx", "MX29F001-T", "zupa", SIZE_MX29F001);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/MXIC 29Fxxx", "MX29F002-T", "zupa", SIZE_MX29F002);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/MXIC 29Fxxx", "MX29F004-T", "zupa", SIZE_MX29F004);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/MXIC 29Fxxx", "MX29F001-B", "zupa", SIZE_MX29F001);
+    register_chip_end;                                                                  
+    register_chip_begin("/Flash (29,39,49)Fxxx/MXIC 29Fxxx", "MX29F002-B", "zupa", SIZE_MX29F002);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/MXIC 29Fxxx", "MX29F004-B", "zupa", SIZE_MX29F004);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/MXIC 29Fxxx", "MX29F040", "zupa", SIZE_MX29F040);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/MXIC 29Fxxx", "MX29F1610", "zupa", SIZE_MX29F1610);
+    register_chip_end;
+// 29/49F00xx
+    register_chip_begin("/Flash (29,39,49)Fxxx/(29,49)F00xx", "29F001T", "zupa", SIZE_29F001);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(29,49)F00xx", "29F002", "zupa", SIZE_29F002);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(29,49)F00xx", "29F002NT", "zupa", SIZE_29F002);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(29,49)F00xx", "AT49F001", "zupa", SIZE_AT49F001);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(29,49)F00xx", "AT49F001(N)T", "zupa", SIZE_AT49F001);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(29,49)F00xx", "AT49F002", "zupa", SIZE_AT49F002);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(29,49)F00xx", "AT49F002(N)T", "zupa", SIZE_AT49F002);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/(29,49)F00xx", "AT49F008A", "zupa", SIZE_AT49F008);
+    register_chip_end;
+// 29Fx00 8/16bit
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fx00 (8,16bit)", "MX29F100", "zupa", SIZE_AM29F100);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fx00 (8,16bit)", "Am29F200", "zupa", SIZE_AM29F200);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fx00 (8,16bit)", "Am29F400", "zupa", SIZE_AM29F400);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fx00 (8,16bit)", "Am29F800", "zupa", SIZE_AM29F800);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fx00 (8,16bit)", "Am29F160", "zupa", SIZE_AM29F160);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/29Fx00 (8,16bit)", "Am29F320", "zupa", SIZE_AM29F320);
+    register_chip_end;
+// M29F0x0 TSOP40    
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "MBM29LV002", "zupa", SIZE_MBM29LV002);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "MBM29LV004", "zupa", SIZE_MBM29LV004);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "MBM29LV004x", "zupa", SIZE_MBM29LV004);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "MBM29LV008x", "zupa", SIZE_MBM29LV008);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "MBM29LV016x", "zupa", SIZE_MBM29LV016);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "MBM29LV032x", "zupa", SIZE_MBM29LV032);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "HY29F080", "zupa", SIZE_HY29F080);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "M29F080", "zupa", SIZE_M29F080);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "M29F016", "zupa", SIZE_M29F016);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "M29F032", "zupa", SIZE_M29F032);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "Am29F080", "zupa", SIZE_AM29F080);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "Am29F016", "zupa", SIZE_AM29F016);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "Am29F032", "zupa", SIZE_AM29F032);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "Am29F032 (32Mb)", "zupa", SIZE_Am29F032mb);
+    register_chip_end;
+    register_chip_begin("/Flash (29,39,49)Fxxx/M29F0x0 TSOP40", "AT49F080", "zupa", SIZE_AT49F080);
+    register_chip_end;
+*/
 REGISTER_MODULE_END
 
