@@ -7,13 +7,27 @@
 	Restart your computer, go into the BIOS or SETUP: press F2, F10, F12, or DELETE (depending
 on your computer) as soon as it boots. There should be a setting somewhere for the parallel or LPT
 port. Set this to EPP or ECP, not to Normal. If your computer does not have a parallel port setting,
-Geepro may not work at all.
+Geepro may not work at all. PCI card parallel ports often do not need to be configured.
 
 							USING GEEPRO
 
 	Using Geepro is fairly self explanatory. There are read, write, verify, etc. buttons relative
 to the chip that you selected in the chip selection box. The black on the dip switch is the actual
-switch knob as of Geepro version 0.1. 
+switch knob as of Geepro version 0.1. There are three tabs along the top: Chip, Buffer, and HW Test.
+The Chip tab is where you select your chip and programmer. It also has the dip switch configuration.
+Geepro keeps the hex code read from a chip or file in the Buffer tab. You can edit or modify anything
+in the buffer by right clicking a cell in the main window of the buffer. There are various tools along
+the left side. HW Test does anything from testing the hardware to putting a square wave signal on
+the pins to reading data. Geepro supports multiple programming devices that use parallel ports.
+Selecting a programmer will give you a photo of what they look like. Later versions of Willem devices
+should be compatible with Willem 4.0 or PCB 3. Again, any and all feedback is appreciated.
+
+							27XX PROGRAMMING VOLTAGES
+
+	2716   27c16  2732   27c32    						25 volt
+	2732a  2764   27128							21 volt
+	2764a  27c64  27128a 27c128  27256  27c256 27512  27c512      		12.5 Volt 
+
 							ADDING CHIPS
 
 	There is a "readme_plugins" file in the doc directory that gives a tutorial on adding chips.
@@ -32,3 +46,6 @@ purpose, otherwise Google it.
 the command "cd /your_folder_path/build_directory/" and then "sudo ./geepro" in a terminal window. 
 Ordinarily you will not have to run Geepro as root. Use this if Geepro has trouble with read/write
 errors or programming problems.
+
+	Clicking the VPP box in the HW Test tab should turn on the red LED, and VCC should turn
+on the orange LED.
