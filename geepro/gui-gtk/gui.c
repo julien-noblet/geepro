@@ -1781,9 +1781,6 @@ static void gui_help(geepro *gep)
     }
     if( text ){
 	// set marker
-	gtk_text_view_get_iter_at_location( cta, &iter, 0, 0);
-    	gtk_text_view_scroll_to_iter( cta, &iter, 0,0,0,0 );
-	
 	gtk_text_buffer_set_text( gtb, text, len );
 	free( text );
 	gtk_widget_show_all( wg );
