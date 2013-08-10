@@ -60,8 +60,8 @@ static geepro *__geepro_root__ = NULL; // data structure for system signals hand
 // AA---> memory leak problem
 int test_uid(geepro *gep)
 {
-    if((gep->uid = getuid())) 
-	gui_dialog_box(gep, "[IF][TEXT]\n   For lower latency time \nis better to run program using \n                 sudo[/TEXT][BR]  OK  ");
+//    if((gep->uid = getuid())) 
+//	gui_dialog_box(gep, "[IF][TEXT]\n   For lower latency time \nis better to run program using \n                 sudo[/TEXT][BR]  OK  ");
     return gep->uid;
 }
 
