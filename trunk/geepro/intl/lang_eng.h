@@ -26,7 +26,7 @@
 
 #define STS_CHIP_DUMP		"Memory chip read complete"
 #define TXT_READING_CHIP_PB	"Memory chip reading"
-#define ALLOCATION_ERROR	"memory allocation error\n"
+#define ALLOCATION_ERROR	"Memory allocation error\n"
 #define STS_EMPTY		"Buffer is empty"
 #define DEVICE_ENTRY_LB		"Chip name: "
 #define INIT_PORT_ERROR		"Initialization port I/O error\n"
@@ -88,7 +88,7 @@
 #define TST_LB_CS		"Line CS Pin 1"
 #define TST_LB_CLK		"Line CLOCK Pin 2"
 #define TST_LB_DI		"Line DI Pin 3"
-#define TST_LB_SER_RD		"read-out DO Pin 4"
+#define TST_LB_SER_RD		"Read-out DO Pin 4"
 #define TST_LB_DIP		"DIP SW"
 #define PROPERTIES_TIP		"Program settings"
 
@@ -116,19 +116,19 @@
 #define BUTTON_NO		"Cancel"
 #define NO_CHIP_PLUGIN		"Missing plugin for chip"
 #define QUIT_TITLE		"Message"
-#define QUIT_MSG		"Are you realy want to quit?"
+#define QUIT_MSG		"Do you really want to quit?"   //changed by Reuben
 
 #define FSEL_LOAD		"Read file"
 #define FSEL_SAVE		"Write file"
 #define MISSING_PROG_PLUGIN	"Missing programmer plugin\n"
-#define CHIP_SELECTION		"Chip selection"
-#define TXT_MISSING		"missing"
+#define CHIP_DESCRIPTION	"Chip description"
+#define TXT_MISSING		"Missing"
 #define TXT_PROGRAMMER		"Programmer:"
 #define TXT_INTERFACE		"Device:"
 #define TXT_BUFFER		"Buffer"
-#define TXT_EXIT		"bye bye.\n"
+#define TXT_EXIT		"Bye Bye.\n"
 
-#define RELOAD_QUESTION		"Buffer file and disk file are differ.\nReload ?"
+#define RELOAD_QUESTION		"Buffer file and disk file are different.\nReload ?" //changed by Reuben
 
 #define TIP_BE_CLEAR_BUFFER	"Clear buffer"
 #define TIP_BE_FIND_STRING	"Find string"
@@ -167,7 +167,7 @@
 
 #define TXT_BE_ADDRESS_RANGE	"Address range"
 #define TXT_BE_ADDRESS_FROM	"From:"
-#define TXT_BE_ADDRESS_TO	"to:"
+#define TXT_BE_ADDRESS_TO	"To:"
 #define TXT_BE_PATTERN		"Pattern"
 #define TXT_BE_FIND_ENTRY	"Find string"
 #define TXT_BE_REPLACE_ENTRY	"Replace string"
@@ -304,3 +304,4 @@
 #define TEXT_GUI_RELOAD		"Reload file"
 #define TEXT_BE_TEXTED_UTF8	"Selected area contains invalidated UTF8 characters. Fill them with spaces or abort ?"
 #define TEXT_BE_STENCIL_BRIEF	"Brief description"
+#define CHIP_SELECTION		"Chip"
