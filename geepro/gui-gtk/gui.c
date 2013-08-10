@@ -1745,11 +1745,9 @@ static void gui_chip_tree_add_node(const char *path, char *name, chip_tree **br,
 static void gui_help(geepro *gep)
 {
     GtkWidget *wg, *wg1, *cta;
-    GtkTextMark *gtm;
     GtkTextBuffer *gtb;
-    GtkTextIter iter;
     FILE *f;
-    char *text = NULL;    
+    char *text = NULL, *path = NULL;    
     int len;
 
     wg = gtk_dialog_new();
@@ -1759,32 +1757,38 @@ static void gui_help(geepro *gep)
     wg1 = gtk_scrolled_window_new( NULL, NULL);
     gtk_box_pack_start(GTK_BOX(cta), wg1, TRUE, TRUE, 0);
     cta =  gtk_text_view_new_with_buffer( NULL );
-    gtk_container_add(GTK_CONTAINER( wg1 ), cta);
     gtk_text_view_set_editable( GTK_TEXT_VIEW( cta ), FALSE);
     gtk_text_view_set_cursor_visible( GTK_TEXT_VIEW( cta ), FALSE);
     gtb = gtk_text_view_get_buffer( GTK_TEXT_VIEW( cta ));
+    gtk_container_add(GTK_CONTAINER( wg1 ), cta);
     // read file, temporary fixed path
-    if(!(f = fopen( "./doc/doc_eng.txt", "r"))){ 
-	printf("[ERR] Missing help file\n");
-    } else {
-	fseek(f, 0L, SEEK_END);    
-	len = ftell( f );
-	fseek(f, 0L, SEEK_SET);
-	if(len){
-	    text = (char *)malloc( len + 1 );
-	    if(fread( text, len, 1, f) != len){
-		printf("[ERR] Read help file error\n");
-	    };	
-	    text[len] = 0;
-	}	
-	fclose( f );
+    if(cfp_get_string(gep->cfg, "/docfile", &path)){
+	printf("[WRN] Missing docfile variable in config\n");    
+    }
+    if( path ){
+	if(!(f = fopen( "./doc/doc_eng.txt", "r"))){ 
+	    printf("[ERR] Missing help file\n");
+	} else {
+	    fseek(f, 0L, SEEK_END);    
+	    len = ftell( f );
+	    fseek(f, 0L, SEEK_SET);
+	    if(len){
+		text = (char *)malloc( len + 1 );
+		if(fread( text, len, 1, f) != len){
+		    printf("[ERR] Read help file error\n");
+		};	
+		text[len] = 0;
+	    }	
+	    fclose( f );
+	}
+        free( path );
     }
     if( text ){
 	// set marker
 	gtk_text_buffer_set_text( gtb, text, len );
 	free( text );
 	gtk_widget_show_all( wg );
-	gtk_dialog_run( GTK_DIALOG( wg ) );    
+	gtk_dialog_run( GTK_DIALOG( wg ) ); 
     }
     gtk_widget_destroy( wg );
 }

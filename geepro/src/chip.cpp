@@ -387,14 +387,14 @@ void chip_menu_create(chip_plugins *plg, chip_callback cc, void *ptr1, void *ptr
 {
     chip_desc *chp;
     char *tmp, t;
-    void *p,*op;
+    void *p;
 // have to add release list
     chip_add_path(plg, (char *)"/");
     for(chp = plg->chip_qe; chp; chp = chp->next ){
 	if(chip_test_supported( plg )) continue;
 	if( cc ) cc( chp, ptr1, ptr2);
 	tmp = chp->chip_path + 1;
-	op = chip_find_path(plg, (char *)"/");
+//	op = chip_find_path(plg, (char *)"/");
 	for(;*tmp; tmp++){
 	    for(; *tmp!='/' && *tmp; tmp++);
 	    t = *tmp;
@@ -402,7 +402,6 @@ void chip_menu_create(chip_plugins *plg, chip_callback cc, void *ptr1, void *ptr
 	    if(!(p = chip_find_path(plg, chp->chip_path))){
 		chip_add_path(plg, chp->chip_path);
 	    }
-	    op = p;
 	    *tmp = t;
 	}
 	if((p = chip_find_path(plg, chp->chip_path))){
