@@ -57,29 +57,6 @@ extern "C" {
 
 static geepro *__geepro_root__ = NULL; // data structure for system signals handling, local for this file
 
-// AA---> memory leak problem
-int test_uid(geepro *gep)
-{
-//    if((gep->uid = getuid())) 
-//	gui_dialog_box(gep, "[IF][TEXT]\n   For lower latency time \nis better to run program using \n                 sudo[/TEXT][BR]  OK  ");
-    return gep->uid;
-}
-
-char test_hw(void *wg, geepro *gep)
-{
-    if(!gep->ifc) return 0;
-    for(;;)
-	if(gep->hw_test_conn()){
-        	gui_dialog_box(gep,"[IF][TEXT]\n     Hardware present [/TEXT][BR]  OK  ");
-	    break;
-	}else{
-		if(gui_dialog_box(gep,"[ER][TEXT]\n hardware error :  Check Power and\n connections[/TEXT][BR]Try again[BR]Cancel") == 2) return 0;
-	}
-
-    return 1;
-}
-// AA<-------
-
 static char load_cfg(geepro *gep, const char *path)
 {
     char err;
@@ -246,6 +223,7 @@ int main(int argc, char **argv)
 	destruct( geep );
 	return -2;
     };
+    geep->uid = getuid();
     load_cfg_file( geep );
     if(load_variables( geep )){
 	destruct( geep );

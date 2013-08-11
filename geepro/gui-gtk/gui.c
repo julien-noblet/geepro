@@ -65,6 +65,7 @@ static void gui_chip_tree_view_create(geepro *gep, chip_tree *tree);
 static void gui_chip_tree_view_free( chip_tree *tree );
 static void gui_help(geepro *gep);
 static void gui_chip_tree_add_node(const char *path, char *name, chip_tree **br, int col);
+static void gui_test_hw(GtkWidget *wg, geepro *gep);
 
 /***************************************************************************************************/
 void gui_action_icon_set()
@@ -86,6 +87,7 @@ void gui_action_icon_set()
 
     gtk_icon_factory_add_default(ifact);
 }
+
 
 char gui_test_connection(geepro *gep)
 {
@@ -444,7 +446,7 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
     if( !strcmp(ga->name, "geepro-write-eeprom-action") ) gui_test_file( gep );
     if( !strcmp(ga->name, "geepro-verify-action") ) gui_test_file( gep );
     if( !strcmp(ga->name, "geepro-verify-eeprom-action") ) gui_test_file( gep );
-
+    gep->action = 1;
     if( !gui_test_connection( gep ) ){
 	x = ((chip_act_func)ga->action)(ga->root);
     } else 
@@ -457,6 +459,7 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 	    );
     gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
     gui_checksum_recalculate( gep );
+    gep->action = 0;
 }
 
 static int gui_add_bt_action(geepro *gep, const char *stock_name, const char *tip, chip_act_func action)
@@ -641,7 +644,7 @@ static int gui_iface_sel(GtkWidget *wg, geepro *gep)
     }
     gep->ifc->ifc_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
     gui_stat_rfsh(gep);
-    test_hw(NULL, gep);
+    gui_test_hw(NULL, gep);
     sprintf(tmp,"%i", gep->ifc->ifc_sel);
     if(GUI(gep->gui)->gui_run) store_set(gep->store, "LAST_SELECTED_IFACE", tmp);
     return 0;
@@ -701,6 +704,7 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     sprintf(tmp,"%i", gtk_combo_box_get_active(GTK_COMBO_BOX(wg)));
 
     if(GUI(gep->gui)->gui_run) store_set(gep->store, "LAST_SELECTED_PROGRAMMER", tmp);
+    gui_test_hw( NULL, gep );
 }
 
 
@@ -837,11 +841,42 @@ void gui_setup_chip_selection_tree(geepro *gep, GtkWidget *wg )
     gtk_container_add(GTK_CONTAINER( wg ), view);
 }
 
+static void gui_set_plug(geepro *gep)
+{
+    gtk_label_set_markup(
+	GTK_LABEL( GUI(gep->gui)->connected_lbl ), 
+	gep->plug ? LB_PLUGGED : LB_UNPLUGGED
+    );
+    if( gep->plug )
+        gtk_image_set_from_stock( GTK_IMAGE(GUI(gep->gui)->connected), GTK_STOCK_CONNECT, GTK_ICON_SIZE_DND);    
+    else
+        gtk_image_set_from_stock( GTK_IMAGE(GUI(gep->gui)->connected), GTK_STOCK_DISCONNECT, GTK_ICON_SIZE_DND);        
+}
+
+static void gui_test_hw(GtkWidget *wg, geepro *gep)
+{
+    char old;
+    if( !gep->ifc || gep->action);
+    old = gep->plug;
+    gep->plug = gep->hw_test_conn();
+    if( old != gep->plug) 
+	gui_set_plug( gep );
+}
+
+static gboolean gui_test_cyclic_hw(geepro *gep)
+{
+    if( !gep->ifc || gep->action ) return TRUE;
+    if( !gep->hw_test_continue() ) return TRUE;
+    gui_test_hw( NULL, gep);
+    return TRUE;
+}
+
 void gui_menu_setup(geepro *gep)
 {
     char *tmp;
-    GtkWidget *wg0, *wg1, *wg2, *wg3, *wg4;
+    GtkWidget *wg0, *wg1, *wg2, *wg3, *wg4, *wg5;
     GtkToolItem *ti0;
+    GtkStyle *style;
 
 
     GUI(gep->gui)->fct = -1;
@@ -856,14 +891,38 @@ void gui_menu_setup(geepro *gep)
     gtk_window_set_title(GTK_WINDOW(GUI(gep->gui)->wmain), EPROGRAM_NAME " ver " EVERSION);
     gtk_widget_set_size_request(GUI(gep->gui)->wmain, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
     gtk_widget_realize(GUI(gep->gui)->wmain);
-
     wg0 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);    
     gtk_container_add(GTK_CONTAINER(GUI(gep->gui)->wmain), wg0);
+// connect/disconnect icon
+    wg1 = gtk_frame_new( NULL );
+    wg2 = gtk_button_new();
+    wg4 = gtk_image_new_from_stock(GTK_STOCK_DISCONNECT, GTK_ICON_SIZE_DND);    
+    gtk_container_add(GTK_CONTAINER(wg2), wg4);
+    g_signal_connect(G_OBJECT(wg2), "pressed", G_CALLBACK(gui_test_hw), gep);
+    gtk_widget_set_tooltip_text(wg2, TEST_BUTTON_LB);
+
+    gtk_container_add(GTK_CONTAINER(wg1), wg2);    
+    GUI(gep->gui)->connected = wg4;
 
 /* stripe Menu Bar */
+    wg3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add(GTK_CONTAINER(wg0), wg3);
+    gtk_box_pack_end(GTK_BOX(wg3), wg1, FALSE, FALSE, 0);
+    wg4 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(wg3), wg4, TRUE, TRUE, 0);
+    wg3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(wg4), wg3, TRUE, TRUE, 0);
     wg1 = gtk_menu_bar_new();
-    gtk_box_pack_start(GTK_BOX(wg0), wg1, FALSE, FALSE, 0);
-
+    gtk_box_pack_start(GTK_BOX(wg3), wg1, TRUE, TRUE, 0);
+    style = gtk_widget_get_style( wg1 );
+    wg5 = gtk_label_new(NULL);
+    GUI(gep->gui)->connected_lbl = wg5;
+    gtk_misc_set_padding(GTK_MISC(wg5), 10, 0);
+    wg2 = gtk_event_box_new();
+    if( style )
+	gtk_widget_modify_bg( wg2, GTK_STATE_NORMAL, &style->bg[GTK_STATE_NORMAL]);
+    gtk_container_add(GTK_CONTAINER(wg2), wg5);    
+    gtk_box_pack_start(GTK_BOX(wg3), wg2, FALSE, FALSE, 0);
 /* menu File */
     wg2 = gtk_menu_item_new_with_label(MB_FILE);
     gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
@@ -873,7 +932,7 @@ void gui_menu_setup(geepro *gep)
     wg2 = gtk_menu_item_new_with_label(MB_LOAD_FILE);
     gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
     g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_load_file), gep);
-
+    gui_set_plug( gep );
     /* load file at specified address */
     wg2 = gtk_menu_item_new_with_label(MB_LOAD_FILE_AT);
     gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
@@ -919,7 +978,7 @@ void gui_menu_setup(geepro *gep)
 /* toolbar */
     wg1 = gtk_toolbar_new();
     gtk_toolbar_set_style(GTK_TOOLBAR(wg1), GTK_TOOLBAR_ICONS);
-    gtk_box_pack_start(GTK_BOX(wg0), wg1, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(wg4), wg1, FALSE, FALSE, 0);
     GUI(gep->gui)->toolbox = wg1;
 
     // static toolbar items
@@ -1029,9 +1088,6 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     wg1 = gtk_label_new(TXT_INTERFACE);
     gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
     gtk_table_attach( GTK_TABLE(wg3), wg1, 0, 2, 1, 2,  GTK_FILL, 0, 5, 5);
-    wg1 = gtk_button_new_with_label("Test Connection");
-    g_signal_connect(G_OBJECT(wg1), "clicked", G_CALLBACK(test_hw), gep);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  3, 4, 2, 3,  GTK_FILL, 0 , 5, 5);
     gtk_table_attach(GTK_TABLE(wg3), wg1 = gui_prog_list(gep),  2, 4, 0, 1, GTK_FILL | GTK_EXPAND, 0, 5, 5);
     gui_add_iface_combox(gep);
 
@@ -1049,6 +1105,8 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
 /* Koniec inicjowania Gui */
     gui_set_default(gep);
     gui_xml_new(GUI(gep->gui)); /* zainicjowanie struktury gui_xml */
+// test connection automaticaly
+    g_timeout_add( 1000, (GSourceFunc)(gui_test_cyclic_hw), gep); // automatic test connection
 }
 
 void gui_run(geepro *gep)
@@ -1058,11 +1116,15 @@ void gui_run(geepro *gep)
 
     gui_menu_setup( gep );
     gui_action_icon_set();
-
     gtk_notebook_set_current_page(GTK_NOTEBOOK(GUI(gep->gui)->notebook), 0);
     gui_device_menu_create(gep->ifc->plugins, GUI(gep->gui)->mb_dev, gep);
-    gtk_widget_show_all(GUI(gep->gui)->wmain);
-    test_uid(gep);
+
+    GUI(gep->gui)->gui_run = 1;
+    gtk_widget_show_all(GUI(gep->gui)->wmain);    
+
+    // It is hack for proper work of gtk_file_chooser() 
+    gui_dialog_box(gep, "[IF][TEXT]Annoying popup\n Hack for gtk_file_chooser_new() not crash.[/TEXT][BR]OK", NULL, NULL);    
+
     /* inicjowanie domyślnego plugina sterownika programatora */
     g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->prog_combox), "changed");
     // default combox setting
@@ -1070,7 +1132,7 @@ void gui_run(geepro *gep)
     if(!store_get(gep->store, "LAST_CHIP_SELECTED", &tmp)){
 	if( tmp ) gui_chip_select(gep, tmp);
     }
-    GUI(gep->gui)->gui_run = 1;
+
     gtk_main(); /* jesli programator ok to startuj program inaczej wyjdź */
 }
 
@@ -1765,9 +1827,11 @@ static void gui_help(geepro *gep)
     if(cfp_get_string(gep->cfg, "/docfile", &path)){
 	printf("[WRN] Missing docfile variable in config\n");    
     }
+//printf( "--->%s \n", path);    
+path = "./doc/doc_eng.txt";
     if( path ){
-	if(!(f = fopen( "./doc/doc_eng.txt", "r"))){ 
-	    printf("[ERR] Missing help file\n");
+	if(!(f = fopen( path, "r"))){ 
+//	    printf("[ERR] Missing help file\n");
 	} else {
 	    fseek(f, 0L, SEEK_END);    
 	    len = ftell( f );
@@ -1775,13 +1839,13 @@ static void gui_help(geepro *gep)
 	    if(len){
 		text = (char *)malloc( len + 1 );
 		if(fread( text, len, 1, f) != len){
-		    printf("[ERR] Read help file error\n");
+//		    printf("[ERR] Read help file error\n");
 		};	
 		text[len] = 0;
 	    }	
 	    fclose( f );
 	}
-        free( path );
+//        free( path );
     }
     if( text ){
 	// set marker
@@ -1792,4 +1856,5 @@ static void gui_help(geepro *gep)
     }
     gtk_widget_destroy( wg );
 }
+
 

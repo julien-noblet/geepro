@@ -30,13 +30,13 @@ extern "C" {
 
 int dummy_hardware_driver(void *,en_hw_api funct, int val, void *ptr)
 {
-    printf("[MSG] Adding dummy module\n");
     switch(funct){
 	/* ogólne */
 	case HW_NAME:	  *(char **)ptr = (char *)"Dummy driver";
 	case HW_IFACE:	  return IFACE_USB;
 	case HW_GINIT:    return 0;
 	case HW_TEST:	  return 1; /* zawsze obecny */
+	case HW_TEST_CONTINUE:  return 0; /* zawsze obecny */
 	case HW_RESET:    return 0;
 	case HW_OPEN:     return 0;
 	case HW_CLOSE:    return 0;

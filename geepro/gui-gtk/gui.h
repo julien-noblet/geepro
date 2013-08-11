@@ -63,6 +63,8 @@ typedef struct
     void *crc_entry;    /* pole sumy CRC */
     void *file_entry;    /* pole sumy CRC */
     void *chip_select_store; // chip selection tree container
+    void *connected;	// connected/disconnected indicator
+    void *connected_lbl;// connected/disconnected indicator
 //    void *chip_desc;    /* pole opisu ukladu */
 //    void *status_bar;   /* pasek statusu u dolu okna */
 

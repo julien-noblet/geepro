@@ -252,6 +252,7 @@ int memsim_api(void *g,en_hw_api func, int val, void *ptr)
 	case HW_OPEN : return memsim_open((const char *)ptr, val);
 	case HW_CLOSE: return memsim_close();
 	case HW_TEST : return memsim_test_connected();
+	case HW_TEST_CONTINUE : return 1;
 	case HW_SET_DATA: memsim_wr_data( val ); return HW_SUCCESS;
 	case HW_SET_ADDR: memsim_set_address( val ); return HW_SUCCESS;
 	case HW_SET_PGM: memsim_set_rdy( val ); return HW_SUCCESS;

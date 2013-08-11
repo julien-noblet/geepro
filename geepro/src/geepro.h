@@ -69,6 +69,8 @@ typedef struct
     store_str *store; // variables stored after close program
     const char *shared_drivers_xml_file;
     const char *shared_geepro_dir;
+    char  plug;
+    char  action;
 } geepro;
 
 #ifdef __cplusplus
