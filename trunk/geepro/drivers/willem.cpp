@@ -488,6 +488,7 @@ int willem_40_hardware_driver(void *g,en_hw_api funct, int val, void *ptr)
 	case HW_GINIT:    return willem_gui_init(ptr, (char *)"none", (char *)"", (char *)"willem_40");
 	case HW_SET_CHIP: return willem_gui_init(ptr, ((geepro *)ptr)->chp->chip_name, ((geepro *)ptr)->chp->chip_family, "willem_40");
 	case HW_TEST:	  return willem_test_connection();
+	case HW_TEST_CONTINUE:	  return 0;
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return willem_open((const char *)ptr,val);
 	case HW_CLOSE:    return willem_close();
@@ -540,6 +541,7 @@ int willem4_hardware_driver(void *g,en_hw_api funct, int val, void *ptr)
 	case HW_GINIT:    return willem_gui_init(ptr,(char *)"none", (char *)"", (char *)"willem_pcb3");
 	case HW_SET_CHIP: return willem_gui_init(ptr, ((geepro *)ptr)->chp->chip_name, ((geepro *)ptr)->chp->chip_family, "willem_pcb3");
 	case HW_TEST:	  return willem_test_connection();
+	case HW_TEST_CONTINUE:	  return 0;
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return pcb3_open((const char *)ptr,val);
 	case HW_CLOSE:    return willem_close();
@@ -590,6 +592,7 @@ int willempro2_hardware_driver(void *g, en_hw_api funct, int val, void *ptr)
 	case HW_GINIT:    return willem_gui_init(ptr,(char *)"none", (char *)"", (char *)"willem_pro2");
 	case HW_SET_CHIP: return willem_gui_init(ptr, ((geepro *)ptr)->chp->chip_name, ((geepro *)ptr)->chp->chip_family, "willem_pro2");
 	case HW_TEST:	  return willem_test_connection();
+	case HW_TEST_CONTINUE:	  return 0;
 	case HW_RESET:    return willem_reset();
 	case HW_OPEN:     return pcb3_open((const char *)ptr,val);
 	case HW_CLOSE:    return willem_close();

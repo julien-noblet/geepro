@@ -11,16 +11,26 @@ Geepro may not work at all. PCI card parallel ports often do not need to be conf
 
 							USING GEEPRO
 
-	Using Geepro is fairly self explanatory. There are read, write, verify, etc. buttons relative
-to the chip that you selected in the chip selection box. The black on the dip switch is the actual
-switch knob as of Geepro version 0.1. There are three tabs along the top: Chip, Buffer, and HW Test.
-The Chip tab is where you select your chip and programmer. It also has the dip switch configuration.
-Geepro keeps the hex code read from a chip or file in the Buffer tab. You can edit or modify anything
-in the buffer by right clicking a cell in the main window of the buffer. There are various tools along
-the left side. HW Test does anything from testing the hardware to putting a square wave signal on
+	Using Geepro is fairly self explanatory. There are three tabs along the top: Chip, Buffer, and
+HW Test.
+
+	The Chip tab is where you select your chip and programmer. It also has the dip switch
+configuration.The black on the dip switch is the actual switch knob. There are read, write, verify, etc.
+buttons in the toolbar relative to the chip that you selected in the chip selection box. 
+
+	Geepro keeps the hex code read from a chip or file in the Buffer tab. You can edit or
+modify anything in the buffer by right clicking a cell in the main window of the buffer. There are
+various tools along the left side. 
+
+	HW Test does anything from testing the hardware to putting a square wave signal on
 the pins to reading data. Geepro supports multiple programming devices that use parallel ports.
 Selecting a programmer will give you a photo of what they look like. Later versions of Willem devices
 should be compatible with Willem 4.0 or PCB 3. Again, any and all feedback is appreciated.
+
+							FILE
+
+	Geepro supports saving the chip contents to file. Always save the code to a file name that ends
+with .bin . Anything else may not save properly. 
 
 							27XX PROGRAMMING VOLTAGES
 

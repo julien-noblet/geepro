@@ -148,6 +148,7 @@ int altera_bb_api(void *g,en_hw_api func, int val, void *ptr)
 	case HW_OPEN : return altera_bb_open((const char *)ptr, val);
 	case HW_CLOSE: return altera_bb_close();
 	case HW_TEST : return altera_bb_test_connected();
+	case HW_TEST_CONTINUE : return 1;
 	// GUI
 	case HW_GINIT: return altera_bb_gui( GEEPRO(ptr), (const char *)"none", (const char *)"" );
 	case HW_SET_CHIP: return altera_bb_gui( GEEPRO(ptr), GEEPRO(ptr)->chp->chip_name, GEEPRO(ptr)->chp->chip_family );

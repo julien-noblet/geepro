@@ -305,3 +305,7 @@
 #define TEXT_BE_TEXTED_UTF8	"Selected area contains invalidated UTF8 characters. Fill them with spaces or abort ?"
 #define TEXT_BE_STENCIL_BRIEF	"Brief description"
 #define CHIP_SELECTION		"Chip"
+
+#define LB_PLUGGED		"<span foreground=\"black\"><b>Programmer Connected</b></span>"
+#define LB_UNPLUGGED		"<span foreground=\"red\"><b>Programmer Unplugged !</b></span>"
+

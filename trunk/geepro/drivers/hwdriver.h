@@ -41,6 +41,7 @@ typedef enum{
     HW_IFACE,
     HW_GINIT,
     HW_TEST,
+    HW_TEST_CONTINUE,
     HW_RESET,
     HW_OPEN,
     HW_CLOSE,
@@ -128,6 +129,7 @@ typedef int (*hw_driver_type)(void *root, en_hw_api func_id, int arg, void *ptr)
 #define hw_get_iface()		ifc->hwd(gep, HW_IFACE,  0, NULL)
 #define hw_gui_init(geepro)	ifc->hwd(gep, HW_GINIT,  0, geepro)
 #define hw_test_conn()		ifc->hwd(gep, HW_TEST,   0, NULL)
+#define hw_test_continue()	ifc->hwd(gep, HW_TEST_CONTINUE,   0, NULL)	// returns true or false flag - if true -> allow continue test
 #define hw_reset()		ifc->hwd(gep, HW_RESET,  0, NULL)
 #define hw_open(dev, flags)	ifc->hwd(gep, HW_OPEN,   flags, dev)
 #define hw_close()		ifc->hwd(gep, HW_CLOSE,  0, NULL)
