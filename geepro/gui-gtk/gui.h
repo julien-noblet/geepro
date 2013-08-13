@@ -53,11 +53,11 @@ typedef struct
     void *mb_dev;       /* lista ukladów do wyboru */
     void *toolbox;      /* toolbox dla doczepiania kontrolek operacji na ukladzie */
     void *notebook;     /* notebook, dla dodawania kart */    
-    void *table;        /* tabela pakujaca, zawierjaca przycisk wyboru urzadzenia */
+void *table;        /* tabela pakujaca, zawierjaca przycisk wyboru urzadzenia */
     void *main_table;	/* main pack table */
 
     void *prog_combox;  /* combox wyboru programatora */
-    void *iface;        /* combox wyboru urzadzenia */
+void *iface;        /* combox wyboru urzadzenia */
     void *dev_entry;    /* pole nazwy ukladu    */
     void *buffer_entry; /* pole rozmiaru bufora */
     void *crc_entry;    /* pole sumy CRC */
