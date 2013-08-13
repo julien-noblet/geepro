@@ -12,20 +12,23 @@ Geepro may not work at all. PCI card parallel ports often do not need to be conf
 							USING GEEPRO
 
 	Using Geepro is fairly self explanatory. There are three tabs along the top: Chip, Buffer, and
-HW Test.
+HW Test. In the top right corner is the programmer status: connected or disconnected. The button 
+will update the programmer status. There are read, write, verify, etc. buttons in the toolbar relative
+to the chip that you selected in the chip selection box.
 
 	The Chip tab is where you select your chip and programmer. It also has the dip switch
-configuration.The black on the dip switch is the actual switch knob. There are read, write, verify, etc.
-buttons in the toolbar relative to the chip that you selected in the chip selection box. 
+configuration.The black on the dip switch is the actual switch knob.  The bottom right corner 
+has two selection buttons: programmer and port. Geepro supports multiple programming devices 
+that use parallel ports. Selecting a programmer will give you a photo of what they look like. Later
+versions of Willem devices should be compatible with Willem 4.0 or PCB 3. Any and all feedback is
+appreciated. 
 
 	Geepro keeps the hex code read from a chip or file in the Buffer tab. You can edit or
 modify anything in the buffer by right clicking a cell in the main window of the buffer. There are
 various tools along the left side. 
 
 	HW Test does anything from testing the hardware to putting a square wave signal on
-the pins to reading data. Geepro supports multiple programming devices that use parallel ports.
-Selecting a programmer will give you a photo of what they look like. Later versions of Willem devices
-should be compatible with Willem 4.0 or PCB 3. Again, any and all feedback is appreciated.
+the pins to reading data. 
 
 							FILE
 
@@ -34,9 +37,9 @@ with .bin . Anything else may not save properly.
 
 							27XX PROGRAMMING VOLTAGES
 
-	2716   27c16  2732   27c32    						25 volt
-	2732a  2764   27128							21 volt
-	2764a  27c64  27128a 27c128  27256  27c256 27512  27c512      		12.5 Volt 
+	2716   27c16  2732   27c32------------------------------------------------------------------25 volt
+	2732a  2764   27128-----------------------------------------------------------------------------21 volt
+	2764a  27c64  27128a 27c128  27256  27c256 27512  27c512-----------12.5 Volt 
 
 							ADDING CHIPS
 

@@ -92,8 +92,9 @@ void gui_action_icon_set()
 char gui_test_connection(geepro *gep)
 {
     if(gep->hw_test_conn()) return 0;
-    gui_dialog_box(gep, "[ER][TEXT]Programmer unplugged![/TEXT][BR]OK", NULL, NULL);
-    return -1;
+    gui_test_hw( NULL, gep );
+    gui_dialog_box(gep, "[ER][TEXT]Programmer unplugged ![/TEXT][BR]OK", NULL, NULL);
+    
 }
 
 static void gui_checksum_rfsh(geepro *gep)
@@ -430,7 +431,7 @@ static void gui_test_file( geepro *gep )
 
 static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 {
-    int x;
+    int x = 0;
     geepro *gep = (geepro*)(ga->root);
     if(!ga->action){
 	gui_dialog_box(
@@ -447,16 +448,19 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
     if( !strcmp(ga->name, "geepro-verify-action") ) gui_test_file( gep );
     if( !strcmp(ga->name, "geepro-verify-eeprom-action") ) gui_test_file( gep );
     gep->action = 1;
+    gui_test_hw( NULL, gep );
     if( !gui_test_connection( gep ) ){
 	x = ((chip_act_func)ga->action)(ga->root);
-    } else 
-	x = -1;
-	
+    } 
+    else;
+	//x = -1;        //changed by Reuben
+		
+
     if( x ) gui_dialog_box( gep, 
 		"[ER][TEXT]"
-	        "Error occured during performing action.\n Returned error: %i"
+	        "Action returned error: %i"
 		"[/TEXT][BR] OK ", x
-	    );
+	    ); 
     gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
     gui_checksum_recalculate( gep );
     gep->action = 0;
@@ -974,13 +978,11 @@ void gui_menu_setup(geepro *gep)
     gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
     g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_about), gep);
 
-
 /* toolbar */
     wg1 = gtk_toolbar_new();
     gtk_toolbar_set_style(GTK_TOOLBAR(wg1), GTK_TOOLBAR_ICONS);
     gtk_box_pack_start(GTK_BOX(wg4), wg1, FALSE, FALSE, 0);
     GUI(gep->gui)->toolbox = wg1;
-
     // static toolbar items
     ti0 = gtk_tool_button_new_from_stock(GTK_STOCK_OPEN);
     g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_load_file), gep);
@@ -1008,14 +1010,14 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
 /* ======================================== */
 /* --> notebook page 1 'strona glowna' <--- */
 /* ======================================== */
-    wg2 = gtk_table_new(2, 2, FALSE); /* tabela pakujaca karty glownej */
-    GUI(gep->gui)->main_table = wg2;
-    wg3 = gtk_label_new(LAB_NOTE_1);
-    gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg2, wg3);
-/* Ramka ukladu */
+    wg2 = gtk_table_new(3, 2, FALSE); /* tabela pakujaca karty glownej */
+    wg5 = gtk_table_new( 2, 1, FALSE );
+    gtk_table_attach(GTK_TABLE(wg2), wg5,  1, 2, 0, 3,  GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 0,0);
+    gtk_notebook_append_page( GTK_NOTEBOOK(wg1), wg2, gtk_label_new(LAB_NOTE_1) );
+// Chip frame
     wg1 = gtk_frame_new(MB_DEVICE);
     gtk_container_set_border_width(GTK_CONTAINER(wg1), 3);
-    gtk_table_attach_defaults(GTK_TABLE(wg2), wg1,  0, 1, 0, 1);
+    gtk_table_attach_defaults(GTK_TABLE(wg2), wg1,  0, 1, 0, 3);
     /* tabela pakujaca opis ukladu i bufor */
     wg3 = gtk_table_new( 2, 6, FALSE);
     gtk_container_set_border_width(GTK_CONTAINER(wg3), 3);
@@ -1074,20 +1076,13 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     gtk_table_attach_defaults(GTK_TABLE(wg3), wg1,  0, 3, 4, 5);
     gui_setup_chip_selection_tree( gep, wg1 );
 
-/* Ramka programatora */
-    /* opcje programatora */
+/* Programmer */
+    GUI(gep->gui)->main_table = wg5; // point to attach XML GUI (view of programmer, dipsw etc )
     wg1 = gtk_frame_new(FR_NB_04_TITLE);
-    gtk_container_set_border_width(GTK_CONTAINER(wg1), 3);
-    gtk_table_attach(GTK_TABLE(wg2), wg1,  0, 1, 1, 2,  GTK_FILL | GTK_EXPAND,0, 0,0);
+    gtk_table_attach(GTK_TABLE(wg5), wg1,  0, 1, 1, 2,  GTK_FILL | GTK_EXPAND, 0, 0,0);
     wg3 = gtk_table_new(3, 4, FALSE);
     GUI(gep->gui)->table = wg3;
-    gtk_container_add(GTK_CONTAINER(wg1), wg3);    
-    wg1 = gtk_label_new(TXT_PROGRAMMER);
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach( GTK_TABLE(wg3), wg1, 0, 2, 0, 1,  GTK_FILL, 0, 5, 5);
-    wg1 = gtk_label_new(TXT_INTERFACE);
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach( GTK_TABLE(wg3), wg1, 0, 2, 1, 2,  GTK_FILL, 0, 5, 5);
+    gtk_container_add(GTK_CONTAINER(wg1), wg3); 
     gtk_table_attach(GTK_TABLE(wg3), wg1 = gui_prog_list(gep),  2, 4, 0, 1, GTK_FILL | GTK_EXPAND, 0, 5, 5);
     gui_add_iface_combox(gep);
 

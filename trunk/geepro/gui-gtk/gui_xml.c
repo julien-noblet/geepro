@@ -555,7 +555,7 @@ static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, cons
 	    tmp = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
 	    gui_xml_signal_register(g, tmp, NULL, NULL, GUI_XML_INFO_ROOT);    
 	    gui_xml_parse_element(g, GTK_WIDGET(tmp), doc, cur->xmlChildrenNode, parm, shared_geepro_dir);
-	    gtk_table_attach_defaults(GTK_TABLE(g->info), tmp, 1,2, 0, 2);
+	    gtk_table_attach(GTK_TABLE(g->info), tmp, 0,1, 0, 1,  GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 0, 0);
 	    gtk_widget_show_all(GTK_WIDGET(g->info));
 	}
 	if(!strcmp((char*)cur->name,"notebook") && strstr(section, "notebook")){
