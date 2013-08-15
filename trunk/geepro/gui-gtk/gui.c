@@ -113,28 +113,42 @@ static void gui_checksum_recalculate(geepro *gep)
     gui_checksum_rfsh( gep );
 }
 
+void gui_shortcut_size(char *tmp_str, unsigned long size)
+{
+    unsigned int a, i;
+    const char kx[5] = {'k','M','G','T','P'};
+    char  b[3] = {'B',0,0};
+
+    a = size;
+    i = 0;
+    while( (a >= 1024) && (i < 5)){
+        b[0] = kx[i];
+        b[1] = 'B';
+        a = a / 1024;
+        i++;
+    }
+    sprintf(tmp_str + strlen(tmp_str), "(%i %s)", a, b); 
+}
+
+void gui_entry_update(GtkEntry *entry, long size, char *tmp_str)
+{
+    sprintf(tmp_str, "0x%x", size); 
+    gui_shortcut_size( tmp_str, size);
+    gtk_entry_set_text(entry, tmp_str);  
+}
+
 void gui_stat_rfsh(geepro *gep)
 {
-    const char kx[5] = {'k','M','G','T','P'};
     char tmp_str[40];
-    unsigned int a, i;
-    char  b[3] = {'B',0,0};
 
     if(gep->chp){
 	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), gep->chp->chip_name);
-	a = (unsigned int)gep->chp->dev_size;
-	i = 0;
-	while( (a >= 1024) && (i < 5)){
-	    b[0] = kx[i];
-	    b[1] = 'B';
-	    a = a / 1024;
-	    i++;
-	}
-	sprintf(tmp_str, "0x%x (%i %s)", (unsigned int)gep->chp->dev_size, a, b); 
-	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->buffer_entry), tmp_str);  
+	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->device_entry),(unsigned int)gep->chp->dev_size, tmp_str);
+	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->buffer_entry),gui_bineditor_get_buffer_size(GUI_BINEDITOR(GUI(gep->gui)->bineditor)), tmp_str);
 	gui_checksum_rfsh( gep );
     } else {
 	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), "--------");
+	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->device_entry), tmp_str);  
 	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->buffer_entry), tmp_str);  
 	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->crc_entry), tmp_str);  
     }
@@ -403,7 +417,7 @@ static void gui_save_file(GtkWidget *w, geepro *gep)
 }
 
 /***************************************************************************************************************************/
-/* dodawanie przyciskow akcji do paska narzedziowego */
+// adding action button to tool bar
 
 static void gui_test_file( geepro *gep )
 {
@@ -545,7 +559,7 @@ static void gui_chip_select(geepro *gep, const char *name)
     chip_desc *tmp, *old_chp;
     chip_plugins *plg = gep->ifc->plugins;
 
-    /* Ustawienie nowego biezacego ukladu */
+    // select new chip as current
     if(!(tmp = chip_lookup_chip(plg, name))){
 	gui_dialog_box( gep,
 	    "[ER][TEXT]Missing chip description in queue.[/TEXT][BR] OK "
@@ -555,7 +569,7 @@ static void gui_chip_select(geepro *gep, const char *name)
     old_chp = gep->chp;
     gep->chp = tmp; 
 
-    /* ustawienie programatora pod wybrany uklad, test czy programator go obsluguje */
+    // sets programmer for given chip, test if progammer can handle it
     if(gep->hw_set_chip(gep) < 0){
 	gui_dialog_box( gep,
 	    "[ER][TEXT]Chip %s not supported by current programmer.[/TEXT][BR] OK ",
@@ -565,11 +579,11 @@ static void gui_chip_select(geepro *gep, const char *name)
 	return;
     }
 
-    /* wykasowanie menu, zwolnienie pamieci przez bufor */
+    // destroy menu, free buffer memory 
     gui_chip_free(gep);
     gep->chp = tmp; 
 
-    /* alokacja pamieci na bufor */
+    // allocate memory for buffer
     if(buffer_alloc(gep->chp)){
 	gui_dialog_box( gep,
 	    "[ER][TEXT]Out of memory.[/TEXT][BR] OK "
@@ -578,13 +592,13 @@ static void gui_chip_select(geepro *gep, const char *name)
 	return;
     }
 
-    /* aktualizacja edycji bufora */
+    // actualize buffer object
     gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, tmp->dev_size, (unsigned char*)tmp->buffer);
 
-    /* ustawienie przyciskow akcji na menu */    
+    // add action buttons to menu    
     gui_add_action(gep, gep->chp );
 
-    /* wykonanie autostartu dla danego ukladu, jesli zdefiniowano */
+    // autostart for choosed chip, if defined
     if(gep->chp->autostart)
 	     gep->chp->autostart(gep);
 
@@ -832,7 +846,7 @@ void gui_setup_chip_selection_tree(geepro *gep, GtkWidget *wg )
     GtkTreeModel *model;
 
     view = gtk_tree_view_new();
-//    gtk_tree_view_set_headers_visible( GTK_TREE_VIEW( view ), FALSE );
+    gtk_tree_view_set_headers_visible( GTK_TREE_VIEW( view ), FALSE );
     gtk_tree_view_set_enable_tree_lines( GTK_TREE_VIEW( view ), TRUE );
     gtk_tree_view_insert_column_with_attributes( GTK_TREE_VIEW( view ), -1, CHIP_SELECTION, gtk_cell_renderer_text_new(), "text", 0, NULL);
 
@@ -875,18 +889,70 @@ static gboolean gui_test_cyclic_hw(geepro *gep)
     return TRUE;
 }
 
+static GtkWidget *gui_info_field(const char *title, void **entry)
+{
+    GtkWidget *wg1, *wg2;
+    wg1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    wg2 = gtk_label_new(title);
+//    gtk_misc_set_alignment(GTK_MISC(wg2), 0, 0);
+    gtk_box_pack_start(GTK_BOX(wg1), wg2, FALSE, FALSE, 0);
+    wg2 = gtk_entry_new();
+    gtk_editable_set_editable(GTK_EDITABLE(wg2), FALSE);
+    gtk_box_pack_start(GTK_BOX(wg1), wg2, TRUE, TRUE, 0);
+    *entry = wg2;
+    return wg1;
+}
+
+static void gui_device_buffer_info(geepro *gep, GtkWidget *wg)
+{
+    GtkWidget *wg1, *wg4, *wg3, *wg2;
+    char *tmp;
+
+    wg1 = gtk_frame_new( NULL );
+    gtk_container_add( GTK_CONTAINER( wg ), wg1);
+    wg2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_container_add( GTK_CONTAINER( wg1 ), wg2);
+    // Size of device
+    gtk_container_add( GTK_CONTAINER( wg2 ), gui_info_field(SIZE_DEVICE_HEX_LB, &GUI(gep->gui)->device_entry) );
+    // Size of buffer
+    gtk_container_add( GTK_CONTAINER( wg2 ), gui_info_field(SIZE_BUFFER_HEX_LB, &GUI(gep->gui)->buffer_entry) );
+    // CRC sum   
+    gtk_container_add( GTK_CONTAINER( wg2 ), gui_info_field(CHECKSUM_LB, &GUI(gep->gui)->crc_entry) );
+    // file entry and reload button
+    wg1 = gtk_frame_new( NULL );
+    gtk_container_add( GTK_CONTAINER( wg ), wg1);
+    wg2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add( GTK_CONTAINER( wg1 ), wg2);
+    gtk_box_pack_start(GTK_BOX(wg2), gui_info_field(FILE_LB, &GUI(gep->gui)->file_entry),  TRUE, TRUE, 0);
+    tmp = NULL;
+    if(!store_get(gep->store, "LAST_OPENED_FILE", &tmp)){
+	if(tmp){
+	    gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->file_entry), tmp);
+	    gtk_editable_set_position(GTK_EDITABLE(GUI(gep->gui)->file_entry), -1);
+	}
+    }
+    wg1 = gtk_button_new();
+    gtk_container_add(GTK_CONTAINER(wg1), gtk_image_new_from_stock("gtk-refresh", GTK_ICON_SIZE_BUTTON));
+    gtk_widget_set_tooltip_text(wg1, TEXT(GUI_RELOAD) );
+    g_signal_connect(G_OBJECT(wg1), "pressed", G_CALLBACK(gui_refresh_button), gep);
+    gtk_box_pack_start(GTK_BOX(wg2), wg1,  FALSE, FALSE, 0);
+
+}
+
+void gui_bineditor_update(GuiBineditor *be, geepro *gep)
+{
+    gui_stat_rfsh( gep );
+}
+
 void gui_menu_setup(geepro *gep)
 {
-    char *tmp;
     GtkWidget *wg0, *wg1, *wg2, *wg3, *wg4, *wg5;
     GtkToolItem *ti0;
     GtkStyle *style;
 
-
     GUI(gep->gui)->fct = -1;
     gtk_init(&gep->argc, &gep->argv);
     gui_add_images(gep);
-
     GUI(gep->gui)->action = NULL;
     GUI(gep->gui)->wmain = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_icon(GTK_WINDOW(GUI(gep->gui)->wmain), gdk_pixbuf_new_from_xpm_data( LOGO_ICON ));
@@ -904,7 +970,6 @@ void gui_menu_setup(geepro *gep)
     gtk_container_add(GTK_CONTAINER(wg2), wg4);
     g_signal_connect(G_OBJECT(wg2), "pressed", G_CALLBACK(gui_test_hw), gep);
     gtk_widget_set_tooltip_text(wg2, TEST_BUTTON_LB);
-
     gtk_container_add(GTK_CONTAINER(wg1), wg2);    
     GUI(gep->gui)->connected = wg4;
 
@@ -954,13 +1019,6 @@ void gui_menu_setup(geepro *gep)
     gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
     g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_exit_program), gep);
 
-/* Menu device */
-//    wg2 = gtk_menu_item_new_with_label(MB_DEVICE);    
-//    gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
-//    wg3 = gtk_menu_new();
-//    gtk_menu_item_set_submenu(GTK_MENU_ITEM(wg2), wg3);
-//    GUI(gep->gui)->mb_dev = wg3;
-
 /* Menu Help */
     wg2 = gtk_menu_item_new_with_label( MB_HELP );    
     gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
@@ -1006,9 +1064,9 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     gtk_box_pack_start(GTK_BOX(wg0), wg1, TRUE, TRUE, 0);
     GUI(gep->gui)->notebook = wg1;
 
-/* ------------------------------------------- strony NOTEBOOKA ----------------------------------------------------------- */
+/* ------------------------------------------- NOTEBOOK pages ----------------------------------------------------------- */
 /* ======================================== */
-/* --> notebook page 1 'strona glowna' <--- */
+/* --> notebook page 1 'main page' <--- */
 /* ======================================== */
     wg2 = gtk_table_new(3, 2, FALSE); /* tabela pakujaca karty glownej */
     wg5 = gtk_table_new( 2, 1, FALSE );
@@ -1030,47 +1088,6 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
     gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,0,1, GTK_FILL | GTK_EXPAND, 0, 10,0);
     GUI(gep->gui)->dev_entry = wg1;
-    /* Rozmiar bufora/pamieci */    
-    wg1 = gtk_label_new(SIZE_HEX_LB);
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,1,2, GTK_FILL, 0, 0,0);
-    wg1 = gtk_entry_new();
-    gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,1,2, GTK_FILL | GTK_EXPAND, 0, 10,0);
-    GUI(gep->gui)->buffer_entry = wg1;
-    /* Suma CRC */    
-    wg1 = gtk_label_new(CHECKSUM_LB);
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,2,3, GTK_FILL, 0, 0,0);
-    wg1 = gtk_entry_new();
-    gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
-    GUI(gep->gui)->crc_entry = wg1;
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  1,2,2,3, GTK_FILL | GTK_EXPAND, 0, 10,0);
-
-    /* Nazwa pliku */    
-    wg1 = gtk_label_new(FILE_LB);
-    gtk_misc_set_alignment(GTK_MISC(wg1), 0, 0);
-    gtk_table_attach(GTK_TABLE(wg3), wg1,  0,1,3,4, GTK_FILL, 0, 0,0);
-    wg1 = gtk_entry_new();
-    gtk_editable_set_editable(GTK_EDITABLE(wg1), FALSE);
-    GUI(gep->gui)->file_entry = wg1;
-    tmp = NULL;
-    if(!store_get(gep->store, "LAST_OPENED_FILE", &tmp)){
-	if(tmp){
-	    gtk_entry_set_text(GTK_ENTRY(wg1), tmp);
-	    gtk_editable_set_position(GTK_EDITABLE(wg1), -1);
-	}
-    }
-    wg4 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(wg4), wg1,  TRUE, TRUE, 0);
-    wg1 = gtk_button_new();
-    gtk_box_pack_start(GTK_BOX(wg4), wg1, FALSE ,FALSE, 0);    
-    gtk_table_attach(GTK_TABLE(wg3), wg4,  1,2,3,4, GTK_FILL | GTK_EXPAND, 0, 10,0);
-    wg4 = gtk_image_new_from_stock("gtk-refresh", GTK_ICON_SIZE_BUTTON);    
-    gtk_container_add(GTK_CONTAINER(wg1), wg4);
-    gtk_widget_set_tooltip_text(wg1, TEXT(GUI_RELOAD));
-    g_signal_connect(G_OBJECT(wg1), "pressed", G_CALLBACK(gui_refresh_button), gep);
-
     // Chip selection tree
     wg1 = gtk_scrolled_window_new( NULL, NULL);
     gtk_table_attach_defaults(GTK_TABLE(wg3), wg1,  0, 3, 4, 5);
@@ -1089,14 +1106,15 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
 /* ======================================= */
 /* -----> notebook page 2 'bufor' <------- */
 /* ======================================= */
-    wg1 = GUI(gep->gui)->notebook;
+    wg1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
     wg0 = gui_bineditor_new(GUI(gep->gui)->wmain);
     GUI_BINEDITOR(wg0)->priv->store = gep->store;
-    gui_bineditor_set_icon( GUI_BINEDITOR(wg0), LOGO_ICON );
-    wg3 = gtk_label_new(TXT_BUFFER);
-    gtk_notebook_append_page(GTK_NOTEBOOK(wg1), wg0, wg3);
     GUI(gep->gui)->bineditor = wg0;
-
+    g_signal_connect(G_OBJECT(wg0), "changed", G_CALLBACK(gui_bineditor_update), gep);    
+    gui_bineditor_set_icon( GUI_BINEDITOR(wg0), LOGO_ICON );
+    gtk_notebook_append_page( GTK_NOTEBOOK( GUI(gep->gui)->notebook), wg1, gtk_label_new(TXT_BUFFER) );
+    gui_device_buffer_info( gep, wg1 );
+    gtk_box_pack_start(GTK_BOX(wg1), wg0, TRUE, TRUE, 0);    
 /* Koniec inicjowania Gui */
     gui_set_default(gep);
     gui_xml_new(GUI(gep->gui)); /* zainicjowanie struktury gui_xml */

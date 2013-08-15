@@ -60,6 +60,7 @@ void *table;        /* tabela pakujaca, zawierjaca przycisk wyboru urzadzenia */
 void *iface;        /* combox wyboru urzadzenia */
     void *dev_entry;    /* pole nazwy ukladu    */
     void *buffer_entry; /* pole rozmiaru bufora */
+    void *device_entry; /* pole rozmiaru bufora */
     void *crc_entry;    /* pole sumy CRC */
     void *file_entry;    /* pole sumy CRC */
     void *chip_select_store; // chip selection tree container
