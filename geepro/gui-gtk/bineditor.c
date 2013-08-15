@@ -701,6 +701,15 @@ void gui_bineditor_file_tool_insert(GuiBineditor *be)
     gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), GTK_TOOL_ITEM(be->priv->i_open), 0);
 }
 
+void gui_bineditor_tool_insert(GuiBineditor *be, GtkToolItem *tool_item, int pos)
+{
+    if(!be) return;
+    if(!tool_item) return;
+    if(!be->priv) return;
+    if(!be->priv->tb) return;
+    gtk_toolbar_insert( GTK_TOOLBAR(be->priv->tb), tool_item, pos);    
+}
+
 static inline void gui_bineditor_hor_tool(GuiBineditor *be)
 {
     be->priv->tb = gtk_toolbar_new();

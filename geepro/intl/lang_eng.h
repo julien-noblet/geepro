@@ -149,6 +149,7 @@
 #define TIP_BE_COPY		"Copy from clipboard"
 #define TIP_BE_TEXTED		"Text editor"
 #define TIP_BE_OPEN		"Load binary file"
+#define TIP_BE_OPEN_AT		"Load binary file at position"
 #define TIP_BE_WRITE		"Save binary file"
 #define TIP_BE_UNDO		"Undo changes"
 #define TIP_BE_REDO		"Redo changes"

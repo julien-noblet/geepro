@@ -132,7 +132,7 @@ void gui_shortcut_size(char *tmp_str, unsigned long size)
 
 void gui_entry_update(GtkEntry *entry, long size, char *tmp_str)
 {
-    sprintf(tmp_str, "0x%x", size); 
+    sprintf(tmp_str, "0x%x", (unsigned int)size); 
     gui_shortcut_size( tmp_str, size);
     gtk_entry_set_text(entry, tmp_str);  
 }
@@ -905,7 +905,7 @@ static GtkWidget *gui_info_field(const char *title, void **entry)
 
 static void gui_device_buffer_info(geepro *gep, GtkWidget *wg)
 {
-    GtkWidget *wg1, *wg4, *wg3, *wg2;
+    GtkWidget *wg1, *wg2;
     char *tmp;
 
     wg1 = gtk_frame_new( NULL );
@@ -992,6 +992,7 @@ void gui_menu_setup(geepro *gep)
 	gtk_widget_modify_bg( wg2, GTK_STATE_NORMAL, &style->bg[GTK_STATE_NORMAL]);
     gtk_container_add(GTK_CONTAINER(wg2), wg5);    
     gtk_box_pack_start(GTK_BOX(wg3), wg2, FALSE, FALSE, 0);
+
 /* menu File */
     wg2 = gtk_menu_item_new_with_label(MB_FILE);
     gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
@@ -1107,11 +1108,31 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
 /* -----> notebook page 2 'bufor' <------- */
 /* ======================================= */
     wg1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+
     wg0 = gui_bineditor_new(GUI(gep->gui)->wmain);
     GUI_BINEDITOR(wg0)->priv->store = gep->store;
     GUI(gep->gui)->bineditor = wg0;
     g_signal_connect(G_OBJECT(wg0), "changed", G_CALLBACK(gui_bineditor_update), gep);    
     gui_bineditor_set_icon( GUI_BINEDITOR(wg0), LOGO_ICON );
+
+    wg2 = gtk_separator_tool_item_new();
+    gui_bineditor_tool_insert(GUI_BINEDITOR(wg0), wg2, 0);
+
+    wg2 = gtk_tool_button_new_from_stock( GTK_STOCK_SAVE );
+    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(wg2), TIP_BE_WRITE);    
+    gui_bineditor_tool_insert(GUI_BINEDITOR(wg0), wg2, 0);
+    g_signal_connect(G_OBJECT(wg2), "clicked", G_CALLBACK(gui_save_file), gep);
+
+    wg2 = gtk_tool_button_new_from_stock( GTK_STOCK_OPEN );
+    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(wg2), TIP_BE_OPEN_AT);    
+    gui_bineditor_tool_insert(GUI_BINEDITOR(wg0), wg2, 0);
+    g_signal_connect(G_OBJECT(wg2), "clicked", G_CALLBACK(gui_load_file_at), gep);
+
+    wg2 = gtk_tool_button_new_from_stock( GTK_STOCK_OPEN );
+    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(wg2), TIP_BE_OPEN);    
+    gui_bineditor_tool_insert(GUI_BINEDITOR(wg0), wg2, 0);
+    g_signal_connect(G_OBJECT(wg2), "clicked", G_CALLBACK(gui_load_file), gep);
+
     gtk_notebook_append_page( GTK_NOTEBOOK( GUI(gep->gui)->notebook), wg1, gtk_label_new(TXT_BUFFER) );
     gui_device_buffer_info( gep, wg1 );
     gtk_box_pack_start(GTK_BOX(wg1), wg0, TRUE, TRUE, 0);    
