@@ -24,6 +24,7 @@
 #include <gtk/gtk.h>
 #include <libxml/tree.h>
 #include "gui_xml.h"
+#include "../src/error.h"
 
 //#define DEBUG(fmt, p...)	printf("|-- DEBUG --> " fmt "\n", ## p)
 #define DEBUG(fmt, p...)

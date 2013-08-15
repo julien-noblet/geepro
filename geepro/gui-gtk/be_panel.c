@@ -625,6 +625,7 @@ static void gui_bineditor_resize_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_
 	exit(-1);
     }
     gui_bineditor_set_buffer(be, new_size, be->priv->buff->data);
+    g_signal_emit_by_name(G_OBJECT(be), "changed");
 }
 
 static void gui_bineditor_open_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_open_str *str )

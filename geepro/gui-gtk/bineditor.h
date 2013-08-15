@@ -250,6 +250,7 @@ GType hui_bineditor_get_type	(void) G_GNUC_CONST;
 GtkWidget *gui_bineditor_new(GtkWindow *parent);
 void gui_bineditor_set_icon(GuiBineditor *be, const char **xpm_data);
 void gui_bineditor_set_buffer(GuiBineditor *be, int bfsize, unsigned char *buffer);
+unsigned long gui_bineditor_get_buffer_size(GuiBineditor *be);
 void gui_bineditor_set_properties(GuiBineditor *be, GuiBineditorProperties prop);
 void gui_bineditor_set_colors(GuiBineditor *be, GuiBineditorColors color, float r, float g, float b);
 void gui_bineditor_redraw(GuiBineditor *be);
