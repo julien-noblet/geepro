@@ -257,6 +257,7 @@ void gui_bineditor_redraw(GuiBineditor *be);
 void gui_bineditor_connect_statusbar(GuiBineditor *be, GtkWidget *sb);
 void gui_bineditor_show_grid(GuiBineditor *be, unsigned int from, unsigned int to);
 GType gui_bineditor_get_type(void);
+void gui_bineditor_tool_insert(GuiBineditor *be, GtkToolItem *ti, int pos);
 /* marker */
 void gui_bineditor_marker_set_color(GuiBineditor *be, GuiBineditorMarkerType id, GuiBineditorColors foreground, GuiBineditorColors background);
 void gui_bineditor_marker_set_item(GuiBineditor *be, GuiBineditorMarkerType id, GuiBineditorMarkerMode mode, unsigned int from, unsigned int to);
