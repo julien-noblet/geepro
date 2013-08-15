@@ -1485,3 +1485,11 @@ void gui_bineditor_set_icon(GuiBineditor *be, const char **xpm_data)
 {
     be->priv->icon = xpm_data;
 }
+
+unsigned long gui_bineditor_get_buffer_size(GuiBineditor *be)
+{
+    if(!be) return 0;
+    if(!be->priv) return 0;
+    if(!be->priv->buff) return 0;
+    return be->priv->buff->size;
+}
