@@ -6,7 +6,8 @@ def build(bld):
     'error.cpp', 'intl.cpp',
     'buffer.cpp', 'chip.cpp', 'dummy.cpp', 'storings.cpp', 
     'iface.cpp', 'files.cpp', 'parport.cpp', 'timer.cpp', 
-    'protocols.cpp', 'script.cpp', 'checksum.cpp', 'cfp.cpp'
+    'protocols.cpp', 'script.cpp', 'checksum.cpp', 'cfp.cpp',
+    'usb2lpt.cpp'
   ]
   bld(
     features     = 'cxx', 
