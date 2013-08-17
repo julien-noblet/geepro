@@ -1,3 +1,23 @@
+/* geepro - Willem eprom programmer for linux
+ * Copyright (C) 2006 Krzysztof Komarnicki
+ * Email: krzkomar@wp.pl
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version. See the file COPYING. 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,15 +25,9 @@
 #include "opendevice.h" /* common code moved to separate module */
 #include "./firmware/requests.h"   /* custom request numbers */
 #include "./firmware/usbconfig.h"  /* device's VID/PID and names */
+#include "usb2lpt.h"
 
-typedef struct 
-{
-    usb_dev_handle *handle;
-    char *buffer;    
-    int  bfsize;
-} s_usb2lpt;
-
-char usb2lpt_get(s_usb2lpt *usb, char *buff, int buff_len, int req, int rcv)
+static char usb2lpt_get(s_usb2lpt *usb, char *buff, int buff_len, int req, int rcv)
 {
     int cnt;
 
@@ -51,7 +65,7 @@ char *usb2lpt_get_rev(s_usb2lpt *usb)
     return NULL;
 }
 
-char usb2lpt_set(s_usb2lpt *usb, int buff_len, int req)
+static char usb2lpt_set(s_usb2lpt *usb, int buff_len, int req)
 {
     int cnt;
     
@@ -76,6 +90,7 @@ char usb2lpt_output(s_usb2lpt *usb, int data)
     return 1;
 }
 
+/*
 char usb2lpt_test( s_usb2lpt *usb ) // return TRUE if error
 {
     if( !usb ) return 1;
@@ -86,6 +101,7 @@ char usb2lpt_test( s_usb2lpt *usb ) // return TRUE if error
     usb2lpt_set(usb, 2, USB_RQ_ECHO );
     return !strncmp(usb->buffer, "Echo", 2);
 }
+*/
 
 static void usb2lpt_usb_detach(s_usb2lpt *usb)
 {    
@@ -103,7 +119,7 @@ static void usb2lpt_usb_detach(s_usb2lpt *usb)
     }
 }
 
-void usb2lpt_open( s_usb2lpt *usb )
+static void usb2lpt_open( s_usb2lpt *usb )
 {
     const unsigned char rawVid[2] = {USB_CFG_VENDOR_ID}, rawPid[2] = {USB_CFG_DEVICE_ID};
     char  vendor[] = {USB_CFG_VENDOR_NAME, 0}, product[] = {USB_CFG_DEVICE_NAME, 0};

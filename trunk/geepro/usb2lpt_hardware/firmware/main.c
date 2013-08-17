@@ -12,7 +12,7 @@
 
 #include <avr/pgmspace.h>   /* required by usbdrv.h */
 #include "usbdrv.h"
-#include "requests.h"       /* The custom request numbers we use */
+#include "../../src/usb_reqs.h"       /* The custom request numbers we use */
 
 
 #define	BIT_LO	(1 << 7)
