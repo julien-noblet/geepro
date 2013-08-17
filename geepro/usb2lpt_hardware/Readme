@@ -1,0 +1,6 @@
+To compile go to './firmware' directory and type 'make'. It create main.hex file to burn flash in ATtiny2313 used in adapter.
+You should also set bitfuses CKSEL0..3, CKDIV, CKOUT  to '1' eg using external oscillator, no divider.
+For compile you have to install avr-gcc.
+
+Script usb_rules_install adds USB of adapter to group 'lp', so to run program you do not need to be root.
+
