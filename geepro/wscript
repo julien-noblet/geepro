@@ -28,9 +28,11 @@ def configure(conf):
   conf.check_cfg(package='gtk+-3.0'  , atleast_version='0.0.0')
   conf.check_cfg(package='cairo'     , atleast_version='0.0.0')
   conf.check_cfg(package='libxml-2.0', atleast_version='0.0.0')
+  conf.check_cfg(package='libusb'    , atleast_version='0.0.0')
   conf.check_cfg(package='gtk+-3.0'  , args='--cflags --libs')
   conf.check_cfg(package='cairo'     , args='--cflags --libs')
   conf.check_cfg(package='libxml-2.0', args='--cflags --libs')
+  conf.check_cfg(package='libusb'    , args='--cflags --libs')
 
   conf.define('PACKAGE'                    , APPNAME)
   conf.define('DEFAULT_CHIPS_PATH'         , conf.env.PREFIX+'/lib/geepro/chips')
@@ -66,6 +68,6 @@ def build(bld):
     features     = 'cxx cprogram',
     add_objects  = ['maincode',"main.o"],
     use          = ['gui-gtk'],
-    uselib       = ['GTK+-3.0','CAIRO','LIBXML-2.0','DL'],
+    uselib       = ['GTK+-3.0','CAIRO','LIBXML-2.0','DL','LIBUSB'],
     target       = bld.env.APPNAME,
   )
