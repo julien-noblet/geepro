@@ -1,0 +1,2 @@
+#!/bin/bash
+sudo cp Usb2Lpt.rules /etc/udev/rules.d

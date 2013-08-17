@@ -1,0 +1,2 @@
+ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="05dc",
+ATTRS{serial}=="0000:00:12.0", MODE="0660", GROUP="lp"

@@ -109,7 +109,7 @@
 #define MB_READ_ACTION		"Read-out chip"
 #define MB_OPTIONS		"Options"
 #define MB_DEVICE		"Chip"
-#define MB_HELP			"Help"
+#define MB_HELP			"Geepro"                     //changed by Reuben
 #define MB_DOCUMENTATION	"Documentation"
 
 #define ABOUT_TITLE		"About program"
