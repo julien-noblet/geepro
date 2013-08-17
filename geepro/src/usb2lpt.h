@@ -21,6 +21,10 @@
 #ifndef __USB2LPT_H__
 #define __USB2LPT_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct 
 {
 //    usb_dev_handle *handle;
@@ -29,6 +33,8 @@ typedef struct
     int  bfsize;
 } s_usb2lpt;
 
+#define USB_HANDLER(x)	((usb_dev_handle *)x)
+
 extern s_usb2lpt *usb2lpt_init();			// initialize driver
 extern char usb2lpt_input(s_usb2lpt *usb);		// input data from adapter
 extern char *usb2lpt_get_id(s_usb2lpt *usb);		// get identifier -> should be "Geepro"
@@ -36,6 +42,10 @@ extern char *usb2lpt_get_rev(s_usb2lpt *usb);		// get revision number -> [0].[1]
 extern char usb2lpt_output(s_usb2lpt *usb, int data);	// set pins
 //extern char usb2lpt_test( s_usb2lpt *usb ); 		// return TRUE if error
 extern void usb2lpt_free(s_usb2lpt *usb );		// destroy driver
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __USB2LPT_H__ */
 

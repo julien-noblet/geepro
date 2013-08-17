@@ -23,8 +23,8 @@
 #include <string.h>
 #include <usb.h>        /* this is libusb */
 #include "opendevice.h" /* common code moved to separate module */
-#include "./firmware/requests.h"   /* custom request numbers */
-#include "./firmware/usbconfig.h"  /* device's VID/PID and names */
+#include "usb_reqs.h"   /* custom request numbers */
+#include "usbconfig.h"  /* device's VID/PID and names */
 #include "usb2lpt.h"
 
 static char usb2lpt_get(s_usb2lpt *usb, char *buff, int buff_len, int req, int rcv)
@@ -32,7 +32,7 @@ static char usb2lpt_get(s_usb2lpt *usb, char *buff, int buff_len, int req, int r
     int cnt;
 
     if( !usb ) return 0;
-    cnt = usb_control_msg(usb->handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, req, 0, 0, buff, buff_len, 5000);
+    cnt = usb_control_msg(USB_HANDLER(usb->handle), USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, req, 0, 0, buff, buff_len, 5000);
     if(cnt < rcv){
         if(cnt < 0){
             fprintf(stderr, "USB error: %s\n", usb_strerror());
@@ -64,25 +64,25 @@ char *usb2lpt_get_rev(s_usb2lpt *usb)
     if(usb2lpt_get( usb, usb->buffer, usb->bfsize, USB_RQ_REV, 2 )) return usb->buffer;
     return NULL;
 }
-
+/*
 static char usb2lpt_set(s_usb2lpt *usb, int buff_len, int req)
 {
     int cnt;
     
     if( !usb ) return 0;
-    cnt = usb_control_msg(usb->handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, req, 0, 0, usb->buffer, buff_len, 5000);
+    cnt = usb_control_msg(USB_HANDLER(usb->handle), USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, req, 0, 0, usb->buffer, buff_len, 5000);
     if(cnt != buff_len){
         fprintf(stderr, "USB error: %s\n", usb_strerror());
         return 0;
     }
     return 1;
 }
-
+*/
 char usb2lpt_output(s_usb2lpt *usb, int data)
 {
     int cnt;
     if( !usb ) return 0;
-    cnt = usb_control_msg(usb->handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, USB_RQ_OUTPUT, 0, data, usb->buffer, 0, 5000);
+    cnt = usb_control_msg(USB_HANDLER(usb->handle), USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, USB_RQ_OUTPUT, 0, data, usb->buffer, 0, 5000);
     if(cnt != 0){
         fprintf(stderr, "USB error: %s\n", usb_strerror());
         return 0;
@@ -109,11 +109,11 @@ static void usb2lpt_usb_detach(s_usb2lpt *usb)
     int len;
 
     if( !usb ) return;
-    if( usb_set_configuration(usb->handle, usbConfiguration )){
+    if( usb_set_configuration(USB_HANDLER(usb->handle), usbConfiguration )){
         fprintf(stderr, "Warning: could not set configuration: %s\n", usb_strerror());
     }
-    while((len = usb_claim_interface(usb->handle, usbInterface)) != 0 && retries-- > 0){
-        if(usb_detach_kernel_driver_np(usb->handle, 0) < 0){
+    while((len = usb_claim_interface(USB_HANDLER(usb->handle), usbInterface)) != 0 && retries-- > 0){
+        if(usb_detach_kernel_driver_np(USB_HANDLER(usb->handle), 0) < 0){
             fprintf(stderr, "Warning: could not detach kernel driver: %s\n", usb_strerror());
         }
     }
@@ -130,7 +130,7 @@ static void usb2lpt_open( s_usb2lpt *usb )
     vid = rawVid[1] * 256 + rawVid[0];
     pid = rawPid[1] * 256 + rawPid[0];
     /* The following function is in opendevice.c: */
-    if(usbOpenDevice(&usb->handle, vid, vendor, pid, product, NULL, NULL, NULL) != 0){
+    if(usbOpenDevice((usb_dev_handle **)(&usb->handle), vid, vendor, pid, product, NULL, NULL, NULL) != 0){
         fprintf(stderr, "Could not find USB device \"%s\" with vid=0x%x pid=0x%x. Have you got permissions to USB ?\n", product, vid, pid);
         exit(1);
     }
@@ -160,7 +160,7 @@ s_usb2lpt *usb2lpt_init()
 void usb2lpt_free(s_usb2lpt *usb )
 {
     if( !usb ) return;
-    usb_close( usb->handle );
+    usb_close( USB_HANDLER(usb->handle) );
     if(usb->buffer) free( usb->buffer );
     free( usb );
 }
