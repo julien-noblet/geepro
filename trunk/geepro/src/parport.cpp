@@ -29,10 +29,14 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdarg.h>
-
+#include "usb2lpt.h"
 #include "parport.h"
 
-#define PARPORT_VERSION	"lib parport version 0.0.3\n"
+static s_usb2lpt *usb = NULL;
+static char usb_sw = 0;
+static short int usb_mirror = 0;
+
+#define PARPORT_VERSION	"lib parport version 0.1 with Usb2Lpt support\n"
 
 #ifndef __PARPORT_CPP_CLASS__
 void parport_message(int, void *, const char *, ...);
@@ -46,6 +50,12 @@ void *parport_msgh_ptr = NULL;
 static int parport_init_lvl=0;
 
 #endif
+
+static int parport_usb_init(s_usb2lpt **usb);
+static int parport_usb_write_data(s_usb2lpt *usb, char data);
+static int parport_usb_write_ctrl(s_usb2lpt *usb, char ctrl);
+static char parport_usb_read_stat(s_usb2lpt *usb);
+static int parport_usb_cleanup(s_usb2lpt *usb);
 
 /* wirtualna funkcja obsługi błędu */
 void PARPORT(message)(int lvl, void *ptr, const char *fmt, ...)
@@ -66,6 +76,7 @@ int PARPORT(cleanup)(void)
 {
     int err = 0;
     if(PARPORT_M(init_lvl) == 0) return 0;
+    if( usb_sw ) return parport_usb_cleanup( usb );
     PARPORT_M(message)(1, PARPORT_EM, "Cleanup parport device.\n");
     if(PARPORT_M(init_lvl) > 1)
 	if(ioctl(PARPORT_M(ppdev_fd), PPRELEASE) == -1){
@@ -84,6 +95,11 @@ int PARPORT(cleanup)(void)
 int PARPORT(init)(const char *dev_path, int dev_flags)
 {
     static char first_run=1;
+
+    if(!strcmp( dev_path, "Usb2Lpt")){
+	usb_sw = 1;
+    } else 
+	usb_sw = 0;
     allow = 1;
     if(first_run){
 	PARPORT_M(message)(0, PARPORT_EM, PARPORT_VERSION);
@@ -91,6 +107,8 @@ int PARPORT(init)(const char *dev_path, int dev_flags)
     } else{
 	if(PARPORT_M(cleanup)() == PP_ERROR) return PP_ERROR;
     }
+    if( usb_sw ) return parport_usb_init( &usb );
+
     PARPORT_M(message)(1, PARPORT_EM, "Opening device %s\n", dev_path);
     if((PARPORT_M(ppdev_fd) = open(dev_path, O_RDWR | dev_flags)) == -1 ){
 	PARPORT_M(message)(7, PARPORT_EM, "open(\"%s\", O_RDWR): %s\n", dev_path, strerror(errno));    
@@ -114,6 +132,7 @@ int PARPORT(init)(const char *dev_path, int dev_flags)
 int PARPORT(w_data)(unsigned char data)
 {
     if(allow) return 0;
+    if(usb_sw) return parport_usb_write_data( usb, data);
     if(ioctl(PARPORT_M(ppdev_fd), PPWDATA, &data)){
 	PARPORT_M(message)(7, PARPORT_EM, "ioctl(%d, PPWDATA, %d): %s\n", PARPORT_M(ppdev_fd), data, strerror(errno));	
 	PARPORT_M(cleanup)();
@@ -125,6 +144,7 @@ int PARPORT(w_data)(unsigned char data)
 int PARPORT(w_ctrl)(unsigned char data)
 {
     if(allow) return 0;
+    if(usb_sw) return parport_usb_write_ctrl( usb, data);
     data ^= 0x0b; /* negacja bitów sprzetowo negowanych */
     if(ioctl(PARPORT_M(ppdev_fd), PPWCONTROL, &data)){
 	PARPORT_M(message)(7, PARPORT_EM, "ioctl(%d, PPWCONTROL, %d): %s\n", PARPORT_M(ppdev_fd), data, strerror(errno));	
@@ -138,6 +158,7 @@ int PARPORT(r_stat)(void)
 { 
     if(allow) return 0;
     unsigned char data;
+    if(usb_sw) return parport_usb_read_stat( usb );
     data = 0;
     if(ioctl(PARPORT_M(ppdev_fd), PPRSTATUS, &data)){
 	PARPORT_M(message)(7, PARPORT_EM, "ioctl(%d, PPRSTATUS): %s\n", PARPORT_M(ppdev_fd), strerror(errno));
@@ -155,6 +176,7 @@ int PARPORT(set)(unsigned char port_idx, unsigned char data)
 {
     if(allow) return 0;
     if(port_idx > 2) return PP_ERROR;
+
     PARPORT_M(mirror)[port_idx] = data;
     if(port_idx == PA)
 	if(PARPORT_M(w_data)(data) == PP_ERROR) return PP_ERROR;
@@ -165,6 +187,7 @@ int PARPORT(set)(unsigned char port_idx, unsigned char data)
 
 int PARPORT(get)(unsigned char port_idx)
 {
+
     if(allow) return 0;
     if(port_idx > 2) return 0;
     if(port_idx == PB) PARPORT_M(mirror)[port_idx] = PARPORT_M(r_stat)();
@@ -212,4 +235,71 @@ parport::~parport()
 }
 
 #endif
+
+/************************************************************************************************************************
+    USB Layer
+*/
+
+void parport_set_usb(char sw)
+{
+    usb_sw = sw;
+}
+
+static int parport_usb_init(s_usb2lpt **usb)
+{ 
+    usb_mirror = 0;
+    *usb = usb2lpt_init();
+    if( usb ) allow = 0;
+    return !usb; 
+}
+
+static int parport_usb_write_data(s_usb2lpt *usb, char data)
+{
+    usb_mirror &= 0xff00;
+    usb_mirror |= (data & 0x00ff);
+    usb2lpt_output( usb, usb_mirror );
+    return 0; 
+}
+
+static inline char parport_usb_bit_out_relocate(char  a )
+{
+    return ((a & 8) >> 3) | ((a & 4) >> 1) | ((a & 2) << 1) | ((a & 1) << 3);
+}
+
+static inline char parport_usb_bit_in_relocate(char  a )
+{
+    a = (( a & 0x1) << 6) |
+	(( a & 0x2) << 6) |    
+	(( a & 0x4) << 3) |
+	(( a & 0x8) << 1) |
+	(( a & 0xa) >> 1);
+    return a;
+}
+
+static int parport_usb_write_ctrl(s_usb2lpt *usb, char ctrl)
+{
+    ctrl = parport_usb_bit_out_relocate( ctrl );
+    usb_mirror &= 0x00ff;
+    usb_mirror |= (((int)ctrl) << 8) & 0x0ff00;
+    usb2lpt_output( usb, usb_mirror );
+    return 0; 
+}
+
+static char parport_usb_read_stat(s_usb2lpt *usb)
+{
+    char tmp = usb2lpt_input( usb );
+    tmp = parport_usb_bit_in_relocate( tmp );
+    return tmp; 
+}
+
+static int parport_usb_cleanup(s_usb2lpt *usb)
+{
+    usb_mirror = 0;
+    usb2lpt_free( usb );
+    usb = NULL;
+    allow = 1;
+    return 0; 
+}
+
+
 

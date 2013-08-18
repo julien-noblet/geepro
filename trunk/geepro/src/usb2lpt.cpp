@@ -81,6 +81,7 @@ static char usb2lpt_set(s_usb2lpt *usb, int buff_len, int req)
 char usb2lpt_output(s_usb2lpt *usb, int data)
 {
     int cnt;
+
     if( !usb ) return 0;
     cnt = usb_control_msg(USB_HANDLER(usb->handle), USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, USB_RQ_OUTPUT, 0, data, usb->buffer, 0, 5000);
     if(cnt != 0){
@@ -132,7 +133,7 @@ static void usb2lpt_open( s_usb2lpt *usb )
     /* The following function is in opendevice.c: */
     if(usbOpenDevice((usb_dev_handle **)(&usb->handle), vid, vendor, pid, product, NULL, NULL, NULL) != 0){
         fprintf(stderr, "Could not find USB device \"%s\" with vid=0x%x pid=0x%x. Have you got permissions to USB ?\n", product, vid, pid);
-        exit(1);
+	usb->handle = NULL;
     }
 }
 
@@ -153,6 +154,11 @@ s_usb2lpt *usb2lpt_init()
     }
     usb_init();
     usb2lpt_open( tmp );
+    if( !tmp->handle ){
+	free( tmp->buffer );    
+	free( tmp );
+	return NULL;
+    }
     usb2lpt_usb_detach( tmp );
     return tmp;
 }
