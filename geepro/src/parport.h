@@ -105,6 +105,8 @@ typedef void (*message_type)(int lvl, void *ptr, const char *fmt, ...);
 extern "C" {
 #endif
 
+extern void parport_set_usb( char );	// true -> enable usb2lpt layer, false -> enable ppdev
+
 /* uchwyt wlasnej funkcji bledu */
 extern message_type parport_message_handler;
 extern void *parport_msgh_ptr; /* wskaznik przekazywany jako parametr ptr funkcji bledu */

@@ -485,6 +485,8 @@ int iface_load_config(iface *ifc, void *cfg)
     iface_add_list( ifc, IFACE_LPT);
     iface_add_list( ifc, IFACE_USB);
     iface_add_list( ifc, IFACE_RS232);
+// usb experimental
+    iface_add(ifc, IFACE_LPT, "Usb2Lpt adapter", "Usb2Lpt");
 //exit(0);
     return 0;
 }
