@@ -95,8 +95,13 @@ usbMsgLen_t usbFunctionSetup(uchar data[8])
     return 0;   // default - no return bytes
 }
 
+//#define LED_TEST
+
 int __attribute__((noreturn)) main(void)
 {
+#ifdef LED_TEST
+    long  led = 0;
+#endif
     uchar   i;
 
     DDRB  = 0xff;	// whole port B as output
@@ -114,8 +119,15 @@ int __attribute__((noreturn)) main(void)
     set_pins( 0, 0 );
     sei();
     for(;;){                /* main event loop */
+#ifdef LED_TEST
+	if( ++led > 60000 ){
+	    PORTB ^= 1; // bit chandge
+	    led = 0;
+	}
+#endif
         wdt_reset();
         usbPoll();
+        
     }
 }
 

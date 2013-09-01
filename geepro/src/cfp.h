@@ -230,6 +230,11 @@ char cfp_load(s_cfp *cfp, const char *fpath);
 char cfp_get_expression(s_cfp *cfp, const char *path, const char **expr);
 
 /*
+    return count lvalue occurance in branch pointed by path
+*/
+int cfp_tree_count_element(s_cfp *cfp, const char *path, const char *lvalue);
+
+/*
     -= Get string value from tree =-
     path - as above
     str - pointer to not allocated string, return newly allocated memory with copy of string, otherwise NULL

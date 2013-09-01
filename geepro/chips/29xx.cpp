@@ -108,8 +108,8 @@ static void test_blank_flash29C(int dev_size, int range)
 
 void load_byte( int addr, char data )
 {
-    gep->hw_set_we(1);    
     gep->hw_set_oe(1); 
+    gep->hw_set_we(1);    
     gep->hw_set_ce(0); // ignore in willem
     gep->hw_set_addr( addr );
     gep->hw_set_we(0);  // latch address on falling edge

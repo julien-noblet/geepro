@@ -41,6 +41,7 @@
 #include "../src/checksum.h"
 #include "../src/error.h"
 #include "gui_dialog.h"
+#include "../src/gep_usb.h" // for gusb_events()
 
 typedef struct 
 {
@@ -883,6 +884,7 @@ static void gui_test_hw(GtkWidget *wg, geepro *gep)
 static gboolean gui_test_cyclic_hw(geepro *gep)
 {
     if( !gep->ifc || gep->action ) return TRUE;
+    gusb_events( S_USB(gep->usb_cb) ); // check USB events for hotplug
     if( !gep->hw_test_continue() ) return TRUE;
     gui_test_hw( NULL, gep);
     return TRUE;
@@ -942,6 +944,18 @@ void gui_bineditor_update(GuiBineditor *be, geepro *gep)
 {
     gui_stat_rfsh( gep );
 }
+
+void gui_usb_port_notify(s_usb_devlist *it, char flag, geepro *gep)
+{
+printf("GUI usb notify\n");
+}
+
+static void gui_port_devices_set(geepro *gep )
+{
+    gusb_set_callback( S_USB(gep->usb_cb), GUSB_CALLBACK( gui_usb_port_notify ), gep);
+    gusb_scan_connected( S_USB(gep->usb_cb) ); 
+}
+
 
 void gui_menu_setup(geepro *gep)
 {
@@ -1150,6 +1164,7 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     gui_xml_new(GUI(gep->gui)); /* zainicjowanie struktury gui_xml */
 // test connection automaticaly
     g_timeout_add( 1000, (GSourceFunc)(gui_test_cyclic_hw), gep); // automatic test connection
+    gui_port_devices_set( gep );
 }
 
 void gui_run(geepro *gep)

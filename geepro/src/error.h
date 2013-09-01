@@ -56,6 +56,10 @@ typedef struct
 
 extern void error_printf(s_error *err, const char *fmt, ... ); // prints formatted mesaage to error channel. If err = NULL then output to stdout
 
+// x have to be variable !
+#define DEC_8( x )	(x) / 100, ((x) % 100) / 10, ((x) % 10) 
+#define HEX_16( x )	((x) >> 12) & 0xff, ((x) >> 8) & 0xff, ((x) >> 4) & 0xff, (x)  & 0xff
+
 #define E_T_MALLOC			"malloc() == NULL"
 #define MALLOC_ERR			"malloc!\n"
 #define _ERROR(err, err_class, format, x...)  error_printf(err, "EC[%i]{%i}:%s:%s()->"format"\n", err_class, __LINE__, __FILE__,__FUNCTION__, ##x)
@@ -67,8 +71,9 @@ extern void error_printf(s_error *err, const char *fmt, ... ); // prints formatt
 
 // old
 #define ERROR(err_class, format, x...)  printf("EC[%i]{%i}:%s:%s()->"format"\n", err_class, __LINE__, __FILE__,__FUNCTION__, ##x)
+#define MESSAGE(format, x...)   printf("[MSG] "format"\n", ##x)
 #define ERR( fmt, x...)		ERROR( E_ERR, fmt, ##x)
-#define MSG( fmt, x...)		ERROR( E_MSG, fmt, ##x)
+#define MSG( fmt, x...)		MESSAGE( fmt, ##x)
 #define WRN( fmt, x...)		ERROR( E_WRN, fmt, ##x)
 #define CRT( fmt, x...)		ERROR( E_CRIT, fmt, ##x)
         

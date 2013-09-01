@@ -39,6 +39,7 @@ extern "C" {
 #include "geepro.h"
 #include "storings.h"
 #include "error.h"
+#include "gep_usb.h"
 
 #define CONFIG_FILE_PATH_LIST	"./cfg/geepro.cfg:~/.geepro/geepro.cfg:/usr/share/geepro/geepro.cfg"
 #define CONFIG_FILE_ENV_VAR     "GEEPRO_CFG_PATH"
@@ -69,7 +70,7 @@ static char load_cfg(geepro *gep, const char *path)
     return err;
 }
 
-static void load_cfg_file(geepro *gep)
+static char load_cfg_file(geepro *gep)
 {
     char *cfg_file, err;
 
@@ -77,7 +78,6 @@ static void load_cfg_file(geepro *gep)
     cfg_file = getenv( CONFIG_FILE_ENV_VAR );
     if( cfg_file )
 	err = load_cfg( gep, cfg_file );
-
     if( !cfg_file || err ){
 	cfg_file = cfp_path_selector( CONFIG_FILE_PATH_LIST, F_OK);
 	if( cfg_file ){
@@ -85,11 +85,16 @@ static void load_cfg_file(geepro *gep)
 	    free( cfg_file );
 	}
     }
-    if( !err )
-	cmt_error(TR("OK\n"));	
-//    else 
-//	create_default_cfg_file();
-    
+    if( !err ){
+	if( cfg_file ){
+	    cmt_error(TR("[MSG] Reading config file %s\n"), cfg_file);	
+	    return 0;
+	}
+	cmt_error(TR("[ERR] Missing configuration file. Set enviroment variable '%s' to point location of config file\n"), CONFIG_FILE_ENV_VAR);	
+	return 1;
+    }
+    cmt_error(TR("[ERR] Error reading cobfiguration file '%s'\n"), cfg_file);	
+    return 1;
 }
 
 static char set_path_var(geepro *gep, const char *var_name, const char *default_name, const char *default_val)
@@ -193,12 +198,14 @@ static inline geepro *geep_init(int argc, char **argv)
     }
     g->argc = argc;
     g->argv = argv;
+    gusb_init( SS_USB(&g->usb_cb) );
     return g;    
 }
 
 static void destruct(geepro *geep)
 {
     // Destruct
+    gusb_exit( S_USB(geep->usb_cb) );
     if( geep->ifc ) iface_destroy(geep->ifc);
     if(geep->cfg) cfp_free( geep->cfg );
     if(geep->store) store_destr( geep->store );
@@ -210,6 +217,66 @@ static void kill_me(int signal)
 {
 //__geepro_root__
     printf("SIG INT -> KILL\n");
+}
+
+static char *get_value_from_enum(int x, char *p)
+{
+    sprintf(p, "%i", x);
+    return p;
+}
+
+static void set_usb_devices(geepro *gep)
+{
+    char *tmp= NULL;
+    s_usb_device_id id;    
+    char path[256];
+    int i, k;
+    long val;
+
+    printf("[MSG] Registering USB devices.\n");
+
+    k = cfp_tree_count_element(gep->cfg, "/usb_devices/device", "device");
+    for(i = 0; i < k; i++){
+	sprintf( path, "/usb_devices/device:%i/vendor_id", i);    
+	cfp_get_long( gep->cfg, path, &val);
+	id.vendor_id = val;
+
+//id.vendor_id = get_long_from_cfg(gep->cfg, "/usb_devices/device:%i/vendor_id", i, 0, path);
+
+	sprintf( path, "/usb_devices/device:%i/product_id", i);    
+	cfp_get_long( gep->cfg, path, &val);
+	id.product_id = val;
+	sprintf( path, "/usb_devices/device:%i/class_id", i);    
+	id.class_id = (cfp_get_long( gep->cfg, path, &val)) ? -1 : val;
+	tmp = NULL;
+	sprintf( path, "/usb_devices/device:%i/serial", i);    
+	cfp_get_string( gep->cfg, path, &tmp);
+	id.serial = tmp;
+	sprintf( path, "/usb_devices/device:%i/bus", i);    
+	id.bus = (cfp_get_long( gep->cfg, path, &val)) ? -1 : val;
+	sprintf( path, "/usb_devices/device:%i/address", i);    
+	id.addr = (cfp_get_long( gep->cfg, path, &val)) ? -1 : val;
+	tmp = NULL;
+	sprintf( path, "/usb_devices/device:%i/device", i);    
+	cfp_get_string( gep->cfg, path, &tmp);
+	id.dev_name = tmp;
+	tmp = NULL;
+	sprintf( path, "/usb_devices/device:%i/vendor", i);    
+	cfp_get_string( gep->cfg, path, &tmp);
+	id.vend_name = tmp;
+	tmp = NULL;
+	sprintf( path, "/usb_devices/device:%i/alias", i);    
+	cfp_get_string( gep->cfg, path, &tmp);
+	id.alias_name = tmp;
+	sprintf( path, "/usb_devices/device:%i/class", i);    
+	cfp_get_long( gep->cfg, path, &val);
+	id.dev_class = val;
+	gusb_add_dev_item( S_USB(gep->usb_cb), &id);    
+	if(id.dev_name) free(id.dev_name);
+	if(id.vend_name) free(id.vend_name);
+	if(id.alias_name) free(id.alias_name);
+	if(id.serial) free(id.serial);
+    }
 }
 
 int main(int argc, char **argv)
@@ -224,11 +291,15 @@ int main(int argc, char **argv)
 	return -2;
     };
     geep->uid = getuid();
-    load_cfg_file( geep );
-    if(load_variables( geep )){
-	destruct( geep );
+    if(load_cfg_file( geep )){
+        destruct( geep );
 	return -3;
     }
+    if(load_variables( geep )){
+	destruct( geep );
+	return -4;
+    }
+
     if(store_constr(geep->store, cfp_heap_get(geep->cfg, "store_vars_dir"), cfp_heap_get(geep->cfg, "store_vars_file"))){
 	destruct( geep );
 	return -4;
@@ -242,8 +313,10 @@ int main(int argc, char **argv)
 	iface_make_modules_list( geep->ifc, cfp_heap_get(geep->cfg, "chips_path"), ".chip"); 
     }
     signal(SIGINT, kill_me);
+    set_usb_devices( geep );
     gui_run( geep );
     destruct( geep );
+
     return 0;
 }
 
