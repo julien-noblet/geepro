@@ -71,6 +71,7 @@ typedef struct
     const char *shared_geepro_dir;
     char  plug;
     char  action;
+    void  *usb_cb; // For hotplug USB devices
 } geepro;
 
 #ifdef __cplusplus

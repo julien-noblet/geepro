@@ -1043,10 +1043,22 @@ static const s_cfp_tree *_cfp_tree_get_element(s_cfp_tree *t, const char *path)
     return NULL;
 }
 
+
 const s_cfp_tree *cfp_tree_get_element(s_cfp *cfp, const char *path)
 {
     if( !cfp ) return NULL;
     return _cfp_tree_get_element(cfp->root, path);
+}
+
+int cfp_tree_count_element(s_cfp *cfp, const char *path, const char *lvalue)
+{
+    s_cfp_tree *t;
+    int i;
+    t = (s_cfp_tree *)cfp_tree_get_element( cfp, path);
+    for(i=0;t; t = t->next){
+	if( !strcmp(t->lval, lvalue) ) i++;	
+    }    
+    return i;
 }
 
 s_cfp *cfp_init()
