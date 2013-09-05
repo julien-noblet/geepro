@@ -112,7 +112,7 @@ extern message_type parport_message_handler;
 extern void *parport_msgh_ptr; /* wskaznik przekazywany jako parametr ptr funkcji bledu */
 
 /* funkcje inicjujace */
-extern int parport_init(const char *path, int dev_flags);
+extern int parport_init(const char *path, int dev_flags, void *ptr);
 extern int parport_cleanup(void);
 
 /* ustawienia/odczyt portow, idx = PA,PB,PC */

@@ -80,7 +80,7 @@ static int xyz_reset()
 
 static int xyz_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags)) return HW_ERROR;
+    if(parport_init(ptr, flags, gep)) return HW_ERROR;
     return xyz_reset();
 }
 

@@ -99,7 +99,7 @@ static int x3_reset()
 
 static int x3_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags)) return HW_ERROR;
+    if(parport_init(ptr, flags, gep)) return HW_ERROR;
     return x3_reset();
 }
 

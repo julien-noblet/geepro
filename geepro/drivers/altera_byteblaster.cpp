@@ -89,7 +89,7 @@ static int altera_bb_reset()
 
 static int altera_bb_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags)) return HW_ERROR;
+    if(parport_init(ptr, flags,gep)) return HW_ERROR;
     return altera_bb_reset();
 }
 

@@ -51,7 +51,7 @@ static int parport_init_lvl=0;
 
 #endif
 
-static int parport_usb_init(s_usb2lpt **usb);
+static int parport_usb_init(s_usb2lpt **usb, void *);
 static int parport_usb_write_data(s_usb2lpt *usb, char data);
 static int parport_usb_write_ctrl(s_usb2lpt *usb, char ctrl);
 static char parport_usb_read_stat(s_usb2lpt *usb);
@@ -75,8 +75,9 @@ void PARPORT(message)(int lvl, void *ptr, const char *fmt, ...)
 int PARPORT(cleanup)(void)
 {
     int err = 0;
-    if(PARPORT_M(init_lvl) == 0) return 0;
+
     if( usb_sw ) return parport_usb_cleanup( usb );
+    if(PARPORT_M(init_lvl) == 0) return 0;
     PARPORT_M(message)(1, PARPORT_EM, "Cleanup parport device.\n");
     if(PARPORT_M(init_lvl) > 1)
 	if(ioctl(PARPORT_M(ppdev_fd), PPRELEASE) == -1){
@@ -92,22 +93,24 @@ int PARPORT(cleanup)(void)
     return err;
 }
 
-int PARPORT(init)(const char *dev_path, int dev_flags)
+int PARPORT(init)(const char *dev_path, int dev_flags, void *ptr)
 {
     static char first_run=1;
 
-    if(!strcmp( dev_path, "Usb2Lpt")){
+    if(!strcmp( dev_path, "USB")){
 	usb_sw = 1;
     } else 
 	usb_sw = 0;
     allow = 1;
+
+    if( usb_sw ) return parport_usb_init( &usb, ptr );
+
     if(first_run){
 	PARPORT_M(message)(0, PARPORT_EM, PARPORT_VERSION);
 	first_run=0;
     } else{
 	if(PARPORT_M(cleanup)() == PP_ERROR) return PP_ERROR;
     }
-    if( usb_sw ) return parport_usb_init( &usb );
 
     PARPORT_M(message)(1, PARPORT_EM, "Opening device %s\n", dev_path);
     if((PARPORT_M(ppdev_fd) = open(dev_path, O_RDWR | dev_flags)) == -1 ){
@@ -245,10 +248,10 @@ void parport_set_usb(char sw)
     usb_sw = sw;
 }
 
-static int parport_usb_init(s_usb2lpt **usb)
+static int parport_usb_init(s_usb2lpt **usb, void *ptr)
 { 
     usb_mirror = 0;
-    *usb = usb2lpt_init();
+    *usb = usb2lpt_init( ptr );
     if( usb ) allow = 0;
     return !usb; 
 }

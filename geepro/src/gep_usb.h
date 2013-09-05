@@ -43,6 +43,8 @@ typedef struct
     int  dev_class;	// interface class USB, or emulating LPT, RS232 etc 
     int  bus;           // bus number, if -1 -> any
     int  addr;		// device addres on bus
+    int  option;	// flags for driver
+    char *drivers;	// comma separated string of drivers supported by device
 } s_usb_device_id;
 
 /*
@@ -54,10 +56,10 @@ struct s_usb_devlist_
     s_usb_device_id dev_id;
     /* status */    
     char plugged;	// '1' if device is connected to USB, otherwise '0'
-    int  device;        // device number
     /* handler data */
     void *handler;	// USB handler aka libusb_device_handle, NULL if device is unplugged
     void *hp_hdl;	// Hotplug handlers aka libusb_hotplug_callback_handle[2]    
+    void *device;	// libusb_device*
     /* next structure in queue, or NULL if last */
     s_usb_devlist *next;
 };
@@ -130,6 +132,18 @@ void gusb_set_callback(s_usb *, f_usb_callback, void *ptr);
     Removes lists of compatible devices
 */
 void gusb_remove_list( s_usb * );
+
+/*********************************************************************************************************/
+/*
+    open interface dev for I/O
+*/
+char gusb_open_iface(s_usb *, s_usb_devlist *dev);
+
+/*
+    close interface dev for I/O
+*/
+void gusb_close_iface( s_usb *, s_usb_devlist *dev);
+
 
 #ifdef __cplusplus
 }

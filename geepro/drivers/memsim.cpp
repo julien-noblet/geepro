@@ -118,7 +118,7 @@ static int memsim_reset()
 
 static int memsim_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags)) return HW_ERROR;
+    if(parport_init(ptr, flags,gep)) return HW_ERROR;
     return memsim_reset();
 }
 
