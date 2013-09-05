@@ -33,9 +33,9 @@ typedef struct
     int  bfsize;
 } s_usb2lpt;
 
-#define USB_HANDLER(x)	((usb_dev_handle *)x)
+#define USB_HANDLER(x)	((libusb_device_handle *)x)
 
-extern s_usb2lpt *usb2lpt_init();			// initialize driver
+extern s_usb2lpt *usb2lpt_init(void *ptr );			// initialize driver
 extern char usb2lpt_input(s_usb2lpt *usb);		// input data from adapter
 extern char *usb2lpt_get_id(s_usb2lpt *usb);		// get identifier -> should be "Geepro"
 extern char *usb2lpt_get_rev(s_usb2lpt *usb);		// get revision number -> [0].[1]

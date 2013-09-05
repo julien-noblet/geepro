@@ -22,6 +22,8 @@
 #include "usbconfig.h"
 #include <string.h>
 
+#define USB_DEBUG
+
 static void gusb_hotplug_notify(s_usb *usb, s_usb_devlist *id, char flag )
 {
     if(!usb) return;
@@ -96,17 +98,16 @@ static int LIBUSB_CALL gusb_hotplug_callback_attach(libusb_context *ctx, libusb_
         fprintf (stderr, "[ERR] Error fetching USB device information\n");
         return 1;	    
     }
-
-    if(!( found = gusb_looking_for_matched( usb, &id))){ // check if device is on list, return true if so
-        libusb_close (handler);
-        return 0; // Normal return, it is just unknown device
-    }
-    if( found->plugged ) return 0; // already connected, so ignore (for cause where few devices on the list has the same vendor:product keys )
     libusb_close (handler);
+
+    if(!( found = gusb_looking_for_matched( usb, &id))) return 0; // Normal return, it is just unknown device
+    if( found->plugged ) return 0; // already connected, so ignore (for cause where few devices on the list has the same vendor:product keys )
+    // set device status as plugged
     found->handler = NULL;
     found->plugged = 1;
     found->dev_id.bus = id.bus;
     found->dev_id.addr = id.addr;
+    found->device = dev;
     MSG("USB plugged -> Bus %i%i%i Device %i%i%i: ID %x%x%x%x:%x%x%x%x \"%s\"", DEC_8(id.bus), DEC_8(id.addr), HEX_16(id.vendor_id), HEX_16(id.product_id), id.dev_name);
     gusb_hotplug_notify(usb, found, GUSB_ATTACH );
     return 0;
@@ -187,6 +188,9 @@ int gusb_init(s_usb **usb)
 	return EXIT_FAILURE;
     }
     (*usb)->notify = 1;
+#ifdef USB_DEBUG
+    libusb_set_debug((*usb)->ctx, 3 );
+#endif
     return 0;
 }
 
@@ -200,8 +204,8 @@ void gusb_events(s_usb *usb)
 void gusb_exit(s_usb *usb)
 {
     if(!usb->ctx) return;
-    libusb_exit (usb->ctx);
     gusb_remove_list( usb );
+    libusb_exit (usb->ctx);
 }
 
 static s_usb_devlist *gusb_add_dev_item_list(s_usb *usb, s_usb_device_id *item)
@@ -263,9 +267,23 @@ static s_usb_devlist *gusb_add_dev_item_list(s_usb *usb, s_usb_device_id *item)
 	}
 	strcpy(tmp->dev_id.serial, item->serial);
     }
+
+    if( item->drivers ){
+	if(!(tmp->dev_id.drivers = (char *)malloc( strlen(item->drivers) + 1))){
+	    printf("malloc!\n");
+	    free(tmp->dev_id.serial);
+	    free( tmp->dev_id.alias_name );
+	    free(tmp->dev_id.dev_name);
+	    free(tmp->dev_id.vend_name);
+	    free( tmp );
+	    return NULL;
+	}
+	strcpy(tmp->dev_id.drivers, item->drivers);
+    }
     
     if(!(tmp->hp_hdl = (libusb_hotplug_callback_handle *)malloc( sizeof(libusb_hotplug_callback_handle) ))){
 	    printf("malloc!\n");
+	    free(tmp->dev_id.drivers);
 	    free(tmp->dev_id.serial);
 	    free(tmp->dev_id.alias_name);
 	    free(tmp->dev_id.dev_name);
@@ -303,6 +321,7 @@ void gusb_remove_list(s_usb *usb)
 	if( x->dev_id.vend_name ) free( x->dev_id.vend_name);
 	if( x->dev_id.alias_name ) free( x->dev_id.alias_name);
 	if( x->dev_id.serial ) free( x->dev_id.serial);
+	if( x->dev_id.drivers ) free( x->dev_id.drivers);
 	if( x->hp_hdl) free( x->hp_hdl );
 	if( x->handler ) libusb_close( (libusb_device_handle *)x->handler );
 	free( x );
@@ -336,11 +355,45 @@ void gusb_scan_connected(s_usb *usb)
 
 void gusb_set_callback(s_usb *usb, f_usb_callback cb, void *ptr)
 {
-    s_usb_devlist *it;
-
     if(!usb) return;
     usb->callback = cb;
     usb->parameter = ptr;
 }
+
+/*****************************************************************************************************************************/
+
+char gusb_open_iface(s_usb *usb, s_usb_devlist *dev)
+{
+    int er;
+    printf("TEST-> Open iface USB for %s\n", dev->dev_id.alias_name);
+/*
+    dev->handler = NULL;
+    er = libusb_open((libusb_device *)dev->device, (libusb_device_handle**)(&dev->handler));
+    if( er ){
+	printf("open usb error\n");
+	return 0;
+    }
+
+    er = libusb_claim_interface((libusb_device_handle*)dev->handler, 0);
+    if( er ){
+	printf("claim usb error\n");
+	return 0;
+    }
+
+*/
+
+    
+
+    return 0;
+}
+
+void gusb_close_iface(s_usb *usb, s_usb_devlist *dev)
+{
+//    if( !dev->handler ) return;
+//    libusb_close( (libusb_device_handle*)dev->handler );
+    printf("TEST-> Close iface USB for %s\n", dev->dev_id.alias_name);
+}
+
+
 
 

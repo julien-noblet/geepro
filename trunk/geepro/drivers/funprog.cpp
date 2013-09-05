@@ -94,7 +94,7 @@ static int funprog_reset()
 
 static int funprog_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags)) return HW_ERROR;
+    if(parport_init(ptr, flags,gep)) return HW_ERROR;
     return funprog_reset();
 }
 

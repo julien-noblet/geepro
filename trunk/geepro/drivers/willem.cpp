@@ -455,13 +455,13 @@ static int willem_gui_init(void *ptr, const char *chip_name, const char *family,
 
 static int willem_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags) ) return HW_ERROR;
+    if(parport_init(ptr, flags, gep) ) return HW_ERROR;
     return willem_reset();
 }
 
 static int pcb3_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags) == PP_ERROR) return HW_ERROR;
+    if(parport_init(ptr, flags, gep) == PP_ERROR) return HW_ERROR;
     return willem_reset();
 }
 

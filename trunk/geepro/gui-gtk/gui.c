@@ -41,7 +41,6 @@
 #include "../src/checksum.h"
 #include "../src/error.h"
 #include "gui_dialog.h"
-#include "../src/gep_usb.h" // for gusb_events()
 
 typedef struct 
 {
@@ -642,9 +641,9 @@ static void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep
     gui_chip_tree_view_free( tree );
 }
 
-static void gui_build_iface_menu(iface *ifc, int cl, char *name, char *dev, GtkWidget *wg)
+static void gui_build_iface_menu(s_iface_device *ifc, s_iface_devlist *dev, GtkWidget *wg)
 {
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg), name);
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg), dev->name);
 }
 
 static int gui_iface_sel(GtkWidget *wg, geepro *gep)
@@ -673,9 +672,14 @@ static GtkWidget *gui_iface_list(geepro *gep)
     GtkWidget *combox;
 
     combox = gtk_combo_box_text_new();
-    iface_search(gep->ifc, gep->ifc->cl, (iface_cb)gui_build_iface_menu, GTK_COMBO_BOX(combox));
+
+//    iface_search(gep->ifc, gep->ifc->cl, (iface_cb)gui_build_iface_menu, GTK_COMBO_BOX(combox));
+
+    iface_device_get_list(gep->ifc->dev, IFACE_F_DEVICE(gui_build_iface_menu), GTK_COMBO_BOX(combox));
+
     gtk_combo_box_set_active(GTK_COMBO_BOX(combox), gep->ifc->ifc_sel);
-    g_signal_connect(G_OBJECT(combox), "changed", G_CALLBACK(gui_iface_sel), gep);
+//    g_signal_connect(G_OBJECT(combox), "changed", G_CALLBACK(gui_iface_sel), gep);
+
     return combox;
 }
 
@@ -685,8 +689,13 @@ static void gui_add_iface_combox(geepro *gep)
     gtk_table_attach(GTK_TABLE(GUI(gep->gui)->table), tmp, 2, 4, 1, 2, GTK_FILL | GTK_EXPAND, 0, 5, 5);
     GUI(gep->gui)->iface = tmp;
 
-
     gtk_widget_show(tmp);
+}
+
+static void gui_iface_rescan(geepro *gep)
+{
+    gtk_widget_destroy( GUI(gep->gui)->iface );
+    gui_add_iface_combox( gep );
 }
 
 static void gui_prog_sel(GtkWidget *wg, geepro *gep)
@@ -705,23 +714,20 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     /* usuniecie listy interfejsów*/
     gtk_widget_destroy(GUI(gep->gui)->iface);
     gep->hw_destroy(gep);
-
     gep->ifc->hwd= api;
-
     gep->ifc->cl = gep->hw_get_iface();
-
     /* utworzenie wyboru interfaców */
     gui_add_iface_combox(gep);
     /* usuniecie menu */
     gui_xml_destroy(GUI(gep->gui)->xml);    
     /* wywolanie gui dla programatora */
     gep->hw_gui_init(gep);
-
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
     g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->iface), "changed");    
     sprintf(tmp,"%i", gtk_combo_box_get_active(GTK_COMBO_BOX(wg)));
-
     if(GUI(gep->gui)->gui_run) store_set(gep->store, "LAST_SELECTED_PROGRAMMER", tmp);
+    // rescan suported ports
+    gui_iface_rescan( gep );
     gui_test_hw( NULL, gep );
 }
 
@@ -884,7 +890,7 @@ static void gui_test_hw(GtkWidget *wg, geepro *gep)
 static gboolean gui_test_cyclic_hw(geepro *gep)
 {
     if( !gep->ifc || gep->action ) return TRUE;
-    gusb_events( S_USB(gep->usb_cb) ); // check USB events for hotplug
+    iface_device_event( gep->ifc->dev );
     if( !gep->hw_test_continue() ) return TRUE;
     gui_test_hw( NULL, gep);
     return TRUE;
@@ -945,17 +951,15 @@ void gui_bineditor_update(GuiBineditor *be, geepro *gep)
     gui_stat_rfsh( gep );
 }
 
-void gui_usb_port_notify(s_usb_devlist *it, char flag, geepro *gep)
+void gui_usb_port_notify(s_iface_device *dev, s_iface_devlist *list, geepro *gep)
 {
-printf("GUI usb notify\n");
+    gui_iface_rescan( gep );
 }
 
 static void gui_port_devices_set(geepro *gep )
 {
-    gusb_set_callback( S_USB(gep->usb_cb), GUSB_CALLBACK( gui_usb_port_notify ), gep);
-    gusb_scan_connected( S_USB(gep->usb_cb) ); 
+    iface_device_connect_notify(gep->ifc->dev, IFACE_F_DEVICE_NOTIFY(gui_usb_port_notify), gep);    
 }
-
 
 void gui_menu_setup(geepro *gep)
 {
