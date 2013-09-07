@@ -75,6 +75,7 @@ extern void error_printf(s_error *err, const char *fmt, ... ); // prints formatt
 #define MSG( fmt, x...)		MESSAGE( fmt, ##x)
 #define WRN( fmt, x...)		ERROR( E_WRN, fmt, ##x)
 #define CRT( fmt, x...)		ERROR( E_CRIT, fmt, ##x)
+#define PRN( fmt, x...)		printf( fmt, x)
 
 #define ERR_MALLOC_CODE	-1
 #define ERR_MALLOC_MSG	MSG( E_T_MALLOC )

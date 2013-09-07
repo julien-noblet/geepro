@@ -95,32 +95,32 @@ static int willem_set_vcc_voltage(int voltage){ DEBUG("[DM]Set VCC value: %f\n",
 static int willem_vcc_on()
 {
     addr_init_mask = 0x800000;    
-    return parport_set_bit(PC,PP_16);
+    return parport_set_bit(gep->ifc->dev->lpt, PC,PP_16);
 }
 
 static int willem_vcc_off()
 {
     addr_init_mask = 0x800000;    
-    return parport_clr_bit(PC,PP_16);
+    return parport_clr_bit(gep->ifc->dev->lpt,PC,PP_16);
 }
 
 static int willem_vpp_on()
 {
     addr_init_mask = 0x800000;    
-    return parport_set_bit(PC,PP_01);
+    return parport_set_bit(gep->ifc->dev->lpt,PC,PP_01);
 }
 
 static int willem_vpp_off()
 {
     addr_init_mask = 0x800000;    
-    return parport_clr_bit(PC,PP_01);
+    return parport_clr_bit(gep->ifc->dev->lpt,PC,PP_01);
 }
 
 /* ZIF-32 - test settings */
 static int willem_set_par_data_pin(char data)
 {
-    if(parport_clr_bit(PC,PP_14) == PP_ERROR) return HW_ERROR;
-    return parport_set(PA,data);
+    if(parport_clr_bit(gep->ifc->dev->lpt,PC,PP_14) == PP_ERROR) return HW_ERROR;
+    return parport_set(gep->ifc->dev->lpt,PA,data);
 }
 
 static int willem_set_par_addr_pin(int addr)
@@ -128,19 +128,19 @@ static int willem_set_par_addr_pin(int addr)
     int mask, err=0;
 
     _addr = addr;
-    err = parport_set_bit(PC, PP_14); /* przelaczenie multipleksera U7 na D i CLK*/
+    err = parport_set_bit(gep->ifc->dev->lpt,PC, PP_14); /* przelaczenie multipleksera U7 na D i CLK*/
     mask = addr_init_mask;
-    err |= parport_clr_bit(PA, PP_03 | PP_02); /* wyzerowanie D0 i D1 -> D i CLK przesuwnika */
+    err |= parport_clr_bit(gep->ifc->dev->lpt,PA, PP_03 | PP_02); /* wyzerowanie D0 i D1 -> D i CLK przesuwnika */
     while(mask && !err){
 //	timer_us_delay(TA_01);
-	if(addr & mask) err |= parport_set_bit(PA, PP_03); else err |= parport_clr_bit(PA, PP_03);
+	if(addr & mask) err |= parport_set_bit(gep->ifc->dev->lpt,PA, PP_03); else err |= parport_clr_bit(gep->ifc->dev->lpt,PA, PP_03);
 //	timer_us_delay(TA_02);
-	err |= parport_set_bit(PA, PP_02);
+	err |= parport_set_bit(gep->ifc->dev->lpt,PA, PP_02);
 //	timer_us_delay(TA_03);
-	err |= parport_clr_bit(PA, PP_02);
+	err |= parport_clr_bit(gep->ifc->dev->lpt,PA, PP_02);
 	mask = mask >> 1;
     }
-    err |= parport_clr_bit(PC, PP_14); /* przelaczenie multipleksera U7 na dane */ 
+    err |= parport_clr_bit(gep->ifc->dev->lpt,PC, PP_14); /* przelaczenie multipleksera U7 na dane */ 
     return err;
 }
 
@@ -150,25 +150,25 @@ static int willempro2_set_par_addr_pin(int addr)
     int mask0,mask1,mask2, err=0;
 
     _addr = addr;
-    err = parport_set_bit(PC, PP_14); /* przelaczenie multipleksera U7 na D i CLK*/
+    err = parport_set_bit(gep->ifc->dev->lpt,PC, PP_14); /* przelaczenie multipleksera U7 na D i CLK*/
     mask0 = 0x000080;
     mask1 = 0x008000;
     mask2 = 0x800000;
-    err |= parport_clr_bit(PA, PP_07 | PP_06 | PP_03 | PP_02); /* wyzerowanie D5,D4,D0 i D1 -> D i CLK przesuwnika */
+    err |= parport_clr_bit(gep->ifc->dev->lpt,PA, PP_07 | PP_06 | PP_03 | PP_02); /* wyzerowanie D5,D4,D0 i D1 -> D i CLK przesuwnika */
     while(mask0 && !err){
 	timer_us_delay(TA_01);
-	if(addr & mask0) err |= parport_set_bit(PA, PP_03); else err |= parport_clr_bit(PA, PP_03);
-	if(addr & mask1) err |= parport_set_bit(PA, PP_06); else err |= parport_clr_bit(PA, PP_06);
-	if(addr & mask2) err |= parport_set_bit(PA, PP_07); else err |= parport_clr_bit(PA, PP_07);
+	if(addr & mask0) err |= parport_set_bit(gep->ifc->dev->lpt,PA, PP_03); else err |= parport_clr_bit(gep->ifc->dev->lpt,PA, PP_03);
+	if(addr & mask1) err |= parport_set_bit(gep->ifc->dev->lpt,PA, PP_06); else err |= parport_clr_bit(gep->ifc->dev->lpt,PA, PP_06);
+	if(addr & mask2) err |= parport_set_bit(gep->ifc->dev->lpt,PA, PP_07); else err |= parport_clr_bit(gep->ifc->dev->lpt,PA, PP_07);
 	timer_us_delay(TA_02);
-	err |= parport_set_bit(PA, PP_02);
+	err |= parport_set_bit(gep->ifc->dev->lpt,PA, PP_02);
 	timer_us_delay(TA_03);
-	err |= parport_clr_bit(PA, PP_02);
+	err |= parport_clr_bit(gep->ifc->dev->lpt,PA, PP_02);
 	mask0 = mask0 >> 1;
 	mask1 = mask1 >> 1;
 	mask2 = mask2 >> 1;
     }
-    err |= parport_clr_bit(PC, PP_14); /* przelaczenie multipleksera U7 na dane */ 
+    err |= parport_clr_bit(gep->ifc->dev->lpt,PC, PP_14); /* przelaczenie multipleksera U7 na dane */ 
     return err;
 }
 
@@ -192,27 +192,27 @@ static int willem_rst_addr()
 
 static int willem_set_we_pin(char _bool)
 {
-    if(_bool) return parport_set_bit(PC,PP_17); 
-    return parport_clr_bit(PC,PP_17);
+    if(_bool) return parport_set_bit(gep->ifc->dev->lpt,PC,PP_17); 
+    return parport_clr_bit(gep->ifc->dev->lpt,PC,PP_17);
 }
 
 static int willem_set_oe_pin(char _bool)
 {
-    if(_bool) return parport_clr_bit(PC,PP_14); 
-    return parport_set_bit(PC,PP_14);
+    if(_bool) return parport_clr_bit(gep->ifc->dev->lpt,PC,PP_14); 
+    return parport_set_bit(gep->ifc->dev->lpt,PC,PP_14);
 }
 
 static int willem_set_ce_pin(char _bool)
 {
     if(programmer_mode == PRAGMA_CE_EQ_PGM ) return 0;
-    if(_bool) return parport_set_bit(PC,PP_17); 
-    return parport_clr_bit(PC,PP_17);
+    if(_bool) return parport_set_bit(gep->ifc->dev->lpt,PC,PP_17); 
+    return parport_clr_bit(gep->ifc->dev->lpt,PC,PP_17);
 }
 
 static int willem_set_pgm_pin(char _bool) // the same as CE, dependent on dip switch
 {
-    if(_bool) return parport_set_bit(PC,PP_17); 
-    return parport_clr_bit(PC,PP_17);
+    if(_bool) return parport_set_bit(gep->ifc->dev->lpt,PC,PP_17); 
+    return parport_clr_bit(gep->ifc->dev->lpt,PC,PP_17);
 }
 
 static int willem_get_par_data_pin(void)
@@ -221,24 +221,24 @@ static int willem_get_par_data_pin(void)
     int err =0, x;    
     
     data = 0;
-    err = parport_set_bit(PC,PP_14);
-    err |= parport_set_bit(PA,PP_04);
-    err |= parport_clr_bit(PA,PP_03);    
+    err = parport_set_bit(gep->ifc->dev->lpt,PC,PP_14);
+    err |= parport_set_bit(gep->ifc->dev->lpt,PA,PP_04);
+    err |= parport_clr_bit(gep->ifc->dev->lpt,PA,PP_03);    
     timer_us_delay(TD_01);
-    err |= parport_set_bit(PA,PP_03);    
+    err |= parport_set_bit(gep->ifc->dev->lpt,PA,PP_03);    
     timer_us_delay(TD_02);
-    err |= parport_clr_bit(PA,PP_04);        
+    err |= parport_clr_bit(gep->ifc->dev->lpt,PA,PP_04);        
     timer_us_delay(TD_03);
-    err |= parport_set_bit(PA,PP_04);        
-    err |= parport_clr_bit(PA,PP_03);        
+    err |= parport_set_bit(gep->ifc->dev->lpt,PA,PP_04);        
+    err |= parport_clr_bit(gep->ifc->dev->lpt,PA,PP_03);        
 
     for(i = 0x80; i && !err; i >>= 1){
 	timer_us_delay(TD_04);
-	if(!(x = parport_get_bit(PB, PP_10))) data |= i; 
+	if(!(x = parport_get_bit(gep->ifc->dev->lpt,PB, PP_10))) data |= i; 
 	if(x == PP_ERROR) err = HW_ERROR;	
-	err |= parport_clr_bit(PA,PP_04);
+	err |= parport_clr_bit(gep->ifc->dev->lpt,PA,PP_04);
 	timer_us_delay(TD_05);
-	err |= parport_set_bit(PA,PP_04);
+	err |= parport_set_bit(gep->ifc->dev->lpt,PA,PP_04);
     }
 
     return data | err;
@@ -247,26 +247,26 @@ static int willem_get_par_data_pin(void)
 /* serial 93Cxx */
 static int willem_set_cs_pin(char _bool)
 {
-    if(_bool) return parport_set_bit(PC,PP_17); 
-    return parport_clr_bit(PC,PP_17); 
+    if(_bool) return parport_set_bit(gep->ifc->dev->lpt,PC,PP_17); 
+    return parport_clr_bit(gep->ifc->dev->lpt,PC,PP_17); 
 }
 
 static int willem_set_clk_pin(char _bool)
 {
-    if(parport_clr_bit(PC,PP_14) == PP_ERROR) return HW_ERROR;
-    if(_bool) return parport_set_bit(PA,PP_03); 
-    return parport_clr_bit(PA,PP_03);
+    if(parport_clr_bit(gep->ifc->dev->lpt,PC,PP_14) == PP_ERROR) return HW_ERROR;
+    if(_bool) return parport_set_bit(gep->ifc->dev->lpt,PA,PP_03); 
+    return parport_clr_bit(gep->ifc->dev->lpt,PA,PP_03);
 }
 
 static int willem_set_di_pin(char _bool)
 {
-    if(_bool) return parport_clr_bit(PA,PP_01); 
-    return parport_set_bit(PA,PP_01);
+    if(_bool) return parport_clr_bit(gep->ifc->dev->lpt,PA,PP_01); 
+    return parport_set_bit(gep->ifc->dev->lpt,PA,PP_01);
 }
 
 static int willem_get_do_pin(void)
 {
-    return parport_get_bit(PB,PP_11);
+    return parport_get_bit(gep->ifc->dev->lpt,PB,PP_11);
 }
 
 /* pic & 24cxx */
@@ -296,7 +296,7 @@ static int willem_set_pragma(int pragma)
 static int willem_reset(void)
 {
     int err=0;
-    err = parport_reset();
+    err = parport_reset(gep->ifc->dev->lpt);
     err |= willem_vpp_off();
     err |= willem_vcc_off();
     err |= willem_set_vpp_voltage(0);
@@ -308,7 +308,7 @@ static int willem_reset(void)
     err |= willem_set_oe_pin(0);
     err |= willem_set_ce_pin(0);
     err |= willem_rst_addr();
-    err |= parport_reset();
+    err |= parport_reset(gep->ifc->dev->lpt);
     return err;
 }
 
@@ -455,20 +455,21 @@ static int willem_gui_init(void *ptr, const char *chip_name, const char *family,
 
 static int willem_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags, gep) ) return HW_ERROR;
+    if(parport_open(gep->ifc->dev->lpt) ) return HW_ERROR;
     return willem_reset();
 }
 
 static int pcb3_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags, gep) == PP_ERROR) return HW_ERROR;
+    if(parport_open(gep->ifc->dev->lpt) == PP_ERROR) return HW_ERROR;
     return willem_reset();
 }
 
 static int willem_close(void)
 {
     if(willem_reset() == PP_ERROR) return HW_ERROR;
-    return parport_cleanup();
+    parport_close(gep->ifc->dev->lpt);
+    return 0;
 }
 
 static void willem_set_addr_range(int val )

@@ -50,22 +50,22 @@ static void memsim_set_rst_out(char state);
 
 static void memsim_set_mode( char reg)
 {
-    if( reg & 4 ) parport_set_bit( PC, PP_17); else parport_clr_bit(PC, PP_17);
-    if( reg & 2 ) parport_set_bit( PC, PP_14); else parport_clr_bit(PC, PP_14);
-    if( reg & 1 ) parport_set_bit( PC, PP_16); else parport_clr_bit(PC, PP_16);
+    if( reg & 4 ) parport_set_bit(gep->ifc->dev->lpt, PC, PP_17); else parport_clr_bit(gep->ifc->dev->lpt,PC, PP_17);
+    if( reg & 2 ) parport_set_bit(gep->ifc->dev->lpt, PC, PP_14); else parport_clr_bit(gep->ifc->dev->lpt,PC, PP_14);
+    if( reg & 1 ) parport_set_bit(gep->ifc->dev->lpt, PC, PP_16); else parport_clr_bit(gep->ifc->dev->lpt,PC, PP_16);
 }
 
 static void memsim_pulse()
 {
-    parport_set_bit( PC, PP_01);
+    parport_set_bit(gep->ifc->dev->lpt, PC, PP_01);
 //timer_us_delay(10000);
-    parport_clr_bit( PC, PP_01);
+    parport_clr_bit(gep->ifc->dev->lpt, PC, PP_01);
 //timer_us_delay(10000);
 }
 
 static void memsim_set_register(char reg, char data)
 {
-    parport_set(PA, data);
+    parport_set(gep->ifc->dev->lpt,PA, data);
     memsim_set_mode( reg );
     memsim_pulse();
 }
@@ -90,23 +90,23 @@ static inline void memsim_set_ctrl_reg( char data )
 
 static void memsim_wr_data(char data)
 {
-    parport_set(PA, data);
+    parport_set(gep->ifc->dev->lpt,PA, data);
     memsim_set_mode( MEMSIM_DATA );
-    parport_set_bit( PC, PP_01);
-    parport_clr_bit( PC, PP_01);
+    parport_set_bit(gep->ifc->dev->lpt, PC, PP_01);
+    parport_clr_bit(gep->ifc->dev->lpt, PC, PP_01);
 }
-
+/*
 static void memsim_write_byte(int addr, char data)
 {
     memsim_set_address( addr );
     memsim_wr_data( data );
 }
-
+*/
 static int memsim_reset()
 {
     int err = 0;
     memsim_ctrl = 0;
-    err =  parport_reset();
+    err =  parport_reset(gep->ifc->dev->lpt);
     memsim_set_ctrl_reg( 0 );
     memsim_set_address( 0 );
     memsim_set_mask( 0 );
@@ -118,29 +118,30 @@ static int memsim_reset()
 
 static int memsim_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags,gep)) return HW_ERROR;
+    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
     return memsim_reset();
 }
 
 static int memsim_close()
 {
     if( memsim_reset() == PP_ERROR ) return HW_ERROR;
-    return parport_cleanup();
+    parport_close(gep->ifc->dev->lpt);
+    return 0;
 }
 
 inline static int memsim_set_test(char test)
 {
     if( test ){
-	if(parport_set_bit(PC, PP_14)) return PP_ERROR;
+	if(parport_set_bit(gep->ifc->dev->lpt,PC, PP_14)) return PP_ERROR;
     } else {
-	if(parport_clr_bit(PC, PP_14)) return PP_ERROR;
+	if(parport_clr_bit(gep->ifc->dev->lpt,PC, PP_14)) return PP_ERROR;
     }
     return 0;
 }
 
 inline static int memsim_get_test()
 {    
-    return parport_get_bit(PB, PP_15);
+    return parport_get_bit(gep->ifc->dev->lpt,PB, PP_15);
 }
 
 static int memsim_test_connected()

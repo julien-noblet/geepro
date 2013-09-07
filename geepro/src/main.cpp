@@ -60,19 +60,14 @@ static geepro *__geepro_root__ = NULL; // data structure for system signals hand
 
 static char load_cfg(geepro *gep, const char *path)
 {
-    char err;
     if(path == NULL ) return -1;
     if( !gep || !path ) return -1;
-    cmt_error(TR("[MSG] Loading config file '%s' ... "), path);
-    err = cfp_load( gep->cfg, path );
-    if( err )
-	cmt_error(TR("FAIL\n"));
-    return err;
+    return cfp_load( gep->cfg, path );
 }
 
 static char load_cfg_file(geepro *gep)
 {
-    char *cfg_file, err;
+    char *cfg_file, err, errc = 0;
 
     err = 0;
     cfg_file = getenv( CONFIG_FILE_ENV_VAR );
@@ -80,21 +75,23 @@ static char load_cfg_file(geepro *gep)
 	err = load_cfg( gep, cfg_file );
     if( !cfg_file || err ){
 	cfg_file = cfp_path_selector( CONFIG_FILE_PATH_LIST, F_OK);
-	if( cfg_file ){
+	if( cfg_file )
 	    err = load_cfg( gep, cfg_file );
-	    free( cfg_file );
-	}
     }
     if( !err ){
 	if( cfg_file ){
-	    cmt_error(TR("[MSG] Reading config file %s\n"), cfg_file);	
-	    return 0;
+	    MSG("Reading config file '%s'", cfg_file);	
+	    errc = 0;
+	} else {
+	    ERR("Missing configuration file. Set enviroment variable '%s' to point location of config file", CONFIG_FILE_ENV_VAR);	
+	    errc = 1;
 	}
-	cmt_error(TR("[ERR] Missing configuration file. Set enviroment variable '%s' to point location of config file\n"), CONFIG_FILE_ENV_VAR);	
-	return 1;
+    } else { 
+	ERR("Error reading configuration file '%s'", cfg_file);	
+	errc = 1;
     }
-    cmt_error(TR("[ERR] Error reading cobfiguration file '%s'\n"), cfg_file);	
-    return 1;
+    free( cfg_file );
+    return errc;
 }
 
 static char set_path_var(geepro *gep, const char *var_name, const char *default_name, const char *default_val)
@@ -217,13 +214,13 @@ static void kill_me(int signal)
     printf("SIG INT -> KILL\n");
     abort( );
 }
-
+/*
 static char *get_value_from_enum(int x, char *p)
 {
     sprintf(p, "%i", x);
     return p;
 }
-
+*/
 int main(int argc, char **argv)
 {
     geepro *geep = NULL;
@@ -240,6 +237,7 @@ int main(int argc, char **argv)
         destruct( geep );
 	return -3;
     }
+
     if(load_variables( geep )){
 	destruct( geep );
 	return -4;
@@ -249,14 +247,16 @@ int main(int argc, char **argv)
 	destruct( geep );
 	return -4;
     };
+
     if(( geep->ifc = iface_init() )){
 	geep->ifc->gep = geep;
 	iface_driver_allow(geep->ifc, cfp_heap_get(geep->cfg, "drivers"));
 	iface_module_allow(geep->ifc, cfp_heap_get(geep->cfg, "chips"));
-	iface_load_config(geep->ifc, NULL);
+//	iface_load_config(geep->ifc, NULL);
 	iface_make_driver_list(geep->ifc, cfp_heap_get(geep->cfg, "drivers_path"), ".driver");
 	iface_make_modules_list( geep->ifc, cfp_heap_get(geep->cfg, "chips_path"), ".chip"); 
     }
+
     signal(SIGINT, kill_me);
     iface_device_configure( geep->ifc->dev, geep->cfg); // temporary
     gui_run( geep );

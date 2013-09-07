@@ -28,48 +28,48 @@ static geepro *gep=NULL;
 static int xyz_sw_vcc( char state )
 {
     if( state )
-	return parport_set_bit(PC, PP_01);
-    return parport_clr_bit(PC, PP_01);
+	return parport_set_bit(gep->ifc->dev->lpt,PC, PP_01);
+    return parport_clr_bit(gep->ifc->dev->lpt,PC, PP_01);
 }
 
 static int xyz_get_tdo()
 {
-    return parport_get_bit(PB, PP_13);
+    return parport_get_bit(gep->ifc->dev->lpt,PB, PP_13);
 }
 
 static int xyz_set_tdi(char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_04);
-    return parport_clr_bit(PA, PP_04);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_04);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_04);
 }
 
 static int xyz_set_tms(char state ) 
 {
     if( state )
-	return parport_set_bit(PA, PP_02);
-    return parport_clr_bit(PA, PP_02);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_02);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_02);
 }
 
 static int xyz_set_tck(char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_03);
-    return parport_clr_bit(PA, PP_03);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_03);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_03);
 }
 
 static int xyz_set_trst(char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_05);
-    return parport_clr_bit(PA, PP_05);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_05);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_05);
 }
 
 static int xyz_reset()
 {
     int err = 0;
     
-    err =  parport_reset();
+    err =  parport_reset(gep->ifc->dev->lpt);
     err |= xyz_sw_vcc( 0 );	// tristate buffer off
     err |= xyz_set_tdi( 0 );
     err |= xyz_set_tms( 0 );
@@ -80,14 +80,15 @@ static int xyz_reset()
 
 static int xyz_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags, gep)) return HW_ERROR;
+    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
     return xyz_reset();
 }
 
 static int xyz_close()
 {
     if( xyz_reset() == PP_ERROR ) return HW_ERROR;
-    return parport_cleanup();
+    parport_close(gep->ifc->dev->lpt);
+    return 0;
 }
 
 /*
