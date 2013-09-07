@@ -27,39 +27,39 @@ static geepro *gep = NULL;
 
 static int funprog_get_miso()
 {
-    return parport_get_bit(PB, PP_10);
+    return parport_get_bit(gep->ifc->dev->lpt,PB, PP_10);
 }
 
 static int funprog_set_mosi( char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_07);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_07);
     else
-	return parport_clr_bit(PA, PP_07);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_07);
 }
 
 static int funprog_set_sck( char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_08);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_08);
     else
-	return parport_clr_bit(PA, PP_08);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_08);
 }
 
 static int funprog_set_rst( char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_06);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_06);
     else
-	return parport_clr_bit(PA, PP_06);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_06);
 }
 
 static int funprog_set_xtal( char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_05);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_05);
     else
-	return parport_clr_bit(PA, PP_05);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_05);
 }
 
 static int funprog_sw_vcc( char state )
@@ -67,13 +67,13 @@ static int funprog_sw_vcc( char state )
     int err = 0;
 
     if( state ){
-	err  = parport_set_bit( PA, PP_02 );
-	err |= parport_set_bit( PA, PP_03 );
-	err |= parport_set_bit( PA, PP_04 );
+	err  = parport_set_bit(gep->ifc->dev->lpt, PA, PP_02 );
+	err |= parport_set_bit(gep->ifc->dev->lpt, PA, PP_03 );
+	err |= parport_set_bit(gep->ifc->dev->lpt, PA, PP_04 );
     } else {
-	err  = parport_clr_bit( PA, PP_02 );
-	err |= parport_clr_bit( PA, PP_03 );
-	err |= parport_clr_bit( PA, PP_04 );    
+	err  = parport_clr_bit(gep->ifc->dev->lpt, PA, PP_02 );
+	err |= parport_clr_bit(gep->ifc->dev->lpt, PA, PP_03 );
+	err |= parport_clr_bit(gep->ifc->dev->lpt, PA, PP_04 );    
     }
     return err;
 }
@@ -82,7 +82,7 @@ static int funprog_reset()
 {
     int err = 0;
     
-    err =  parport_reset();
+    err =  parport_reset(gep->ifc->dev->lpt);
     err |= funprog_sw_vcc( 0 );    
     err |= funprog_set_mosi( 0 );
     err |= funprog_set_sck( 0 );
@@ -94,14 +94,15 @@ static int funprog_reset()
 
 static int funprog_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags,gep)) return HW_ERROR;
+    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
     return funprog_reset();
 }
 
 static int funprog_close()
 {
     if( funprog_reset() == PP_ERROR ) return HW_ERROR;
-    return parport_cleanup();
+    parport_close(gep->ifc->dev->lpt);
+    return 0;
 }
 
 /*

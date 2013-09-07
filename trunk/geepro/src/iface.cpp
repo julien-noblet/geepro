@@ -32,7 +32,7 @@
 #include "parport.h"
 #include "error.h"
 
-//#define IFACE_PARPORT_SUPPORT
+#define IFACE_PARPORT_SUPPORT
 //#define IFACE_SERIAL_SUPPORT
 #define IFACE_USB_SUPPORT
 
@@ -43,6 +43,12 @@ extern "C" {
     #include "main.h"
     #include "files.h"
 }
+
+typedef struct
+{
+    s_cfp *cfg;
+    s_iface_device *ifc;
+} s_iface_tmp;
 
 #include "../intl/lang.h"
 
@@ -58,7 +64,7 @@ iface *iface_init()
     memset(ifc->plugins, 0, sizeof(chip_plugins));
     ifc->hwd = dummy_hardware_driver;
     chip_init_qe(ifc->plugins);
-    iface_device_init( &ifc->dev );
+    iface_device_init( &ifc->dev);
     return ifc;
 }
 
@@ -465,86 +471,6 @@ void iface_driver_allow(iface *ifc, const char *list)
     ifc->plg_list = (char*)list;
 }
 
-static const char *iface_get_iface_wildcard( int type)
-{
-    switch (type) {
-	case IFACE_LPT: return "^parport[[:digit:]]*$";
-	case IFACE_USB: return "^usb[[:digit:]]*$";
-	case IFACE_RS232: return "^ttyS[[:digit:]]*$";
-    }
-    
-    return NULL;
-}
-
-typedef struct 
-{
-    iface *ifc;
-    int   type;    
-} iface_tmp_arg;
-
-static boolean iface_callback_list(const char *fname, const char *error, void *arg)
-{
-    char tmp[4096];
-    
-    if( (strlen(fname) + strlen(SYSTEM_DEVICE_PATH)) > 4094) return false;
-    
-    iface_tmp_arg *targ = (iface_tmp_arg *)arg;
-    
-    sprintf(tmp, "%s%s", SYSTEM_DEVICE_PATH, fname);
-    
-    iface_add(targ->ifc, targ->type, (char *)fname, tmp, NULL);
-    return true;
-}
-
-static void iface_add_list(iface *ifc, int iface_type)
-{
-    char error[256];
-    const char *regex = iface_get_iface_wildcard( iface_type );
-    iface_tmp_arg tmp;
-    
-    tmp.ifc = ifc;
-    tmp.type = iface_type;
-    error[0] = 0;
-        
-    if(!file_ls(SYSTEM_DEVICE_PATH, regex, error, iface_callback_list, &tmp)){
-	fprintf(stderr, "[ERROR]%s\n",error);
-    }
-
-}
-
-int iface_load_config(iface *ifc, void *cfg)
-{
-    char *tmp;
-    ifc->ifc_sel = 0;
-    ifc->cl = IFACE_LPT;
-
-    ifc->prog_sel = 0;    
-    tmp = NULL;
-    if(!store_get(GEEPRO(ifc->gep)->store, "LAST_SELECTED_PROGRAMMER", &tmp)){
-	if( tmp ){
-	    ifc->prog_sel = strtol(tmp, NULL, 0);
-	    free(tmp);
-	}
-    }
-    tmp = NULL;
-    if(!store_get(GEEPRO(ifc->gep)->store, "LAST_SELECTED_IFACE", &tmp)){
-	if( tmp ){
-	    ifc->ifc_sel = strtol(tmp, NULL, 0);
-	    free(tmp);
-	}
-    }
-
-// interface to choose
-    iface_add_list( ifc, IFACE_LPT);
-    iface_add_list( ifc, IFACE_USB);
-    iface_add_list( ifc, IFACE_RS232);
-// usb experimental
-//    iface_add(ifc, IFACE_LPT, "Usb2Lpt adapter", "Usb2Lpt");
-//exit(0);
-    return 0;
-}
-
-
 /******************************************************************************************************************/
 
 void iface_module_allow(iface *ifc, const char *list)
@@ -832,8 +758,57 @@ static void ifc_device_usb_callback(s_usb_devlist *device, char flag, s_iface_de
 #endif // IFACE_USB_SUPPORT
 
 #ifdef IFACE_PARPORT_SUPPORT
-static void iface_device_config_lpt(s_iface_device *ifc, s_cfp *cfg){}
-static void iface_device_scan_lpt( s_iface_device *ifc ){}
+
+static void iface_device_parport_set_alias(s_parport *pp, s_parport_list *it, s_iface_tmp *ctx )
+{
+    char *tmp= NULL;
+    char path[256];
+    long val;
+    int k,i;
+
+    if(!it || !ctx || !pp ) return;
+    if( !ctx->cfg || !ctx->ifc ) return;
+    
+    k = cfp_tree_count_element(ctx->cfg, "/parport_devices/device", "device");
+    for(i = 0; i < k; i++){
+	tmp = NULL;
+	sprintf( path, "/parport_devices/device:%i/path", i);    
+	cfp_get_string( ctx->cfg, path, &tmp);
+        if( !tmp ) continue;
+        if( !it->device_path ) continue;
+        if( strcmp(tmp, it->device_path) ) continue; // check if device path match
+	free( tmp );
+	sprintf( path, "/parport_devices/device:%i/flags", i);    
+	cfp_get_long( ctx->cfg, path, &val);
+	it->flags = val;
+	tmp = NULL;
+	sprintf( path, "/parport_devices/device:%i/alias", i);    
+	cfp_get_string( ctx->cfg, path, &tmp);
+	if(it->alias) free(it->alias);
+	it->alias = tmp;
+	PRN(" * found parallel port device:'%s', alias name:'%s' flags: 0x%x\n", it->device_path, it->alias, it->flags);
+    }
+}
+
+static void iface_device_config_parport(s_iface_device *ifc, s_cfp *cfg)
+{
+    s_iface_tmp tmp;
+    tmp.cfg = cfg;
+    tmp.ifc = ifc;
+    MSG("Parallel ports:");
+    parport_get_list( ifc->lpt, PARPORT_CALLBACK(iface_device_parport_set_alias), &tmp, PARPORT_FILTER_NOALIAS );
+}
+
+static void iface_device_parport_add(s_parport *pp, s_parport_list *it, s_iface_device *ifc )
+{
+    iface_device_add_list(ifc, it->alias, IFACE_LPT, it);	
+}
+
+static void iface_device_scan_parport( s_iface_device *ifc )
+{
+    parport_get_list( ifc->lpt, PARPORT_CALLBACK(iface_device_parport_add), ifc, PARPORT_FILTER_ALIAS );
+}
+
 #endif // IFACE_PARPORT_SUPPORT
 
 #ifdef IFACE_SERIAL_SUPPORT
@@ -844,7 +819,7 @@ static void iface_device_scan_com( s_iface_device *ifc ){}
 
 /******************************************************************/
 
-char iface_device_init( s_iface_device **ifc )
+char iface_device_init( s_iface_device **ifc)
 {
     if( !ifc ) return -2;
     if( *ifc ) {
@@ -856,10 +831,10 @@ char iface_device_init( s_iface_device **ifc )
 	return ERR_MALLOC_CODE;
     }
     memset( *ifc, 0, sizeof( s_iface_device ) );
-
     // LPT ports
 #ifdef IFACE_PARPORT_SUPPORT
-    parport_init( &((*ifc)->lpt) );
+    parport_init( &((*ifc)->lpt), *ifc );
+
 #endif
     // RS232 ports
 #ifdef IFACE_SERIAL_SUPPORT
@@ -941,7 +916,8 @@ char iface_device_connect_notify( s_iface_device *ifc, f_iface_device_notify not
 void iface_device_configure( s_iface_device *ifc, s_cfp *cfg)
 {
 #ifdef IFACE_PARPORT_SUPPORT
-    iface_device_config_lpt( ifc, cfg);
+    iface_device_config_parport( ifc, cfg);
+    iface_device_scan_parport( ifc ); // to add interfaces to list
 #endif
 #ifdef IFACE_SERIAL_SUPPORT
     iface_device_config_com( ifc, cfg);

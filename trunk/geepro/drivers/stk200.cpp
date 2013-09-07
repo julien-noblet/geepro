@@ -28,14 +28,14 @@ static geepro *gep=NULL;
 static int stk200_set_test(char test)
 {
     if( test & 1 ){
-	if(parport_set_bit(PA, PP_02)) return PP_ERROR;
+	if(parport_set_bit(gep->ifc->dev->lpt,PA, PP_02)) return PP_ERROR;
     } else {
-	if(parport_clr_bit(PA, PP_02)) return PP_ERROR;
+	if(parport_clr_bit(gep->ifc->dev->lpt,PA, PP_02)) return PP_ERROR;
     }
     if( test & 2 ){
-	if(parport_set_bit(PA, PP_03)) return PP_ERROR;
+	if(parport_set_bit(gep->ifc->dev->lpt,PA, PP_03)) return PP_ERROR;
     } else {
-	if(parport_clr_bit(PA, PP_03)) return PP_ERROR;
+	if(parport_clr_bit(gep->ifc->dev->lpt,PA, PP_03)) return PP_ERROR;
     }
     return 0;
 }
@@ -45,10 +45,10 @@ static int stk200_get_test()
     char t, x;
 
     t = 0;
-    x = parport_get_bit(PB, PP_12);
+    x = parport_get_bit(gep->ifc->dev->lpt,PB, PP_12);
     if( x == PP_ERROR ) return PP_ERROR;
     t |= x ? 1:0;
-    x = parport_get_bit(PB, PP_11);
+    x = parport_get_bit(gep->ifc->dev->lpt,PB, PP_11);
     if( x == PP_ERROR ) return PP_ERROR;
     t |= x ? 2:0;
     return t;
@@ -71,7 +71,7 @@ static int stk200_get_miso()
 {
     int x;
 
-    x = parport_get_bit(PB, PP_10);
+    x = parport_get_bit(gep->ifc->dev->lpt,PB, PP_10);
     if( x == PP_ERROR ) return PP_ERROR;
     return x;
 }
@@ -79,11 +79,11 @@ static int stk200_get_miso()
 static int stk200_connect( char state ) // on/off 3 state buffers
 {
     if( state ){
-	if(parport_clr_bit(PA, PP_04)) return HW_ERROR;    
-	if(parport_clr_bit(PA, PP_05)) return HW_ERROR;        
+	if(parport_clr_bit(gep->ifc->dev->lpt,PA, PP_04)) return HW_ERROR;    
+	if(parport_clr_bit(gep->ifc->dev->lpt,PA, PP_05)) return HW_ERROR;        
     } else {
-	if(parport_set_bit(PA, PP_04)) return HW_ERROR;    
-	if(parport_set_bit(PA, PP_05)) return HW_ERROR;        
+	if(parport_set_bit(gep->ifc->dev->lpt,PA, PP_04)) return HW_ERROR;    
+	if(parport_set_bit(gep->ifc->dev->lpt,PA, PP_05)) return HW_ERROR;        
     }
     return 0;
 }
@@ -91,33 +91,33 @@ static int stk200_connect( char state ) // on/off 3 state buffers
 static int stk200_set_mosi( char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_07);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_07);
     else
-	return parport_clr_bit(PA, PP_07);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_07);
 }
 
 static int stk200_set_sck( char state )
 {
     if( state )
-	return parport_set_bit(PA, PP_06);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_06);
     else
-	return parport_clr_bit(PA, PP_06);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_06);
 }
 
 static int stk200_set_rst( char state ) // 09
 {
     if( state )
-	return parport_set_bit(PA, PP_09);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_09);
     else
-	return parport_clr_bit(PA, PP_09);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_09);
 }
 
 static int stk200_set_led( char state ) // 08
 {
     if( state )
-	return parport_clr_bit(PA, PP_08);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_08);
     else
-	return parport_set_bit(PA, PP_08);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_08);
 }
 
 static int stk200_sw_vcc( char state )
@@ -132,7 +132,7 @@ static int stk200_reset()
 {
     int err = 0;
     
-    err =  parport_reset();
+    err =  parport_reset(gep->ifc->dev->lpt);
     err |= stk200_connect( 0 );    
     err |= stk200_set_mosi( 0 );
     err |= stk200_set_sck( 0 );
@@ -144,14 +144,15 @@ static int stk200_reset()
 
 static int stk200_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags, gep)) return HW_ERROR;
+    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
     return stk200_reset();
 }
 
 static int stk200_close()
 {
     if( stk200_reset() == PP_ERROR ) return HW_ERROR;
-    return parport_cleanup();
+    parport_close(gep->ifc->dev->lpt);
+    return 0;
 }
 
 /*

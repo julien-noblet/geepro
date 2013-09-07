@@ -27,18 +27,18 @@ static geepro *gep = NULL;
 
 static int x3_test_connected()
 {
-    if( parport_get_bit(PB, PP_15) == 0 ){  // VCC sense
+    if( parport_get_bit(gep->ifc->dev->lpt,PB, PP_15) == 0 ){  // VCC sense
 	printf("[ERR] No power !\n");
 	return 0; 
     }
 
-    if( parport_clr_bit(PA, PP_08) ) return 0;
-    if( parport_get_bit(PB, PP_11) != 0 ) return 0;
-    if( parport_get_bit(PB, PP_12) != 0 ) return 0;
+    if( parport_clr_bit(gep->ifc->dev->lpt,PA, PP_08) ) return 0;
+    if( parport_get_bit(gep->ifc->dev->lpt,PB, PP_11) != 0 ) return 0;
+    if( parport_get_bit(gep->ifc->dev->lpt,PB, PP_12) != 0 ) return 0;
 
-    if( parport_set_bit(PA, PP_08) ) return 0;
-    if( parport_get_bit(PB, PP_11) == 0 ) return 0;    
-    if( parport_get_bit(PB, PP_12) == 0 ) return 0;
+    if( parport_set_bit(gep->ifc->dev->lpt,PA, PP_08) ) return 0;
+    if( parport_get_bit(gep->ifc->dev->lpt,PB, PP_11) == 0 ) return 0;    
+    if( parport_get_bit(gep->ifc->dev->lpt,PB, PP_12) == 0 ) return 0;
 
     return 1;
 }
@@ -46,48 +46,48 @@ static int x3_test_connected()
 static int x3_sw_vcc( char state ) // CTRL line
 {
     if( state )
-	return parport_clr_bit(PA, PP_05);
-    return parport_set_bit(PA, PP_05);
+	return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_05);
+    return parport_set_bit(gep->ifc->dev->lpt,PA, PP_05);
 }
 
 static int x3_set_tdo(char state ) // PROG line
 {
     if( state )
-	return parport_set_bit(PA, PP_06);
-    return parport_clr_bit(PA, PP_06);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_06);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_06);
 }
 
 static int x3_get_tdo() // DONE line
 {
-    return parport_get_bit(PB, PP_13);
+    return parport_get_bit(gep->ifc->dev->lpt,PB, PP_13);
 }
 
 static int x3_set_tdi(char state ) // DIN line
 {
     if( state )
-	return parport_set_bit(PA, PP_02);
-    return parport_clr_bit(PA, PP_02);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_02);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_02);
 }
 
 static int x3_set_tms(char state ) // TMS_IN line
 {
     if( state )
-	return parport_set_bit(PA, PP_04);
-    return parport_clr_bit(PA, PP_04);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_04);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_04);
 }
 
 static int x3_set_tck(char state ) // CLK line
 {
     if( state )
-	return parport_set_bit(PA, PP_03);
-    return parport_clr_bit(PA, PP_03);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_03);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_03);
 }
 
 static int x3_reset()
 {
     int err = 0;
     
-    err =  parport_reset();
+    err =  parport_reset(gep->ifc->dev->lpt);
     err |= x3_sw_vcc( 0 );	// tristate buffer off
     err |= x3_set_tdo( 1 );	// ready to read line TDO
     err |= x3_set_tdi( 0 );
@@ -99,14 +99,15 @@ static int x3_reset()
 
 static int x3_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags, gep)) return HW_ERROR;
+    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
     return x3_reset();
 }
 
 static int x3_close()
 {
     if( x3_reset() == PP_ERROR ) return HW_ERROR;
-    return parport_cleanup();
+    parport_close(gep->ifc->dev->lpt);
+    return 0;
 }
 
 /*

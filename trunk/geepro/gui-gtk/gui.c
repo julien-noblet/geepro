@@ -652,14 +652,15 @@ static int gui_iface_sel(GtkWidget *wg, geepro *gep)
     char *name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(wg));
 
     if(!name) return 0;
-    gep->forbid = 0;
-    if(iface_select_iface(gep->ifc, name)){
-	gep->forbid = 1;
-	gui_error_box(gep,"Open device error !!!\n Device inaccesible.\n");
-	gtk_combo_box_set_active(GTK_COMBO_BOX(wg), gep->ifc->ifc_sel);
-	return -1;
-    }
-    gep->ifc->ifc_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
+    iface_device_select( gep->ifc->dev, name );    
+//    gep->forbid = 0;
+//    if(iface_select_iface(gep->ifc, name)){
+//	gep->forbid = 1;
+//	gui_error_box(gep,"Open device error !!!\n Device inaccesible.\n");
+//	gtk_combo_box_set_active(GTK_COMBO_BOX(wg), gep->ifc->ifc_sel);
+//	return -1;
+//    }
+//    gep->ifc->ifc_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
     gui_stat_rfsh(gep);
     gui_test_hw(NULL, gep);
     sprintf(tmp,"%i", gep->ifc->ifc_sel);
@@ -672,13 +673,9 @@ static GtkWidget *gui_iface_list(geepro *gep)
     GtkWidget *combox;
 
     combox = gtk_combo_box_text_new();
-
-//    iface_search(gep->ifc, gep->ifc->cl, (iface_cb)gui_build_iface_menu, GTK_COMBO_BOX(combox));
-
     iface_device_get_list(gep->ifc->dev, IFACE_F_DEVICE(gui_build_iface_menu), GTK_COMBO_BOX(combox));
-
     gtk_combo_box_set_active(GTK_COMBO_BOX(combox), gep->ifc->ifc_sel);
-//    g_signal_connect(G_OBJECT(combox), "changed", G_CALLBACK(gui_iface_sel), gep);
+    g_signal_connect(G_OBJECT(combox), "changed", G_CALLBACK(gui_iface_sel), gep);
 
     return combox;
 }
@@ -1200,7 +1197,7 @@ void gui_run(geepro *gep)
 
 void gui_kill_me(geepro *gep)
 {
-    printf(TXT_EXIT);
+    MSG(TXT_EXIT);
     /* Usuniecie biezacego GUI zbudowanego o xml */
     gui_xml_destroy(GUI(gep->gui)->xml);
     free(GUI(gep->gui)->xml);

@@ -28,8 +28,8 @@ static geepro *gep = NULL; // temporary
 static int galb_sw_vcc( char state )
 {
     if( state )
-	return parport_clr_bit(PC, PP_16);
-    return parport_set_bit(PC, PP_16);
+	return parport_clr_bit(gep->ifc->dev->lpt,PC, PP_16);
+    return parport_set_bit(gep->ifc->dev->lpt,PC, PP_16);
 }
 
 static char glb_volt_set(int v ) // calculate voltage set
@@ -40,15 +40,15 @@ static char glb_volt_set(int v ) // calculate voltage set
 static int galb_set_vpp( int volt )
 {
     char err, x;
-    x = parport_get(PA);
+    x = parport_get(gep->ifc->dev->lpt,PA);
     if( x == PP_ERROR) return HW_ERROR;
-    err =  parport_set(PA, glb_volt_set(volt));
+    err =  parport_set(gep->ifc->dev->lpt,PA, glb_volt_set(volt));
     gep->hw_delay(2);
-    err |= parport_clr_bit(PC, PP_14);
+    err |= parport_clr_bit(gep->ifc->dev->lpt,PC, PP_14);
     gep->hw_delay(2);
-    err |= parport_set_bit(PC, PP_14);
+    err |= parport_set_bit(gep->ifc->dev->lpt,PC, PP_14);
     gep->hw_delay(2);
-    err |= parport_set(PA, x );
+    err |= parport_set(gep->ifc->dev->lpt,PA, x );
     gep->hw_delay(2);
     return err;
 }
@@ -57,67 +57,68 @@ static int galb_reset()
 {
     int err = 0;
     
-    err =  parport_reset();
-    err |= parport_set(PA, 0);
-    parport_set_bit(PC, PP_16);
-    parport_set_bit(PC, PP_14);
+    err =  parport_reset(gep->ifc->dev->lpt);
+    err |= parport_set(gep->ifc->dev->lpt,PA, 0);
+    parport_set_bit(gep->ifc->dev->lpt,PC, PP_16);
+    parport_set_bit(gep->ifc->dev->lpt,PC, PP_14);
     return err;
 }
 
 static int galb_open(const char *ptr, int flags)
 {
-    if(parport_init(ptr, flags, gep)) return HW_ERROR;
+    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
     return galb_reset();
 }
 
 static int galb_close()
 {
     if( galb_reset() == PP_ERROR ) return HW_ERROR;
-    return parport_cleanup();
+    parport_close(gep->ifc->dev->lpt);
+    return 0;
 }
 
 /* signals*/
 static int galb_get_sdout()
 {
-    return parport_get_bit(PB, PP_10);
+    return parport_get_bit(gep->ifc->dev->lpt,PB, PP_10);
 }
 
 static int galb_set_sdin(char state)
 {
     if( state )
-	return parport_set_bit(PA, PP_02);
-    return parport_clr_bit(PA, PP_02);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_02);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_02);
 }
 
 static int galb_set_sclk(char state)
 {
     if( state )
-	return parport_set_bit(PA, PP_09);
-    return parport_clr_bit(PA, PP_09);
+	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_09);
+    return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_09);
 }
 
 static int galb_set_stb(char state)
 {
     if( state )
-	return parport_clr_bit(PC, PP_01);
-    return parport_set_bit(PC, PP_01);
+	return parport_clr_bit(gep->ifc->dev->lpt,PC, PP_01);
+    return parport_set_bit(gep->ifc->dev->lpt,PC, PP_01);
 }
 
 static int galb_set_pv(char state)
 {
     if( state )
-	return parport_set_bit(PC, PP_17);
-    return parport_clr_bit(PC, PP_17);
+	return parport_set_bit(gep->ifc->dev->lpt,PC, PP_17);
+    return parport_clr_bit(gep->ifc->dev->lpt,PC, PP_17);
 }
 
 static int galb_set_ra(char ra)
 {
     char x;
 
-    x = parport_get(PA);
+    x = parport_get(gep->ifc->dev->lpt,PA);
     if( x == PP_ERROR) return HW_ERROR;
     x = (x & 0x81) | ( (ra << 1) & 0x7e);
-    return parport_set(PA, x);    
+    return parport_set(gep->ifc->dev->lpt,PA, x);    
 }
 
 /*

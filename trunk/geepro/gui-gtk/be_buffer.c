@@ -22,6 +22,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "be_buffer.h"
+#include "../src/error.h"
 
 static inline unsigned int gui_bineditor_buff_str_asm(unsigned char *word, const char *p0, const char *p1, int *error)
 {
@@ -106,23 +107,23 @@ void gui_bineditor_buff_constr(gui_be_buffer_str **bf)
 {
     *bf = (gui_be_buffer_str *)malloc( sizeof( gui_be_buffer_str ) );
     if(*bf == NULL){
-	printf("Critical error: memory allocation in gui_bineditor_buff_constr()\n");
+	CRT("memory allocation in gui_bineditor_buff_constr()");
 	exit(-1);
     }
     (*bf)->ftmp = tmpfile();
     if((*bf)->ftmp == NULL ){
-	printf("Error: temporary file creation for history in gui_bineditor_buff_constr() can not be created!\n");
+	ERR("temporary file creation for history in gui_bineditor_buff_constr() can not be created!");
     }
     (*bf)->size = 0;
     (*bf)->data = NULL;
-    printf("Temporary file for history created.\n");
+    MSG("Temporary file for history created.");
 }
 
 void gui_bineditor_buff_destroy(gui_be_buffer_str **bf)
 {
     if((*bf)->ftmp){
 	 fclose((*bf)->ftmp);
-	 printf("Temporary file cleanup.\n");
+	 MSG("Temporary file cleanup.");
     }
     if(*bf) free(*bf);
     *bf = NULL;

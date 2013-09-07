@@ -127,7 +127,7 @@
 #define TXT_PROGRAMMER		"Programmer:"
 #define TXT_INTERFACE		"Device:"
 #define TXT_BUFFER		"Buffer"
-#define TXT_EXIT		"Bye Bye.\n"
+#define TXT_EXIT		"Bye Bye."
 
 #define RELOAD_QUESTION		"Buffer file and disk file are different.\nReload ?" //changed by Reuben
 

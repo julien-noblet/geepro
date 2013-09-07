@@ -26,6 +26,7 @@
 #include "../drivers/hwdriver.h"
 #include "gep_usb.h"
 #include "cfp.h"
+#include "parport.h"
 
 #define IFACE_DRIVER_INIT_FUNC_NAME	"driver_init"
 #define IFACE_MODULE_INIT_FUNC_NAME	"init_module"
@@ -97,13 +98,13 @@ typedef void (*f_iface_device_notify)(s_iface_device *, s_iface_devlist *, void 
 
 struct s_iface_device_
 {
-    s_iface_devlist *selected;		// currently selected device
-    s_iface_devlist *list;		// actual list of all supported available devices by given programmer
-//    s_parport *lpt;			// all lpt ports available in system
+    s_iface_devlist	*selected;	// currently selected device
+    s_iface_devlist	*list;		// actual list of all supported available devices by given programmer
+    s_parport		*lpt;		// all lpt ports available in system
 //    s_serial *com;			// all RS232 ports available in system
-    s_usb *usb;				// all USB devices supported by geepro
+    s_usb		*usb;		// all USB devices supported by geepro
     f_iface_device_notify notify;	// notify callback
-    void *notify_ptr;			// notify callback parameter
+    void		*notify_ptr;	// notify callback parameter
 };
 
 typedef struct
@@ -207,7 +208,7 @@ char iface_device_connect_notify( s_iface_device *ifc, f_iface_device_notify, vo
     ifc -> pointer to s_iface_device struct pointer.
     return 0 on success
 */
-char iface_device_init( s_iface_device **ifc );
+char iface_device_init( s_iface_device **ifc);
 
 /*
     Destructor

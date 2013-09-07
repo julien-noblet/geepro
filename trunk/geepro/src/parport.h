@@ -22,41 +22,44 @@
 #ifndef __parport_h__
 #define __parport_h__
 
-/*#define __PARPORT_CPP_CLASS__  // - kompiluje do klasy parport */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define PA	0	/* zapis */
-#define PB	1	/* tylko odczyt */
-#define PC	2	/* zapis, moøliwo∂Ê odczytania zapisanej wartosci */
+#define PA	0	// to write only
+#define PB	1	// to read only
+#define PC	2	// to write only (read previously wrote data)
 #define PP_ERROR	-1
 
-/*************************************************************************************************************************/
-/* Maski bitowe dla pin√≥w portu */
+/***************************************/
+/*          Signal names               */
+/***************************************/
 
-/* dla portu PC */
-#define PP_STB		1
-#define PP_ALF		2
-#define PP_INI		4
-#define PP_DSL		8
-#define PP_IRQ		16
+// port PC 
+#define PP_STB		(1  | (PC << 8))
+#define PP_ALF		(2  | (PC << 8))
+#define PP_INI		(4  | (PC << 8))
+#define PP_DSL		(8  | (PC << 8))
+#define PP_IRQ		(16 | (PC << 8))
 
-/* dla portu PB */
-#define PP_ERR		8
-#define PP_ONOF		16
-#define PP_PAP		32
-#define PP_ACK		64
-#define PP_BUSY		128
+// port PB 
+#define PP_ERR		(8   | (PB << 8))
+#define PP_ONOF		(16  | (PB << 8))
+#define PP_PAP		(32  | (PB << 8))
+#define PP_ACK		(64  | (PB << 8))
+#define PP_BUSY		(128 | (PB << 8))
 
-/* dla portu PA */
-#define PP_D0		1
-#define PP_D1		2
-#define PP_D2		4
-#define PP_D3		8
-#define PP_D4		16
-#define PP_D5		32
-#define PP_D6		64
-#define PP_D7		128
+// port PA
+#define PP_D0		(1   | (PA << 8))
+#define PP_D1		(2   | (PA << 8))
+#define PP_D2		(4   | (PA << 8))
+#define PP_D3		(8   | (PA << 8))
+#define PP_D4		(16  | (PA << 8))
+#define PP_D5		(32  | (PA << 8))
+#define PP_D6		(64  | (PA << 8))
+#define PP_D7		(128 | (PA << 8))
 
-/* definicje wg pinÛw portu */
+// port pins definitions in DB25 socket
 #define PP_01		PP_STB	/* PC */
 #define PP_02		PP_D0	/* PA */
 #define PP_03		PP_D1	/* PA */
@@ -75,7 +78,7 @@
 #define PP_16		PP_INI	/* PC */
 #define PP_17		PP_DSL	/* PC */
 
-/* zmiana pojedynczych bitÛw dla funkcji parport_set_bit() i parport_clr_bit()*/
+// change of single bits for functions parport_set_bit() and parport_clr_bit()
 #define SPP_01		PC,PP_STB
 #define SPP_02		PA,PP_D0
 #define SPP_03		PA,PP_D1
@@ -94,87 +97,136 @@
 #define SPP_16		PC,PP_INI
 #define SPP_17		PC,PP_DSL
 
-#ifndef __PARPORT_CPP_CLASS__
-#define PARPORT(x)	parport_##x
-#define PARPORT_M(x)	parport_##x
-#define PARPORT_EM	parport_msgh_ptr
+#define PARPORT( x )	((s_parport *)(x))
 
-typedef void (*message_type)(int lvl, void *ptr, const char *fmt, ...);
+typedef struct s_parport_list_ s_parport_list;
+struct s_parport_list_
+{
+    char *device_path;
+    char *alias;
+    int  flags;    
+    s_parport_list *next;
+};
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct
+{
+    s_parport_list *selected;
+    s_parport_list *list;    
+    void *emul;			// pointer to iface structure
+} s_parport;
 
-extern void parport_set_usb( char );	// true -> enable usb2lpt layer, false -> enable ppdev
+#define PARPORT_FILTER_ALL	0
+#define PARPORT_FILTER_NOALIAS  1
+#define PARPORT_FILTER_ALIAS	2
 
-/* uchwyt wlasnej funkcji bledu */
-extern message_type parport_message_handler;
-extern void *parport_msgh_ptr; /* wskaznik przekazywany jako parametr ptr funkcji bledu */
+#define PARPORT_CALLBACK( x )	((f_parport_callback)(x))
+typedef void (*f_parport_callback)(s_parport *, s_parport_list *, void *);
 
-/* funkcje inicjujace */
-extern int parport_init(const char *path, int dev_flags, void *ptr);
-extern int parport_cleanup(void);
+/****************************************************/
+/*                  Control                         */
+/****************************************************/
 
-/* ustawienia/odczyt portow, idx = PA,PB,PC */
-extern int parport_set(unsigned char port_idx, unsigned char data);
-extern int parport_get(unsigned char port_idx);
-extern int parport_reset(void);
+/*
+    Create parallel port driver.
+    Looking for parports in system and adding them to list.
+    Input:
+	pp - pointer to pointer s_parport structure of NULL value
+    Return:
+	0 - success, -1 - error
+*/
+extern char parport_init(s_parport **pp, void *emul);
+
+/*
+    Free all resources allocated by parport_init() and parport_open().
+    Destroy parallel driver.
+    Input:
+	pp - pointer to s_parport structure
+*/
+extern void parport_exit(s_parport *pp);
+
+/*
+    Open device for I/O
+    Input:
+	pp - pointer to s_parport structure
+    Return:
+	0 - success, -1 - error
+*/
+extern int parport_open( s_parport * ); 
+
+/*
+    Close device
+    Input:
+	pp - pointer to s_parport structure
+*/
+extern void parport_close( s_parport * ); 
+
+/*
+    Redirects all parport calls to emulator adapter.
+    Input:
+	pp - pointer to s_parport structure
+	sw - switch value: 0 - ppdev, 1 - redirect
+    Return:
+	none
+*/
+extern void parport_set_emulate(s_parport *, char );
+
+/*
+    Invokes f_parport_callback for each element from device list.
+    Input:
+	pp - pointer to s_parport structure
+	f  - callback function
+	ptr - callback function parameter
+	filter_mode - PARPORT_FILTER_ALL, PARPORT_FILTER_ALIAS, PARPORT_FILTER_NOALIAS
+    Return:
+	none
+    Note:
+	Skipping "EMULATE" device.
+*/
+extern void parport_get_list(s_parport *, f_parport_callback f, void *ptr, char filter_mode);
+
+/*
+    Set current interface for I/O.
+    Input:
+	pp - pointer to s_parport structure
+	alias_name  - interface alias name
+    Return:
+	0 - success, -1 - error
+    Note:
+	If alias_name = "EMULATE" then parport switch to emulate
+*/
+extern char parport_set_device(s_parport *, const char *alias_name);
+
+/*
+    Return current selected device info.
+    Input:
+	pp - pointer to s_parport structure
+    Return:
+	Selected device info or NULL when error (or not set).        
+*/
+extern const s_parport_list *parport_get_current(s_parport *);
+
+/****************************************************/
+/*            I/O operations                        */
+/****************************************************/
+
+// set/read of ports, idx = PA,PB,PC 
+extern int parport_set(s_parport *, unsigned int port_idx, unsigned char data);
+extern int parport_get(s_parport *, unsigned int port_idx);
+extern int parport_reset(s_parport *);
 
 /* 
-    ustawienia/odczyt bit√≥w portu, idx = PA,PB,PC 
-    w przypadku bledu zwraca PP_ERROR
+    set/read of bits, idx = PA,PB,PC 
+    return PP_ERROR on error
 */
-extern int parport_set_bit(unsigned char idx, unsigned char mask);
-extern int parport_clr_bit(unsigned char idx, unsigned char mask);
+extern int parport_set_bit(s_parport *, unsigned int idx, unsigned int mask);
+extern int parport_clr_bit(s_parport *, unsigned int idx, unsigned int mask);
 /*
-    wartosc zwracana 0,1 w zaleznosci od stanu bitu lub PP_ERROR
+    return 0 or 1 or PP_ERROR
 */
-extern int parport_get_bit(unsigned char idx, unsigned char mask);
+extern int parport_get_bit(s_parport * ,unsigned int idx, unsigned int mask);
 
 #ifdef __cplusplus
 }
-#endif
-
-#else
-#define PARPORT(x)	parport::x
-#define PARPORT_M(x)	x
-#define PARPORT_EM	(void*)this
-class parport
-{
-    private:
-	unsigned char mirror[3];
-	int ppdev_fd;
-	int init_lvl;
-    protected:
-	int w_data(unsigned char);
-	int w_ctrl(unsigned char);
-	int r_stat(void);
-    public:
-/* funkcje inicjujace */
-	int init(const char *path, int dev_flags);
-	int cleanup(void);
-/* ustawienia/odczyt portow, idx = PA,PB,PC */
-	int set(unsigned char port_idx, unsigned char data);
-	int get(unsigned char port_idx);
-	int reset(void);
-/* 
-    ustawienia/odczyt bit√≥w portu, idx = PA,PB,PC 
-    w przypadku bledu zwraca PP_ERROR
-*/
-	int set_bit(unsigned char idx, unsigned char mask);
-	int clr_bit(unsigned char idx, unsigned char mask);
-/*
-    wartosc zwracana 0,1 w zaleznosci od stanu bitu lub PP_ERROR
-*/
-	int get_bit(unsigned char idx, unsigned char mask);
-
-	virtual void message(int lvl, void *, const char *fmt, ...);
-
-	/* w przypadku b≈Çƒôdu generujƒÖ wyjatek const char* */
-	parport(const char *dev_path, int flags);
-	virtual ~parport();
-};
-
 #endif
 
 #endif
