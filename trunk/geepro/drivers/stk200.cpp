@@ -127,7 +127,7 @@ static int stk200_sw_vcc( char state )
     err |= stk200_connect( state );
     return err;
 }
-
+/*
 static int stk200_reset()
 {
     int err = 0;
@@ -141,7 +141,7 @@ static int stk200_reset()
     
     return err;
 }
-
+*/
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */

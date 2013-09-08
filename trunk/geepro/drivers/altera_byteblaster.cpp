@@ -73,7 +73,7 @@ static int altera_bb_set_tck(char state )
 	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_02);
     return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_02);
 }
-
+/*
 static int altera_bb_reset()
 {
     int err = 0;
@@ -86,6 +86,7 @@ static int altera_bb_reset()
     
     return err;
 }
+*/
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */

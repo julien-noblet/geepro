@@ -77,7 +77,7 @@ static int funprog_sw_vcc( char state )
     }
     return err;
 }
-
+/*
 static int funprog_reset()
 {
     int err = 0;
@@ -91,6 +91,7 @@ static int funprog_reset()
     
     return err;
 }
+*/
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */

@@ -452,13 +452,13 @@ static int willem_gui_init(void *ptr, const char *chip_name, const char *family,
     willem_set_gui_main((geepro*)ptr, chip_name, family, programmer);
     return 0;
 }
-
+/*
 static int pcb3_open(const char *ptr, int flags)
 {
     if(parport_open(gep->ifc->dev->lpt) == PP_ERROR) return HW_ERROR;
     return willem_reset();
 }
-
+*/
 static void willem_set_addr_range(int val )
 {
     addr_init_mask = val;

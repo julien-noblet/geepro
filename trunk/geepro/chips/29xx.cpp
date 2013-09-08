@@ -130,9 +130,10 @@ static void send_cmd_flash29C( char cmd )
 
 static void sign_flash29C()
 {
-    char text[256];
-    int addr;
-    unsigned char rdata = 0, manuf = 0, device = 0;
+//    char text[256];
+//    int addr;
+//    unsigned char rdata = 0;
+    unsigned char manuf = 0, device = 0;
     
     init_flash5V();
 

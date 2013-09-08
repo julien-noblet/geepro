@@ -364,7 +364,7 @@ void gusb_set_callback(s_usb *usb, f_usb_callback cb, void *ptr)
 
 char gusb_open_iface(s_usb *usb, s_usb_devlist *dev)
 {
-    int er;
+//    int er;
     printf("TEST-> Open iface USB for %s\n", dev->dev_id.alias_name);
 /*
     dev->handler = NULL;

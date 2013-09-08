@@ -14,9 +14,9 @@
 </info>
 
 <notebook name="HW Test">
-    <table dim="2,2">
+    <table xhomo="true" yhomo="true">
 	<frame  shadow="etched_in" expand="true" fillx="true" pos="0,1, 0,1">
-	    <table dim="6, 3" fillx="true">
+	    <table xhomo="true" yhomo="true">
 		<chbutton id="VCC" pos="0,2, 0,1" label="40-VCC" fillx="true" spacex="5" />
 		<chbutton id="MOSI" pos="0,2, 1,2" label="6-MOSI" fillx="true" spacex="5" />
 		<chbutton id="RST" pos="0,2, 2,3" label="9-RST" fillx="true" spacex="5" spacey="5" />		

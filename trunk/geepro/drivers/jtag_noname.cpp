@@ -64,7 +64,7 @@ static int xyz_set_trst(char state )
 	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_05);
     return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_05);
 }
-
+/*
 static int xyz_reset()
 {
     int err = 0;
@@ -77,7 +77,7 @@ static int xyz_reset()
     err |= xyz_set_trst( 0 );    
     return err;
 }
-
+*/
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */

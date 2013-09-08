@@ -118,7 +118,7 @@ static void gui_xml_signal_register(gui_xml *g, GtkWidget *wg, char *id, const c
 
 static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWidget *parent, GtkWidget *child, char recursive, gui_xml_ifattr *parm, const char *sgd)
 {
-    int b0=0, b1=0, b2=0, b3=0, flagx, flagy, spx, spy;
+    int b0=0, b1=0, b2=0, b3=0, flagx, flagy, spx;
     char *pos;
     
     if( !sgd ){
@@ -146,35 +146,28 @@ static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWi
 	    gtk_box_pack_start(GTK_BOX(parent), child, b0, b1, b2);
 	return;
     }
-
-    b0 = b1 = b2 = b3 = 0;
-    pos = (char *)xmlGetProp(cur, (unsigned char *)"expandx");
-    if(pos) b0 = !strcmp(pos, "true");    
-    pos = (char *)xmlGetProp(cur, (unsigned char *)"expandy");
-    if(pos) b1 = !strcmp(pos, "true");
+    
+    flagx = 0;
+    flagy = 0;
     pos = (char *)xmlGetProp(cur, (unsigned char *)"fillx");
-    if(pos) b2 = !strcmp(pos, "true");
+    if(pos) flagx = !strcmp(pos, "true");
     pos = (char *)xmlGetProp(cur, (unsigned char *)"filly");
-    if(pos) b3 = !strcmp(pos, "true");
-
-    if(b0) b0 = GTK_EXPAND;
-    if(b1) b1 = GTK_EXPAND;
-    if(b2) b2 = GTK_FILL;
-    if(b3) b3 = GTK_FILL;
-
-    flagx = b0 | b2;
-    flagy = b1 | b3;    
-
+    if(pos) flagy = !strcmp(pos, "true");
+/*
     spx = spy = 0;    
     pos = (char *)xmlGetProp(cur, (unsigned char *)"spacex");
     if(pos) spx = atoi(pos);    
     pos = (char *)xmlGetProp(cur, (unsigned char *)"spacey");
     if(pos) spy = atoi(pos);
+*/
     pos = (char *)xmlGetProp(cur, (unsigned char *)"pos");
 
     if(pos){
 	sscanf(pos, "%i, %i, %i, %i", &b0, &b1, &b2, &b3);
-	gtk_table_attach(GTK_TABLE(parent), child, b0, b1, b2, b3, flagx, flagy, spx, spy);
+	gtk_grid_attach(GTK_GRID(parent), child, b0, b2, b1-b0, b3-b2);
+	gtk_grid_set_column_homogeneous(GTK_GRID(parent), flagx);
+	gtk_grid_set_row_homogeneous(GTK_GRID(parent), flagy);
+	
     }else
  	if(GTK_IS_BOX( parent ))
 	    gtk_box_pack_start(GTK_BOX(parent), child, TRUE, TRUE, 0);
@@ -231,7 +224,7 @@ static GtkWidget *gui_xml_box_new(xmlNode *cur, char dir)
 static GtkWidget *gui_xml_dipsw(gui_xml *g, xmlNode *cur)
 {
     GtkWidget *wg0, *wg1, *wg2;
-    char tmp[8], *arg0, *desc, rev = 0;
+    char tmp[8], *arg0, *desc, rev = 0, fillx, filly, *pos;
     int i=0, mask, len = 0;
     long set = 0;
 
@@ -242,8 +235,17 @@ static GtkWidget *gui_xml_dipsw(gui_xml *g, xmlNode *cur)
     desc = (char *)xmlGetProp(cur, (unsigned char *)"name");
     arg0 = (char *)xmlGetProp(cur, (unsigned char *)"reversed");
     if(arg0) rev = !strcmp(arg0, "true");
+
+    fillx = filly = 0;
+    pos = (char *)xmlGetProp(cur, (unsigned char *)"fillx");
+    if(pos) fillx = !strcmp(pos, "true");
+    pos = (char *)xmlGetProp(cur, (unsigned char *)"filly");
+    if(pos) filly = !strcmp(pos, "true");
+
+    wg0 = gtk_grid_new();
+    gtk_grid_set_column_homogeneous(GTK_GRID(wg0), fillx);
+    gtk_grid_set_row_homogeneous(GTK_GRID(wg0), filly);
     
-    wg0 = gtk_table_new(i,2, FALSE);
     memset(tmp, 0, 8);
     if(len <= 0) return NULL;
     
@@ -252,16 +254,16 @@ static GtkWidget *gui_xml_dipsw(gui_xml *g, xmlNode *cur)
 	    sprintf(tmp, "%X", len - i);
 	    wg1 = gtk_label_new(tmp);
 	    wg2 = gtk_image_new_from_stock(set & mask ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->sw_size);
-	    gtk_table_attach(GTK_TABLE(wg0), wg1, i,i+1, 0,1, 0,0, 0,0);
-	    gtk_table_attach(GTK_TABLE(wg0), wg2, i,i+1, 1,2, 0,0, 0,0);
+	    gtk_grid_attach(GTK_GRID(wg0), wg1, i, 0, 1, 1);
+	    gtk_grid_attach(GTK_GRID(wg0), wg2, i, 1, 1, 1);
 	}
     else
 	for(mask = 1, i = 0; i < len; i++,mask <<= 1){
 	    sprintf(tmp, "%X", i + 1);
 	    wg1 = gtk_label_new(tmp);
 	    wg2 = gtk_image_new_from_stock(set & mask ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->sw_size);
-	    gtk_table_attach(GTK_TABLE(wg0), wg1, i,i+1, 0,1, 0,0, 0,0);
-	    gtk_table_attach(GTK_TABLE(wg0), wg2, i,i+1, 1,2, 0,0, 0,0);
+	    gtk_grid_attach(GTK_GRID(wg0), wg1, i, 0, 1, 1);
+	    gtk_grid_attach(GTK_GRID(wg0), wg2, i, 1, 1, 1);
 	}
 
     if(desc){
@@ -289,34 +291,35 @@ static GtkWidget *gui_xml_jumper(gui_xml *g, xmlNode *cur)
     idx_up = (char *)xmlGetProp(cur, (unsigned char *)"name_up");
     idx_dn = (char *)xmlGetProp(cur, (unsigned char *)"name_dn");
 
-    wg0 = gtk_table_new(1,3, FALSE);
+    wg0 = gtk_grid_new();
     if(idx_up){
 	wg1 = gtk_label_new(idx_up);
-	gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 0,1, 0,0, 0,0);
+	gtk_grid_attach(GTK_GRID(wg0), wg1, 0,0, 1, 1);
     }
     wg1 = gtk_image_new_from_stock(state ? GUI_DIPSW_ON : GUI_DIPSW_OFF, g->sw_size);
-    gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 1,2, 0,0, 0,0);
+    gtk_grid_attach(GTK_GRID(wg0), wg1, 0,1, 1, 1);
     if(idx_dn){
 	wg1 = gtk_label_new(idx_dn);
-	gtk_table_attach(GTK_TABLE(wg0), wg1, 0,1, 2,3, 0,0, 0,0);
+        gtk_grid_attach(GTK_GRID(wg0), wg1, 0,2, 1, 1);
     }
     return wg0;
 }
 
 static GtkWidget *gui_xml_table(gui_xml *g, xmlNode *cur)
 {
-    int x=0, y=0;
-    char *tmp=NULL, eq=0;
+    GtkWidget *wg;
+    char *tmp=NULL, xh=0, yh=0;
     
-    tmp = (char *)xmlGetProp(cur, (unsigned char *)"dim");
-    if(!tmp) return NULL;
-    sscanf(tmp, "%i, %i", &x, &y);
+    tmp = (char *)xmlGetProp(cur, (unsigned char *)"xhomo");
+    if(tmp) xh = !strcmp(tmp, "true");
 
-    tmp = (char *)xmlGetProp(cur, (unsigned char *)"equal");
-    if(tmp) eq = !strcmp(tmp, "true");
+    tmp = (char *)xmlGetProp(cur, (unsigned char *)"yhomo");
+    if(tmp) yh = !strcmp(tmp, "true");
 
-    if(!x || !y) return NULL;
-    return gtk_table_new(x, y, eq);
+    wg = gtk_grid_new();
+    gtk_grid_set_column_homogeneous(GTK_GRID(wg), xh);
+    gtk_grid_set_row_homogeneous(GTK_GRID(wg), yh);
+    return wg;
 }
 
 
@@ -556,7 +559,7 @@ static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, cons
 	    tmp = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
 	    gui_xml_signal_register(g, tmp, NULL, NULL, GUI_XML_INFO_ROOT);    
 	    gui_xml_parse_element(g, GTK_WIDGET(tmp), doc, cur->xmlChildrenNode, parm, shared_geepro_dir);
-	    gtk_table_attach(GTK_TABLE(g->info), tmp, 0,1, 0, 1,  GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 0, 0);
+	    gtk_box_pack_start(GTK_BOX(g->info), tmp, TRUE, TRUE, 0);
 	    gtk_widget_show_all(GTK_WIDGET(g->info));
 	}
 	if(!strcmp((char*)cur->name,"notebook") && strstr(section, "notebook")){

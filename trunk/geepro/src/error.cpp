@@ -22,7 +22,7 @@
 #include <stdarg.h>
 #include "error.h"
 
-static void error_vprintf(s_error *err, const char *fmt, va_list args);
+//static void error_vprintf(s_error *err, const char *fmt, va_list args);
 
 void error_printf(s_error *err, const char *fmt, ...)
 {
@@ -39,8 +39,8 @@ void error_printf(s_error *err, const char *fmt, ...)
 */
 }
 
-static void error_vprintf(s_error *err, const char *fmt, va_list args)
-{
-    vprintf( fmt, args); // temporary implementation
-}
+//static void error_vprintf(s_error *err, const char *fmt, va_list args)
+//{
+//    vprintf( fmt, args); // temporary implementation
+//}
 

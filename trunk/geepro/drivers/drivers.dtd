@@ -51,8 +51,8 @@
 >
 
 <!ATTLIST table 
-    dim CDATA #REQUIRED
-    equal (false|true) "false"
+    xhomo (false|true) "false"
+    yhomo (false|true) "false"
     %position;
 >
 
