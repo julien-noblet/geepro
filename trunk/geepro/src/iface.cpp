@@ -32,10 +32,6 @@
 #include "parport.h"
 #include "error.h"
 
-#define IFACE_PARPORT_SUPPORT
-//#define IFACE_SERIAL_SUPPORT
-#define IFACE_USB_SUPPORT
-
 extern "C" {
     #include "iface.h"
     #include "../drivers/hwdriver.h"
@@ -52,7 +48,7 @@ typedef struct
 
 #include "../intl/lang.h"
 
-iface *iface_init()
+iface *iface_init( store_str *st )
 {
     iface *ifc;
     if(!(ifc = (iface *)malloc(sizeof(iface)))) return NULL;
@@ -64,21 +60,8 @@ iface *iface_init()
     memset(ifc->plugins, 0, sizeof(chip_plugins));
     ifc->hwd = dummy_hardware_driver;
     chip_init_qe(ifc->plugins);
-    iface_device_init( &ifc->dev);
+    iface_device_init( &ifc->dev, st);
     return ifc;
-}
-
-void iface_rmv_ifc(iface *ifc)
-{
-    iface_qe *tmp;
-    
-    while(ifc->qe){
-	tmp = ifc->qe->next;
-	free(ifc->qe->name);
-	free(ifc->qe->dev);
-	free(ifc->qe);
-	ifc->qe = tmp;
-    }
 }
 
 void iface_rmv_prg(iface *ifc)
@@ -90,120 +73,6 @@ void iface_rmv_prg(iface *ifc)
 	free(ifc->prg);
 	ifc->prg =ti;
     }
-}
-
-int iface_add(iface *ifc, int cl, char *name, char *dev, void *handler)
-{
-    iface_qe *new_tie, *tmp;
-    
-    if(!(new_tie = (iface_qe*) malloc(sizeof(iface_qe)))){
-	printf("{iface.h} iface_add() -> memory allocation error (1) \n");
-	return -1;
-    }
-    memset( new_tie, 0, sizeof(iface_qe));
-    
-    new_tie->next = NULL;
-    new_tie->handler = handler;
-    
-    if(!(new_tie->name = (char *)malloc(strlen(name) + 1))){
-	printf("{iface.h} iface_add() -> memory allocation error (2) \n");
-	free(new_tie);
-	return -1;
-    }
-    strcpy(new_tie->name, name);    
-
-    if(!(new_tie->dev = (char *)malloc(strlen(dev) + 1))){
-	printf("{iface.h} iface_add() -> memory allocation error (3) \n");
-	free(new_tie->name);
-	free(new_tie);
-	return -1;
-    }
-    strcpy(new_tie->dev, dev);
-
-    new_tie->cl = cl;
-    
-    if(!ifc->qe){
-	ifc->qe = new_tie;
-	return 0;
-    }
-    
-    for(tmp = ifc->qe; tmp->next; tmp = tmp->next);
-    tmp->next = new_tie;
-    
-    return 0;
-}
-
-char iface_del(iface *ifc, int cl, char *name)
-{
-    iface_qe *tmp, *t;
-    
-    for(tmp = ifc->qe; tmp; tmp = tmp->next){
-	if(tmp->cl == cl){
-	    if(!strcmp( tmp->name, name )) break;
-	}    
-    }
-    if( !tmp ) return 1;
-    if( tmp == ifc->qe ){ // first element
-	ifc->qe = tmp->next; // unlink
-	if(tmp->name ) free( tmp->name );
-	if(tmp->dev ) free( tmp->dev );
-	free( tmp );
-	return 0;    
-    }
-    // find previous link
-    for(t = ifc->qe; t; t = t->next){
-	if( t->next == tmp) break;
-    }
-    if( !t ) return 1; // should never happen
-    t->next = tmp->next; // unlink
-    if(tmp->name ) free( tmp->name );
-    if(tmp->dev ) free( tmp->dev );
-    free( tmp );
-    return 0;    
-}
-
-void iface_search(iface *ifc, int cl, iface_cb cb, void *ptr)
-{
-    iface_qe *tmp;
-    
-    for(tmp = ifc->qe; tmp; tmp = tmp->next) 
-	    if(cb && tmp->cl == cl) cb(ifc, tmp->cl, tmp->name, tmp->dev, ptr);
-
-}
-
-char *iface_get_dev(iface *ifc, char *name)
-{
-    iface_qe *tmp;
-    for(tmp = ifc->qe; tmp; tmp = tmp->next) 
-	    if(!strcmp(tmp->name, name)) return tmp->dev;
-
-    return (char *)"/dev/null";
-}
-
-iface_qe *iface_get_iface(iface *ifc, char *name)
-{
-    iface_qe *tmp;
-    for(tmp = ifc->qe; tmp; tmp = tmp->next) 
-	    if(!strcmp(tmp->name, name)) return tmp;
-    return NULL;
-}
-
-int iface_select_iface(iface *ifc, char *name)
-{
-    char *dev;
-    geepro *gep = GEEPRO(ifc->gep);
-    iface *ifct = ifc;    
-
-    if( ifc->ifsel )
-	iface_deselect_iface( ifc );
-    dev = iface_get_dev(ifc, name);
-    ifc->ifsel = iface_get_iface( ifc, name);
-    printf("Opening interface '%s' (device: '%s')\n", name, dev);
-    if(hw_open(dev, 0) == HW_ERROR){
-	ifc = ifct;
-	return -1;
-    }
-    return 0;
 }
 
 /* dopisać detekcję nazw, aby sie nie powtarzały */
@@ -454,7 +323,6 @@ void iface_destroy(iface *ifc)
     geepro *gep = GEEPRO(ifc->gep);
     if(!ifc) return;
     hw_close();
-    iface_rmv_ifc(ifc);
     iface_rmv_prg(ifc);
     iface_rmv_driver(ifc);
     if(ifc->plugins){
@@ -573,47 +441,22 @@ void iface_make_modules_list(iface *ifc, const char *path, const char *ext)
     iface_dir_fltr(ifc, ifc->mod_list, path, ext, iface_add_mod_file);
 }
 
-void iface_deselect_iface(iface *ifc )
+void iface_renew(iface *ifc)
 {
-    geepro *gep = (geepro *)ifc->gep;
-    hw_close();
-    ifc->ifsel = NULL;
-}
-
-char iface_test_compatibility(iface *ifc, const char *devlist)
-{
-    geepro *gep = (geepro *)ifc->gep;
-    char   *name = NULL, *x;
-    int len;
-    
-    if( !ifc || !devlist ) return 0;
-    if( !strcmp(devlist, "ANY") ) return 1;
-
-    hw_get_name( name ); // get selected driver name
-    while( devlist ){
-	if(!*devlist) return 0;
-	if(*devlist == ',') devlist++;
-	x = strchr( (char *)devlist, ',');
-	if( x )
-	    len = x - devlist;
-	else
-	    len = strlen( devlist );
-	if(!strncmp( name, devlist, len)) return 1;
-	devlist = x;
-    }        
-    return 0;
-}
-
-void iface_update_iface(iface *ifc)
-{
-//    iface_rmv_iface( ifc );
-    printf("Iface rescan To Do\n");
+    geepro *gep;
+    char *tmp = NULL;
+        
+    if( ifc->hwd && ifc->gep){
+	gep = GEEPRO(ifc->gep);
+	hw_get_name( tmp );
+        iface_device_set_programmer( ifc->dev, hw_get_iface(), tmp);
+    }
 }
 
 /*******************************************************************************************************************************************************/
 /* NEW API */
 
-static char iface_device_add_list( s_iface_device *ifc, const char *name, int cl, void *handle )
+static char iface_device_add_list( s_iface_device *ifc, const char *name, int cl, int group, void *handle )
 {
     s_iface_devlist *tmp, *i;
 
@@ -622,10 +465,17 @@ static char iface_device_add_list( s_iface_device *ifc, const char *name, int cl
 	ERR_MALLOC_MSG;
 	return ERR_MALLOC_CODE;
     }
-    // as devlist is just index of other queues, there is no need to allocate memory for text, just copy pointers
-    tmp->name = name; 
+    memset( tmp, 0, sizeof(s_iface_devlist) );
+    if( name ){
+	MALLOC( tmp->name, char, strlen( name ) + 1){
+	    ERR_MALLOC_MSG;
+	    return ERR_MALLOC_CODE;    
+	}    
+	strcpy( tmp->name, name);
+    }
     tmp->handler = handle;        
     tmp->cl = cl;
+    tmp->group = group;
     tmp->next = NULL;
     if( !ifc->list ){
 	ifc->list = tmp;
@@ -642,13 +492,12 @@ static void iface_device_delete_list( s_iface_device *ifc)
     if( !ifc ) return;        
     for(it = ifc->list; it;){
 	tmp = it->next;
+	if(it->name) free(it->name);
 	free( it );    
 	it = tmp;
     }    
     ifc->list = NULL;
 }
-
-#ifdef IFACE_USB_SUPPORT
 
 static void iface_device_config_usb(s_iface_device *ifc, s_cfp *cfg)
 {
@@ -742,7 +591,7 @@ static void iface_device_scan_usb( s_iface_device *ifc, int device_class, const 
 	    else
 		len = strlen( devlist );
 	    if(!strncmp( driver_name, devlist, len))
-		iface_device_add_list(ifc, it->dev_id.alias_name, IFACE_USB, it);
+		iface_device_add_list(ifc, it->dev_id.alias_name, IFACE_USB, it->dev_id.dev_class, it);
 	    devlist = x;
 	}        	
     }
@@ -750,14 +599,9 @@ static void iface_device_scan_usb( s_iface_device *ifc, int device_class, const 
 
 static void ifc_device_usb_callback(s_usb_devlist *device, char flag, s_iface_device *ifc )
 {
-//    printf("ATTACH/DETACH = %i\n", flag);
-// temporary
-    iface_device_rescan(ifc, IFACE_LPT, "WILLEM 4.0");
+    if(! ifc->prog_name ) return;
+    iface_device_rescan(ifc);
 }
-
-#endif // IFACE_USB_SUPPORT
-
-#ifdef IFACE_PARPORT_SUPPORT
 
 static void iface_device_parport_set_alias(s_parport *pp, s_parport_list *it, s_iface_tmp *ctx )
 {
@@ -801,7 +645,7 @@ static void iface_device_config_parport(s_iface_device *ifc, s_cfp *cfg)
 
 static void iface_device_parport_add(s_parport *pp, s_parport_list *it, s_iface_device *ifc )
 {
-    iface_device_add_list(ifc, it->alias, IFACE_LPT, it);	
+    iface_device_add_list(ifc, it->alias, IFACE_LPT, IFACE_LPT, it);	
 }
 
 static void iface_device_scan_parport( s_iface_device *ifc )
@@ -809,17 +653,14 @@ static void iface_device_scan_parport( s_iface_device *ifc )
     parport_get_list( ifc->lpt, PARPORT_CALLBACK(iface_device_parport_add), ifc, PARPORT_FILTER_ALIAS );
 }
 
-#endif // IFACE_PARPORT_SUPPORT
-
-#ifdef IFACE_SERIAL_SUPPORT
+/*
 static void iface_device_config_com(s_iface_device *ifc, s_cfp *cfg){}
 static void iface_device_scan_com( s_iface_device *ifc ){}
-#endif // IFACE_SERIAL_SUPPORT
-
+*/
 
 /******************************************************************/
 
-char iface_device_init( s_iface_device **ifc)
+char iface_device_init( s_iface_device **ifc, store_str *st)
 {
     if( !ifc ) return -2;
     if( *ifc ) {
@@ -831,53 +672,64 @@ char iface_device_init( s_iface_device **ifc)
 	return ERR_MALLOC_CODE;
     }
     memset( *ifc, 0, sizeof( s_iface_device ) );
+    (*ifc)->store = st;
     // LPT ports
-#ifdef IFACE_PARPORT_SUPPORT
     parport_init( &((*ifc)->lpt), *ifc );
-
-#endif
     // RS232 ports
-#ifdef IFACE_SERIAL_SUPPORT
-    serial_init( &((*ifc)->com) );
-#endif
+//    serial_init( &((*ifc)->com) );
     // USB devices
-#ifdef IFACE_USB_SUPPORT
     gusb_init( &((*ifc)->usb) );
-#endif
     return 0;
 }
 
 void iface_device_destroy( s_iface_device *ifc )
 {
     iface_device_delete_list( ifc );
-#ifdef IFACE_PARPORT_SUPPORT
     parport_exit( ifc->lpt );
-#endif
-#ifdef IFACE_SERIAL_SUPPORT
-    serial_exit( ifc->com );
-#endif
-#ifdef IFACE_USB_SUPPORT
+//    serial_exit( ifc->com );
     gusb_exit( ifc->usb );
-#endif
 }
 
-char iface_device_rescan( s_iface_device *ifc, int device_class, const char *driver_name )
+char iface_device_rescan( s_iface_device *ifc)
 { 
+    char tmp[4096];
+
     if( !ifc ) return 0;
+    tmp[0] = 0;
+    if(ifc->selected){
+	if(ifc->selected->name)
+	    strcpy(tmp, ifc->selected->name); // store selected iface name
+    }
+
     iface_device_delete_list( ifc );
-#ifdef IFACE_PARPORT_SUPPORT
     iface_device_scan_parport( ifc );
-#endif
-#ifdef IFACE_SERIAL_SUPPORT
-    iface_device_scan_serial( ifc );
-#endif
-#ifdef IFACE_USB_SUPPORT
-    iface_device_scan_usb( ifc, device_class, driver_name );
-#endif
+//    iface_device_scan_serial( ifc );
+    iface_device_scan_usb( ifc, ifc->prog_class, ifc->prog_name );
+    if(tmp[0]){
+	iface_device_select(ifc, tmp); // choose previously selected iface
+    }
     // notify to refresh display list of devices
     if( ifc->notify )
-	ifc->notify(ifc, ifc->selected, ifc->notify_ptr);
+	ifc->notify(ifc, ifc->selected, ifc->notify_ptr );
     return 0;
+}
+
+static void iface_device_set_device( s_iface_device *ifc )
+{
+    const char *key;
+    if(!ifc->selected) return;
+    if( ifc->store ){
+	key = iface_device_get_key_stored( ifc );
+	if( store_set( ifc->store, key,  ifc->selected->name) ){
+	    MSG("Cannot store '%s' variable to '%s'", key, ifc->selected->name); 
+	}
+    }
+printf("-->Select\n");
+    switch(ifc->selected->group){
+	case IFACE_LPT: parport_open( ifc->lpt ); break;
+	case IFACE_USB:;
+	case IFACE_RS232:;
+    }
 }
 
 char iface_device_select( s_iface_device *ifc, const char *device_name )
@@ -885,9 +737,16 @@ char iface_device_select( s_iface_device *ifc, const char *device_name )
     s_iface_devlist *it;
 
     if( !ifc ) return 0;
+
+    if(ifc->selected){
+	if( ifc->selected->name ){
+	    if(!strcmp(ifc->selected->name, device_name)) return 0; // already selected, so ignore
+	}
+    }
     for(it = ifc->list; it; it = it->next){
 	if( !strcmp( it->name, device_name ) ){
 	    ifc->selected = it;
+	    iface_device_set_device( ifc );
 	    return 0;
 	}
     }    
@@ -897,10 +756,11 @@ char iface_device_select( s_iface_device *ifc, const char *device_name )
 char iface_device_get_list( s_iface_device *ifc, f_iface_device dev, void *ptr)
 {    
     s_iface_devlist *it;
-
+    int iter = 0;
+    
     if( !ifc ) return 0;
     if( !dev ) return -2;
-    for(it = ifc->list; it; it = it->next) dev( ifc, it, ptr);
+    for(it = ifc->list; it; it = it->next) dev( ifc, it, ptr, iter++);
     return 0;
 }
 
@@ -913,26 +773,102 @@ char iface_device_connect_notify( s_iface_device *ifc, f_iface_device_notify not
     return 0;
 }
 
+const char *iface_device_get_key_stored(s_iface_device *ifc)
+{
+    static char key[256];
+
+    if( !ifc ) return NULL;
+    if( !ifc->prog_name ) return NULL;
+    if( strlen(ifc->prog_name ) + strlen(IFACE_LAST_SELECTED_IFC_KEY) + 6 >= 256 ){
+	ERR("Key name for storing variable exceed 250 characters !");
+	return NULL;
+    }
+    sprintf(key, "%s[%s]", IFACE_LAST_SELECTED_IFC_KEY, ifc->prog_name);
+    return key;
+}
+
+static char iface_device_match_iface(s_iface_device *ifc)
+{
+    s_iface_devlist *it;
+    if( !ifc ) return -2;
+    if( !ifc->list ) return -2;
+    for(it = ifc->list; it; it = it->next){
+	if(!iface_device_select(ifc, it->name)){
+	    MSG("Set interface to '%s'", it->name);
+	    return 0;
+	}
+    }    
+    return -1;
+}
+
+char iface_device_select_stored(s_iface_device *ifc)
+{
+    char *tmp = NULL;
+    char match = 0;
+    char err = -3; // no entry in storings
+
+    // select default
+    tmp = NULL;
+    if( !ifc ) return err;
+    if( ifc->store ){
+	if(store_get( ifc->store, iface_device_get_key_stored(ifc), &tmp) == 0){
+	    if( tmp ){
+		err = -2; // no matched iface
+		if(iface_device_select(ifc, tmp)){
+		    MSG("Cannot set device to '%s' for driver '%s'", tmp, ifc->prog_name);
+		    match = 1;
+		} else {
+		    MSG("Selected device '%s' (last selected)", tmp);
+		    err = 0; // success
+		}
+		free( tmp );
+	    } else match = 1;
+	} else match = 1;
+	if( match ) {
+	    if( iface_device_match_iface( ifc ) ){
+		MSG("There is no matched device for programmer '%s'", ifc->prog_name);
+	    } else err = -1;
+	}
+    }
+    return err;
+}
+
+void iface_prog_select_store(iface *ifc) // improvisation
+{
+    char *tmp = NULL;
+    ifc->prog_sel = 0;
+    if( GEEPRO(ifc->gep)->store ){
+	if(store_get(  GEEPRO(ifc->gep)->store, IFACE_LAST_SELECTED_PRG_KEY, &tmp) == 0){
+	    if( tmp ){
+		ifc->prog_sel = strtol(tmp, NULL, 0);    		
+		free( tmp );
+	    }
+	}
+    }
+}
+
 void iface_device_configure( s_iface_device *ifc, s_cfp *cfg)
 {
-#ifdef IFACE_PARPORT_SUPPORT
     iface_device_config_parport( ifc, cfg);
     iface_device_scan_parport( ifc ); // to add interfaces to list
-#endif
-#ifdef IFACE_SERIAL_SUPPORT
-    iface_device_config_com( ifc, cfg);
-#endif
-#ifdef IFACE_USB_SUPPORT
+//    iface_device_config_serial( ifc, cfg);
+//    iface_device_scan_serial( ifc, cfg);
     iface_device_config_usb( ifc, cfg);
     gusb_set_callback( ifc->usb, GUSB_CALLBACK( ifc_device_usb_callback ), ifc);
     gusb_scan_connected( ifc->usb );
-#endif
+//    iface_device_select_stored( ifc );
 }
 
 void iface_device_event( s_iface_device *ifc)
 {
-#ifdef IFACE_USB_SUPPORT
     gusb_events( ifc->usb );
-#endif
+}
+
+void iface_device_set_programmer(s_iface_device *ifc, int device_class, const char *prog_name)
+{
+    if( !ifc || !prog_name ) return;
+    ifc->prog_name = prog_name;
+    ifc->prog_class = device_class;
+    iface_device_rescan( ifc );
 }
 

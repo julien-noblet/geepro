@@ -589,7 +589,7 @@ int willempro2_hardware_driver(void *g, en_hw_api funct, int val, void *ptr)
     switch(funct){
 	/* ogólne */
 	case HW_NAME:	  DRIVER_NAME(ptr) = (char *)"WILLEM PRO 2"; return 0;
-	case HW_IFACE:	  return IFACE_LPT;
+	case HW_IFACE:	  return IFACE_RS232;//IFACE_LPT;
 	case HW_GINIT:    return willem_gui_init(ptr,(char *)"none", (char *)"", (char *)"willem_pro2");
 	case HW_SET_CHIP: return willem_gui_init(ptr, ((geepro *)ptr)->chp->chip_name, ((geepro *)ptr)->chp->chip_family, "willem_pro2");
 	case HW_TEST:	  return willem_test_connection();

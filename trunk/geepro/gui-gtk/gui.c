@@ -641,42 +641,31 @@ static void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep
     gui_chip_tree_view_free( tree );
 }
 
-static void gui_build_iface_menu(s_iface_device *ifc, s_iface_devlist *dev, GtkWidget *wg)
+static void gui_build_iface_menu(s_iface_device *ifc, s_iface_devlist *dev, GtkWidget *wg, int iter )
 {
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg), dev->name);
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg), dev->name);    
+    if(ifc->selected){
+	if(!strcmp(ifc->selected->name, dev->name)) gtk_combo_box_set_active(GTK_COMBO_BOX_TEXT(wg), iter);
+    }
 }
 
 static int gui_iface_sel(GtkWidget *wg, geepro *gep)
 {
-    char tmp[256];
     char *name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(wg));
 
     if(!name) return 0;
     iface_device_select( gep->ifc->dev, name );    
-//    gep->forbid = 0;
-//    if(iface_select_iface(gep->ifc, name)){
-//	gep->forbid = 1;
-//	gui_error_box(gep,"Open device error !!!\n Device inaccesible.\n");
-//	gtk_combo_box_set_active(GTK_COMBO_BOX(wg), gep->ifc->ifc_sel);
-//	return -1;
-//    }
-//    gep->ifc->ifc_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
     gui_stat_rfsh(gep);
     gui_test_hw(NULL, gep);
-    sprintf(tmp,"%i", gep->ifc->ifc_sel);
-    if(GUI(gep->gui)->gui_run) store_set(gep->store, "LAST_SELECTED_IFACE", tmp);
     return 0;
 }
 
 static GtkWidget *gui_iface_list(geepro *gep)
 {
     GtkWidget *combox;
-
     combox = gtk_combo_box_text_new();
     iface_device_get_list(gep->ifc->dev, IFACE_F_DEVICE(gui_build_iface_menu), GTK_COMBO_BOX(combox));
-    gtk_combo_box_set_active(GTK_COMBO_BOX(combox), gep->ifc->ifc_sel);
     g_signal_connect(G_OBJECT(combox), "changed", G_CALLBACK(gui_iface_sel), gep);
-
     return combox;
 }
 
@@ -722,8 +711,10 @@ static void gui_prog_sel(GtkWidget *wg, geepro *gep)
     /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
     g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->iface), "changed");    
     sprintf(tmp,"%i", gtk_combo_box_get_active(GTK_COMBO_BOX(wg)));
-    if(GUI(gep->gui)->gui_run) store_set(gep->store, "LAST_SELECTED_PROGRAMMER", tmp);
+    if(GUI(gep->gui)->gui_run) store_set(gep->store, IFACE_LAST_SELECTED_PRG_KEY, tmp);
     // rescan suported ports
+    iface_renew( gep->ifc );
+    iface_device_select_stored( gep->ifc->dev ); // improvisation
     gui_iface_rescan( gep );
     gui_test_hw( NULL, gep );
 }
@@ -950,7 +941,7 @@ void gui_bineditor_update(GuiBineditor *be, geepro *gep)
 
 void gui_usb_port_notify(s_iface_device *dev, s_iface_devlist *list, geepro *gep)
 {
-    gui_iface_rescan( gep );
+     gui_iface_rescan( gep );
 }
 
 static void gui_port_devices_set(geepro *gep )

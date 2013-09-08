@@ -97,29 +97,54 @@ extern "C" {
 #define SPP_16		PC,PP_INI
 #define SPP_17		PC,PP_DSL
 
-#define PARPORT( x )	((s_parport *)(x))
+#define PARPORT( x )	((s_parport *)(x))			// typedef overload for s_parport
+#define PARPORT_CALLBACK( x )	((f_parport_callback)(x))	// typedef overload for callback
 
-typedef struct s_parport_list_ s_parport_list;
-struct s_parport_list_
-{
-    char *device_path;
-    char *alias;
-    int  flags;    
-    s_parport_list *next;
+#define PARPORT_EMULATOR_ALIAS	"EMULATOR"
+#define PARPORT_EMULATOR_PATH	"EMULATOR"
+
+// Filter parameters for parport_get_list() function
+enum{
+    PARPORT_FILTER_ALL = 0,	// lists all devices
+    PARPORT_FILTER_NOALIAS,	// lists only devices with empty alias name, exclude emulator entry -> to named them
+    PARPORT_FILTER_ALIAS	// as above, but only devices with alias name -> to make lists
 };
 
 typedef struct
 {
-    s_parport_list *selected;
-    s_parport_list *list;    
-    void *emul;			// pointer to iface structure
+    short int	mirror;		// mirror for emulator
+    char	emulate;        // if set, ppdev will be emulated
+} s_pp_emul;
+
+typedef struct
+{
+    short int	mirror[3];	// port mirror
+    int		handler;	// ppdev file descriptor
+    char	allow;		// 0 - deny I/O access, 1 - allow
+    char	init;		// init level
+    char	opened;		// flag to indicate is LPT opened
+} s_ppdev;
+
+typedef struct s_parport_list_ s_parport_list;
+
+typedef struct
+{
+    s_pp_emul	   em;		// LPT emulator emulator data
+    s_ppdev	   pd;		// real LPT data
+    s_parport_list *selected; 	// currently choosed device
+    s_parport_list *list;    	// list of all parallel port devices + emulator entry
+    void *user_ptr;		// user pointer to emulation functions
 } s_parport;
 
-#define PARPORT_FILTER_ALL	0
-#define PARPORT_FILTER_NOALIAS  1
-#define PARPORT_FILTER_ALIAS	2
+struct s_parport_list_
+{
+    s_parport *device;		// pointer to main structure
+    char *device_path;		// path to the device
+    char *alias;		// alias name of device
+    int  flags;    		// additional open flags
+    s_parport_list *next;	// next tie
+};
 
-#define PARPORT_CALLBACK( x )	((f_parport_callback)(x))
 typedef void (*f_parport_callback)(s_parport *, s_parport_list *, void *);
 
 /****************************************************/
@@ -131,10 +156,11 @@ typedef void (*f_parport_callback)(s_parport *, s_parport_list *, void *);
     Looking for parports in system and adding them to list.
     Input:
 	pp - pointer to pointer s_parport structure of NULL value
+	user_ptr - pointer to data relayed to emulator functions
     Return:
 	0 - success, -1 - error
 */
-extern char parport_init(s_parport **pp, void *emul);
+extern char parport_init(s_parport **pp, void *user_ptr);
 
 /*
     Free all resources allocated by parport_init() and parport_open().
@@ -168,7 +194,7 @@ extern void parport_close( s_parport * );
     Return:
 	none
 */
-extern void parport_set_emulate(s_parport *, char );
+//extern void parport_set_emulate(s_parport *, char );
 
 /*
     Invokes f_parport_callback for each element from device list.
