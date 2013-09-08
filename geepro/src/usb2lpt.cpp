@@ -113,6 +113,7 @@ char usb2lpt_test( s_usb2lpt *usb ) // return TRUE if error
 
 s_usb2lpt *usb2lpt_init( void *ptr )
 {
+/*
     iface_qe *qe;
     s_usb2lpt *tmp = NULL;
     s_usb_devlist *dl;
@@ -155,7 +156,8 @@ s_usb2lpt *usb2lpt_init( void *ptr )
 	return NULL;
     }    
     tmp->handle = dl;
-    return tmp;
+*/
+    return NULL;//tmp;
 }
 
 void usb2lpt_free(s_usb2lpt *usb )

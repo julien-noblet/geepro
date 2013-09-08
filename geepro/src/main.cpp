@@ -248,17 +248,18 @@ int main(int argc, char **argv)
 	return -4;
     };
 
-    if(( geep->ifc = iface_init() )){
+    if(( geep->ifc = iface_init(geep->store) )){
 	geep->ifc->gep = geep;
 	iface_driver_allow(geep->ifc, cfp_heap_get(geep->cfg, "drivers"));
 	iface_module_allow(geep->ifc, cfp_heap_get(geep->cfg, "chips"));
 //	iface_load_config(geep->ifc, NULL);
 	iface_make_driver_list(geep->ifc, cfp_heap_get(geep->cfg, "drivers_path"), ".driver");
 	iface_make_modules_list( geep->ifc, cfp_heap_get(geep->cfg, "chips_path"), ".chip"); 
+	iface_prog_select_store(geep->ifc);
+	iface_renew(geep->ifc);
+	iface_device_configure( geep->ifc->dev, geep->cfg); // temporary
     }
-
     signal(SIGINT, kill_me);
-    iface_device_configure( geep->ifc->dev, geep->cfg); // temporary
     gui_run( geep );
     destruct( geep );
 

@@ -36,201 +36,136 @@
 #include "files.h"
 
 #define PARPORT_VERSION	"lib parport version 0.2 with Usb2Lpt support\n"
-
-/* zmienne globalne */
-static s_usb2lpt *usb = NULL;
-static char usb_sw = 0;
-static short int usb_mirror = 0;
-unsigned char parport_mirror[3];
-static int parport_ppdev_fd=0;
-static char allow=0;
-void *parport_msgh_ptr = NULL;
-static int parport_init_lvl=0;
-
-
+/*
 static int parport_usb_init(s_usb2lpt **usb, void *);
 static int parport_usb_write_data(s_usb2lpt *usb, char data);
 static int parport_usb_write_ctrl(s_usb2lpt *usb, char ctrl);
 static char parport_usb_read_stat(s_usb2lpt *usb);
 static int parport_usb_close(s_usb2lpt *usb);
+*/
+
 static void parport_lookup_devices( s_parport *pp);
+static char parport_add_device(s_parport *pp, const char *dev_path, const char *alias, int flags);
+static void parport_del_devices(s_parport *pp);
 
-/***************************************************************************************************************************/
-/* niskopoziomowe IO */
+/*
+ *
+ *     Implementation
+ *
+ */
 
-/* do zmiany */
+char parport_init( s_parport **pp , void *user_ptr )
+{
+    if( !pp ) return -2;
+    if( *pp ){
+	ERR("s_parport* have to be NULL !");
+	return -2; // *pp have to be NULL
+    }
+    
+    MALLOC( *pp, s_parport, 1 ){
+	ERR_MALLOC_MSG;	
+	return ERR_MALLOC_CODE;
+    }    
+    memset( *pp, 0, sizeof( s_parport ) );
+    parport_lookup_devices( *pp );
+    parport_add_device( *pp, PARPORT_EMULATOR_PATH, PARPORT_EMULATOR_ALIAS, 0 );
+    (*pp)->user_ptr = user_ptr;
+    return 0;
+}
+
+void parport_exit( s_parport *pp )
+{
+    if( !pp ) return;
+    parport_del_devices( pp );
+    parport_close( pp );
+    free( pp );
+}
+
+int parport_open( s_parport *pp )
+{
+    if( !pp ) return 0;
+    if( !pp->selected ) return 0;
+printf("----->Open\n");
+    if( !pp->selected->device_path ){
+	ERR("Device path is NULL !");
+	return 0;
+    }
+
+//    if( pp->selected->alias ) // switching to emulation mode
+//	pp->em.emulate = !strcmp( pp->selected->alias, PARPORT_EMULATOR_ALIAS );
+
+    pp->pd.allow = 1;
+
+//    if( pp->em.emulate ) 
+//	return parport_usb_init( &usb, pp->emul );
+
+    parport_close(pp); // close already opened device
+
+    MSG("Opening device %s\n", pp->selected->device_path);
+    if((pp->pd.handler = open(pp->selected->device_path, O_RDWR | pp->selected->flags)) == -1 ){
+	ERR("open(\"%s\", O_RDWR): %s\n", pp->selected->device_path, strerror(errno));    
+	return PP_ERROR;
+    }
+    pp->pd.init = 1;
+    MSG("Device %s opened with handler=%d\n", pp->selected->device_path, pp->pd.handler);
+    if(ioctl(pp->pd.handler, PPCLAIM) == -1){
+	MSG("ioctl(%d, PPCLAIM): %s\n", pp->pd.handler, strerror(errno));
+	parport_close(pp);
+	return PP_ERROR;
+    }
+    pp->pd.init = 2;
+    pp->pd.mirror[0] = pp->pd.mirror[1] = pp->pd.mirror[2] = 0;      
+    parport_reset(pp);
+    pp->pd.allow = 0;
+    pp->pd.opened = 1;
+    return 0;
+}
 
 void parport_close(s_parport *pp)
 {
     int err = 0;
 
     if(!pp) return;
+printf("---->close\n");
+    if( !pp->pd.opened ) return;
     
 //    if( usb_sw ){ 
 //	parport_usb_close( usb );
 //	return;
 //    }
-    if(parport_init_lvl == 0) return;
-    MSG("Cleanup parport device.");
-    if(parport_init_lvl > 1)
-	if(ioctl(parport_ppdev_fd, PPRELEASE) == -1){
-	    MSG("ioctl(%d, PPRELEASE): %s", parport_ppdev_fd, strerror(errno));
+
+    if(pp->pd.init == 0) return;
+    MSG("Close parport device.");
+    if(pp->pd.init > 1)
+	if(ioctl(pp->pd.handler, PPRELEASE) == -1){
+	    MSG("ioctl(%d, PPRELEASE): %s", pp->pd.handler, strerror(errno));
 	    err = PP_ERROR;
 	}
-    if(parport_init_lvl)
-	if(close(parport_ppdev_fd) == -1){
-	    MSG("close(%d): %s", parport_ppdev_fd, strerror(errno));
+    if(pp->pd.init)
+	if(close(pp->pd.handler) == -1){
+	    MSG("close(%d): %s", pp->pd.handler, strerror(errno));
 	    err = PP_ERROR;
 	}
-    if(!err) parport_init_lvl = 0;
+    if(!err) pp->pd.init = 0;
+    pp->pd.opened = 0;
 }
 
-int parport_open( s_parport *pp )
+static void parport_del_devices(s_parport *pp)
 {
-    static char first_run=1;
+    s_parport_list *tmp, *it;
 
-    if( !pp ) return 0;
-    if( !pp->selected ) return 0;
-    
-    if(!strcmp( pp->selected->device_path, "EMULATOR")){
-	usb_sw = 1;
-    } else 
-	usb_sw = 0;
-    allow = 1;
-
-//    if( usb_sw ) return parport_usb_init( &usb, pp->emul );
-
-    if(first_run){
-	MSG( PARPORT_VERSION );
-	first_run=0;
-    } else{
-	parport_close(pp);
+    for( it = pp->list; it; ){
+	tmp = it->next;
+	if(it->alias) free( it->alias );
+	if(it->device_path) free( it->device_path );
+	free( it );
+	it = tmp;    
     }
-
-    MSG("Opening device %s\n", pp->selected->device_path);
-    if((parport_ppdev_fd = open(pp->selected->device_path, O_RDWR | pp->selected->flags)) == -1 ){
-	MSG("open(\"%s\", O_RDWR): %s\n", pp->selected->device_path, strerror(errno));    
-	return PP_ERROR;
-    }
-    parport_init_lvl = 1;
-    MSG("Device %s opened with handler=%d\n", pp->selected->device_path, parport_ppdev_fd);
-    if(ioctl(parport_ppdev_fd, PPCLAIM) == -1){
-	MSG("ioctl(%d, PPCLAIM): %s\n", parport_ppdev_fd, strerror(errno));
-	parport_close(pp);
-	return PP_ERROR;
-    }
-    parport_init_lvl = 2;
-    parport_mirror[0] = parport_mirror[1] = parport_mirror[2] = 0;      
-
-    parport_reset(pp);
-    allow = 0;
-    return 0;
+    pp->list = NULL;
+    pp->selected = NULL;
 }
 
-int parport_w_data(s_parport *pp, unsigned char data)
-{
-    if( !pp ) return 0;
-    if(allow) return 0;
-//    if(usb_sw) return parport_usb_write_data( usb, data);
-    if(ioctl(parport_ppdev_fd, PPWDATA, &data)){
-	MSG("ioctl(%d, PPWDATA, %d): %s\n", parport_ppdev_fd, data, strerror(errno));	
-	parport_close(pp);
-	return PP_ERROR;
-    }    
-    return 0;
-}
-
-int parport_w_ctrl(s_parport *pp, unsigned char data)
-{
-    if( !pp ) return 0;
-    if(allow) return 0;
-//    if(usb_sw) return parport_usb_write_ctrl( usb, data);
-    data ^= 0x0b; /* negacja bitów sprzetowo negowanych */
-    if(ioctl(parport_ppdev_fd, PPWCONTROL, &data)){
-	MSG("ioctl(%d, PPWCONTROL, %d): %s\n", parport_ppdev_fd, data, strerror(errno));	
-	parport_close(pp);
-	return PP_ERROR;
-    }    
-    return 0;
-}
-
-int parport_r_stat(s_parport *pp)
-{ 
-    if( !pp ) return 0;
-    if(allow) return 0;
-    unsigned char data;
-//    if(usb_sw) return parport_usb_read_stat( usb );
-    data = 0;
-    if(ioctl(parport_ppdev_fd, PPRSTATUS, &data)){
-	MSG("ioctl(%d, PPRSTATUS): %s\n", parport_ppdev_fd, strerror(errno));
-	parport_close(pp);
-	return PP_ERROR;
-    }    
-    data ^= 0x80;
-    return (int)data;
-}
-
-/***************************************************************************************************************************/
-/* Operacje IO */
-
-int parport_set(s_parport *pp, unsigned int port_idx, unsigned char data)
-{
-    if( !pp ) return 0;
-    if( !pp->selected ) return 0;
-    if(allow) return 0;
-    if(port_idx > 2) return PP_ERROR;
-
-    parport_mirror[port_idx] = data;
-    if(port_idx == PA)
-	if(parport_w_data(pp,data) == PP_ERROR) return PP_ERROR;
-    if(port_idx == PC)
-	if(parport_w_ctrl(pp,data) == PP_ERROR) return PP_ERROR;
-    return 0;
-}
-
-int parport_get(s_parport *pp, unsigned int port_idx)
-{
-    if( !pp ) return 0;
-    if( !pp->selected ) return 0;
-    if(allow) return 0;
-    if(port_idx > 2) return 0;
-    if(port_idx == PB) parport_mirror[port_idx] = parport_r_stat(pp);
-    return parport_mirror[port_idx];
-}
-
-int parport_reset(s_parport *pp)
-{
-    if( !pp ) return 0;
-    if(allow) return 0;
-    if(parport_set(pp,PA, 0) == PP_ERROR) return PP_ERROR;
-    if(parport_set(pp,PB, 0) == PP_ERROR) return PP_ERROR;
-    if(parport_set(pp,PC, 0) == PP_ERROR) return PP_ERROR;
-    return 0;
-}
-
-/***************************************************************************************************************************/
-/* operacje bitowe na portach */
-
-int parport_set_bit(s_parport *pp, unsigned int idx, unsigned int mask)
-{
-    return parport_set(pp,idx, parport_mirror[idx] | mask);
-}
-
-int parport_clr_bit(s_parport *pp, unsigned int idx, unsigned int mask)
-{
-    return parport_set(pp,idx, parport_mirror[idx] & ~mask);
-}
-
-int parport_get_bit(s_parport *pp, unsigned int idx, unsigned int mask)
-{
-    register int x = parport_get(pp,idx) & mask;
-    if(x == -1) return PP_ERROR;
-    return x ? 1:0;
-}
-
-/**************************************************************************************************/
-
-static char parport_add_device(s_parport *pp, char *dev_path, char *alias, int flags)
+static char parport_add_device(s_parport *pp, const char *dev_path, const char *alias, int flags)
 {
     s_parport_list *tmp, *it;
     
@@ -257,6 +192,7 @@ static char parport_add_device(s_parport *pp, char *dev_path, char *alias, int f
 	strcpy( tmp->alias, alias );
     }
     tmp->flags = flags;
+    tmp->device = pp;
     tmp->next = NULL;
     if( !pp->list ){
 	pp->list = tmp;
@@ -265,28 +201,6 @@ static char parport_add_device(s_parport *pp, char *dev_path, char *alias, int f
     for(it = pp->list; it->next; it = it->next);
     it->next = tmp;
     return 0;
-}
-
-static void parport_del_devices(s_parport *pp)
-{
-    s_parport_list *tmp, *it;
-
-    for( it = pp->list; it; ){
-	tmp = it->next;
-	if(it->device_path){
-	    if(it->alias){
-		if(strcmp(it->alias, "EMULATOR") ) free(it->device_path);
-	    } else
-		free(it->device_path);
-	}
-	if(it->alias){
-	    if(strcmp(it->alias, "EMULATOR") ) free(it->alias);
-	}
-	free( it );
-	it = tmp;    
-    }
-    pp->list = NULL;
-    pp->selected = NULL;
 }
 
 static char parport_lookup_callback(const char *fname, const char *error, void *pp)
@@ -306,29 +220,6 @@ static void parport_lookup_devices( s_parport *pp)
     if(!file_ls(SYSTEM_DEVICE_PATH, "^parport[[:digit:]]*$", error, parport_lookup_callback, pp)){
 	ERR("%s", error);
     }        
-}
-
-char parport_init( s_parport **pp , void *emul )
-{
-    if( !pp ) return -2;
-    if( *pp ) return -2; // check if it is not NULL then return.
-    
-    MALLOC( *pp, s_parport, 1 ){
-	ERR_MALLOC_MSG;	
-	return ERR_MALLOC_CODE;
-    }    
-    memset( *pp, 0, sizeof(s_parport) );
-    parport_lookup_devices( *pp );
-    parport_add_device( *pp, (char *)"USB", (char *)"EMULATOR", 0 );
-    (*pp)->emul = emul;
-    return 0;
-}
-
-void parport_exit( s_parport *pp )
-{
-    if( !pp ) return;
-    parport_del_devices( pp );
-    free( pp );
 }
 
 void parport_get_list( s_parport *pp, f_parport_callback cb, void *ptr, char filter )
@@ -363,24 +254,132 @@ char parport_set_device( s_parport *pp, const char *alias_name )
 
 const s_parport_list *parport_get_device( s_parport *pp )
 {
-    if( !pp ) return NULL;    
+    if( !pp ) return NULL; 
     return pp->selected;
 }
 
+/***************************************************************************************************************************/
+/* Operacje IO */
+
+int parport_w_data(s_parport *pp, unsigned char data)
+{
+    if( !pp ) return 0;
+    if(pp->pd.allow) return 0;
+//    if(usb_sw) return parport_usb_write_data( usb, data);
+    if(ioctl(pp->pd.handler, PPWDATA, &data)){
+	MSG("ioctl(%d, PPWDATA, %d): %s\n", pp->pd.handler, data, strerror(errno));	
+	parport_close(pp);
+	return PP_ERROR;
+    }    
+    return 0;
+}
+
+int parport_w_ctrl(s_parport *pp, unsigned char data)
+{
+    if( !pp ) return 0;
+    if(pp->pd.allow) return 0;
+//    if(usb_sw) return parport_usb_write_ctrl( usb, data);
+    data ^= 0x0b; /* negacja bitów sprzetowo negowanych */
+    if(ioctl(pp->pd.handler, PPWCONTROL, &data)){
+	MSG("ioctl(%d, PPWCONTROL, %d): %s\n", pp->pd.handler, data, strerror(errno));	
+	parport_close(pp);
+	return PP_ERROR;
+    }    
+    return 0;
+}
+
+int parport_r_stat(s_parport *pp)
+{ 
+    if( !pp ) return 0;
+    if(pp->pd.allow) return 0;
+    unsigned char data;
+//    if(usb_sw) return parport_usb_read_stat( usb );
+    data = 0;
+    if(ioctl(pp->pd.handler, PPRSTATUS, &data)){
+	MSG("ioctl(%d, PPRSTATUS): %s\n", pp->pd.handler, strerror(errno));
+	parport_close(pp);
+	return PP_ERROR;
+    }    
+    data ^= 0x80;
+    return (int)data;
+}
+
+
+int parport_set(s_parport *pp, unsigned int port_idx, unsigned char data)
+{
+    if( !pp ) return 0;
+    if( !pp->selected ) return 0;
+    if(pp->pd.allow) return 0;
+    if(port_idx > 2) return PP_ERROR;
+
+    pp->pd.mirror[port_idx] = data;
+    if(port_idx == PA)
+	if(parport_w_data(pp,data) == PP_ERROR) return PP_ERROR;
+    if(port_idx == PC)
+	if(parport_w_ctrl(pp,data) == PP_ERROR) return PP_ERROR;
+    return 0;
+}
+
+int parport_get(s_parport *pp, unsigned int port_idx)
+{
+    if( !pp ) return 0;
+    if( !pp->selected ) return 0;
+    if(pp->pd.allow) return 0;
+    if(port_idx > 2) return 0;
+    if(port_idx == PB) pp->pd.mirror[port_idx] = parport_r_stat(pp);
+    return pp->pd.mirror[port_idx];
+}
+
+int parport_reset(s_parport *pp)
+{
+    if( !pp ) return 0;
+    if(pp->pd.allow) return 0;
+    if(parport_set(pp,PA, 0) == PP_ERROR) return PP_ERROR;
+    if(parport_set(pp,PB, 0) == PP_ERROR) return PP_ERROR;
+    if(parport_set(pp,PC, 0) == PP_ERROR) return PP_ERROR;
+    return 0;
+}
+
+/***************************************************************************************************************************/
+/* operacje bitowe na portach */
+
+int parport_set_bit(s_parport *pp, unsigned int idx, unsigned int mask)
+{
+    return parport_set(pp,idx, pp->pd.mirror[idx] | mask);
+}
+
+int parport_clr_bit(s_parport *pp, unsigned int idx, unsigned int mask)
+{
+    return parport_set(pp,idx, pp->pd.mirror[idx] & ~mask);
+}
+
+int parport_get_bit(s_parport *pp, unsigned int idx, unsigned int mask)
+{
+    register int x = parport_get(pp,idx) & mask;
+    if(x == -1) return PP_ERROR;
+    return x ? 1:0;
+}
+
+/**************************************************************************************************/
+
+
+/************************************************************************************************************************
+    Emulation layer
+*/
+
+/*
 void parport_set_emulate(s_parport *pp, char sw)
 {
     usb_sw = sw;
 }
-
-/************************************************************************************************************************
-    USB emulation layer
 */
+
 /*
 static int parport_usb_init(s_usb2lpt **usb, void *ptr)
 { 
 //    usb_mirror = 0;
 //    *usb = usb2lpt_init( ptr );
-//    if( usb ) allow = 0;
+//    if( usb ) pp->pd.allow = 0;
     return 0;//!usb; 
 }
 
@@ -428,94 +427,11 @@ static int parport_usb_close(s_usb2lpt *usb)
 //    usb_mirror = 0;
 //    usb2lpt_free( usb );
 //    usb = NULL;
-//    allow = 1;
+//    pp->pd.allow = 1;
     return 0; 
 }
 */
 /********************************************************************************/
 
 
-
-/*
-static const char *iface_get_iface_wildcard( int type)
-{
-    switch (type) {
-	case IFACE_LPT: return "^parport[[:digit:]]*$";
-	case IFACE_USB: return "^usb[[:digit:]]*$";
-	case IFACE_RS232: return "^ttyS[[:digit:]]*$";
-    }
-    
-    return NULL;
-}
-
-typedef struct 
-{
-    iface *ifc;
-    int   type;    
-} iface_tmp_arg;
-
-static boolean iface_callback_list(const char *fname, const char *error, void *arg)
-{
-    char tmp[4096];
-    
-    if( (strlen(fname) + strlen(SYSTEM_DEVICE_PATH)) > 4094) return false;
-    
-    iface_tmp_arg *targ = (iface_tmp_arg *)arg;
-    
-    sprintf(tmp, "%s%s", SYSTEM_DEVICE_PATH, fname);
-    
-    iface_add(targ->ifc, targ->type, (char *)fname, tmp, NULL);
-    return true;
-}
-
-static void iface_add_list(iface *ifc, int iface_type)
-{
-    char error[256];
-    const char *regex = iface_get_iface_wildcard( iface_type );
-    iface_tmp_arg tmp;
-    
-    tmp.ifc = ifc;
-    tmp.type = iface_type;
-    error[0] = 0;
-        
-    if(!file_ls(SYSTEM_DEVICE_PATH, regex, error, iface_callback_list, &tmp)){
-	fprintf(stderr, "[ERROR]%s\n",error);
-    }
-
-}
-
-
-
-int iface_load_config(iface *ifc, void *cfg)
-{
-    char *tmp;
-    ifc->ifc_sel = 0;
-    ifc->cl = IFACE_LPT;
-
-    ifc->prog_sel = 0;    
-    tmp = NULL;
-    if(!store_get(GEEPRO(ifc->gep)->store, "LAST_SELECTED_PROGRAMMER", &tmp)){
-	if( tmp ){
-	    ifc->prog_sel = strtol(tmp, NULL, 0);
-	    free(tmp);
-	}
-    }
-    tmp = NULL;
-    if(!store_get(GEEPRO(ifc->gep)->store, "LAST_SELECTED_IFACE", &tmp)){
-	if( tmp ){
-	    ifc->ifc_sel = strtol(tmp, NULL, 0);
-	    free(tmp);
-	}
-    }
-
-// interface to choose
-    iface_add_list( ifc, IFACE_LPT);
-    iface_add_list( ifc, IFACE_USB);
-    iface_add_list( ifc, IFACE_RS232);
-// usb experimental
-//    iface_add(ifc, IFACE_LPT, "Usb2Lpt adapter", "Usb2Lpt");
-//exit(0);
-    return 0;
-}
-*/
 

@@ -30,6 +30,7 @@ typedef struct
     float fval;
 } store_str;
 
+// return 0 on success, or < 0 on error
 extern int store_constr(store_str *, const char *path, const char *file);
 extern void store_destr(store_str *);
 extern int store_get(store_str *, const char *key, char **value); // alloc memory for value, have to free()

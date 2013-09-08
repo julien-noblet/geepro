@@ -142,7 +142,7 @@ int file_load_srec_line(FILE *f, int size, char *buffer, int *offset)
     char tmp[520];
 
     while(( (fgetc(f)) != 'S') && !feof(f)); // start line of hex format
-    if((type = fgetc(f)) == EOF) return -1;
+    if((signed)(type = (unsigned int)fgetc(f)) == EOF) return -1;
     if((type > '9') || (type < '0')) return -1;
     type -= '0'; // ascii to digit
     addrpole = 0;
@@ -156,7 +156,7 @@ int file_load_srec_line(FILE *f, int size, char *buffer, int *offset)
 	if(addrpole){
 	    addrpole--;
 	    addr += data << (addrpole * 8);
-	    if((addr + byte_count + byte_count - i - 1) < size) continue;
+	    if((addr + byte_count + byte_count - i - 1) < (unsigned int)size) continue;
 	    return -3;
 	}
 	if( i == byte_count - 1) break;

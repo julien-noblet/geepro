@@ -27,9 +27,14 @@
 #include "gep_usb.h"
 #include "cfp.h"
 #include "parport.h"
+#include "storings.h"
 
 #define IFACE_DRIVER_INIT_FUNC_NAME	"driver_init"
 #define IFACE_MODULE_INIT_FUNC_NAME	"init_module"
+
+// variable name in program storings
+#define IFACE_LAST_SELECTED_IFC_KEY	"LAST_SELECTED_INTERFACE" 
+#define IFACE_LAST_SELECTED_PRG_KEY	"LAST_SELECTED_PROGRAMMER" 
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,15 +59,6 @@ typedef struct iface_qe iface_qe;
 typedef struct iface_prg iface_prg;
 typedef struct iface_driver iface_driver;
 
-struct iface_qe
-{
-    int cl;		/* klasa urządzenia, np USB, LPT itp */
-    char *name;		/* nazwa urządzenia np UBB 0, LPT1, COM1 itp */
-    char *dev;		/* ścieżka do urządzenia, np /dev/parport0 */
-    void *handler;	// handler of device
-    iface_qe *next;    
-};
-
 struct iface_prg
 {
     char *name;		/* nazwa sterownika programatora */
@@ -83,18 +79,20 @@ typedef struct s_iface_devlist_ s_iface_devlist;
 struct s_iface_devlist_
 {
     void *handler;	// pointer to interface data stucture
-    const char *name;	// display name
-    int  cl;		// interface class LPT,USB etc
+    char *name;		// display name
+    int  cl;		// interface real class LPT,USB etc
+    int  group;		// interface group class LPT, USB, etc (whitch driver should handle it: example - LPT driver can using USB emulation )
     s_iface_devlist *next;
 };
 
 typedef struct s_iface_device_ s_iface_device;
 
-typedef void (*f_iface_device)(s_iface_device *, s_iface_devlist *, void *);
+typedef void (*f_iface_device)(s_iface_device *, s_iface_devlist *, void *, int iter);
 #define IFACE_F_DEVICE( x )	((f_iface_device)x)
 
 typedef void (*f_iface_device_notify)(s_iface_device *, s_iface_devlist *, void *);
 #define IFACE_F_DEVICE_NOTIFY( x ) ((f_iface_device_notify)x)
+typedef struct iface_ iface;
 
 struct s_iface_device_
 {
@@ -105,27 +103,26 @@ struct s_iface_device_
     s_usb		*usb;		// all USB devices supported by geepro
     f_iface_device_notify notify;	// notify callback
     void		*notify_ptr;	// notify callback parameter
+    store_str 		*store;
+    const char		*prog_name;	// programmer driver name
+    int			prog_class;	// programmer driver interface class
 };
 
-typedef struct
+struct iface_
 {
     char *plg_list;	/* lista plików pluginów, które mogą być załadowane */
     char *mod_list;	/* lista plików modułów, które mogą być załadowane */
     chip_plugins *plugins;
-    iface_qe *qe;	/* kolejka interfejsów */
     iface_prg *prg;     /* lista driverów */
     iface_driver *plg;  /* lista plików pluginów do obsługi programatora */
 /* wybrany programator: */
-    int ifc_sel;
-    iface_qe *ifsel;	// currently selected iface
     int prog_sel;
-//    iface_prg_api api;  // wybrany programator - dla przyszłej wersji geepro, na razie jest zmienna globalna __hardware_modules__
     int cl;		/* klasa urządzenia */
     void *gep;		/* wskaźnik na główną strukturę danych */
     hw_driver_type hwd;
 // new api
-    s_iface_device *dev; // lists of interfaces and connected devices
-} iface;
+    s_iface_device *dev; // lists of interfaces and all connected devices
+};
 
 
 typedef void (*iface_cb)(iface *, int cl, char *name, char *dev, void *ptr);
@@ -133,22 +130,9 @@ typedef void (*iface_prg_func)(iface *, char *name, void *ptr);
 typedef int  (*iface_cb_fltr)(iface *, const char *path, const char *name, const char *cwd);
 
 /* ogólne */
-extern iface *iface_init(); /* inicjuje kolejkę interfejsów */
+extern iface *iface_init(store_str *st); /* inicjuje kolejkę interfejsów */
 extern void iface_destroy(iface *ifc); /* zwalnia pamięć przydzieloną przez ifc */ 
 extern int  iface_load_config(iface *ifc, void *);
-
-/* wybór interfejsu */
-extern int  iface_add(iface *ifc, int cl, char *name, char *dev, void *handler);
-extern char iface_del(iface *ifc, int cl, char *name); // returbn true if not found
-extern char *iface_get_dev(iface *ifc, char *name);
-extern iface_qe *iface_get_iface(iface *ifc, char *name);
-extern void iface_search(iface *ifc, int cl, iface_cb , void *ptr);
-extern int  iface_select_iface(iface *ifc, char *name); /* uaktywnienie interfejsu */
-extern void iface_deselect_iface(iface *ifc); // close current interface
-extern void iface_rmv_ifc(iface *ifc); /* usuwa wszystkie interfejsy z kolejki */
-extern char iface_test_compatibility(iface *ifc, const char *device_list); // check if current driver is on comma separated list, return 1 if so
-extern void iface_update_iface(iface *ifc); // adds, removes supported ports to interface list
-
 
 /* wybór drivera programatora */
 extern int  iface_prg_add(iface *ifc, iface_prg_api, char on); /* dodanie programatora do kolejki */
@@ -169,12 +153,13 @@ extern void iface_make_modules_list( iface *ifc, const char *path, const char *e
 extern void iface_module_allow(iface *ifc, const char *lst); /* lst jest postaci: "plugin1:plugin2:plugin3 .... "*/
 extern void iface_rmv_modules(iface *);
 
+void iface_renew(iface *);
+
 /****************************************************** NEW API ********************************************************************************/
 /*
     Functions to manipulate interfaces like LPT, USB, RS232 etc.
 
 */
-
 
 /*
     Actualize list of devices supported by choosed programmer.
@@ -183,7 +168,7 @@ extern void iface_rmv_modules(iface *);
     Added device have to match class type and driver name.
     Invokes notify callback if defined.
 */
-char iface_device_rescan( s_iface_device *ifc, int device_class, const char *driver_name );
+char iface_device_rescan( s_iface_device *ifc );
 
 /*
     Select device_name interface for I/O.    
@@ -208,7 +193,7 @@ char iface_device_connect_notify( s_iface_device *ifc, f_iface_device_notify, vo
     ifc -> pointer to s_iface_device struct pointer.
     return 0 on success
 */
-char iface_device_init( s_iface_device **ifc);
+char iface_device_init( s_iface_device **ifc, store_str *store);
 
 /*
     Destructor
@@ -225,6 +210,30 @@ void iface_device_configure( s_iface_device *ifc, s_cfp *cfg);
 */
 void iface_device_event( s_iface_device *ifc );
 
+/*
+    iface_device set programmer driver.
+*/
+void iface_device_set_programmer(s_iface_device *ifc, int device_class, const char *programmer_name);
+
+/*
+    Select interface from stored variable (last choosed interface).
+    Input:
+	ifc - pointer to s_iface_device structure
+    Return:
+	0  - success,
+	-1 - no matched interface, select first matched from list
+	-2 - no matched interface
+	-3 - no stored entry
+*/
+char iface_device_select_stored(s_iface_device *ifc);
+
+/*
+    Return key name for storing 
+*/
+const char *iface_device_get_key_stored(s_iface_device *ifc);
+
+
+void iface_prog_select_store( iface *);
 
 #ifdef __cplusplus
 } // extern "C"
