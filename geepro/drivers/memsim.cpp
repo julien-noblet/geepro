@@ -102,6 +102,7 @@ static void memsim_write_byte(int addr, char data)
     memsim_wr_data( data );
 }
 */
+/*
 static int memsim_reset()
 {
     int err = 0;
@@ -115,7 +116,7 @@ static int memsim_reset()
     memsim_set_rst_out( 0 );
     return err;
 }
-
+*/
 inline static int memsim_set_test(char test)
 {
     if( test ){

@@ -52,7 +52,7 @@ static int galb_set_vpp( int volt )
     gep->hw_delay(2);
     return err;
 }
-
+/*
 static int galb_reset()
 {
     int err = 0;
@@ -63,7 +63,7 @@ static int galb_reset()
     parport_set_bit(gep->ifc->dev->lpt,PC, PP_14);
     return err;
 }
-
+*/
 /* signals*/
 static int galb_get_sdout()
 {

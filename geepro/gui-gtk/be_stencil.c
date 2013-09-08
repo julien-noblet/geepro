@@ -50,15 +50,15 @@ enum{
     GCBT_TIME,
 };
 
-static void gui_bineditor_stencil_edit_add_entries( GtkWidget *list, gui_stencil_edit_str *gses );
+//static void gui_bineditor_stencil_edit_add_entries( GtkWidget *list, gui_stencil_edit_str *gses );
 //static char gui_bineditor_stencil_new(GuiBineditor *be);
-static char gui_bineditor_stencil_edit(GuiBineditor *be, const char *fname);
-static void gui_bineditor_stencil_edit_desc_entry_ev(GtkTextBuffer *txt, gui_stencil_edit_str *gses);
-static void gui_bineditor_stencil_edit_fname_entry_ev();
-static void gui_bineditor_stencil_edit_menu_entry_ev();
-static void gui_bineditor_stencil_edit_device_entry_ev();
-static void gui_bineditor_stencil_edit_new_button_ev(GtkButton *bt, gui_stencil_edit_str *gses);
-static void gui_bineditor_stencil_edit_del_button_ev(GtkButton *bt, gui_stencil_edit_str *gses);
+//static char gui_bineditor_stencil_edit(GuiBineditor *be, const char *fname);
+//static void gui_bineditor_stencil_edit_desc_entry_ev(GtkTextBuffer *txt, gui_stencil_edit_str *gses);
+//static void gui_bineditor_stencil_edit_fname_entry_ev();
+//static void gui_bineditor_stencil_edit_menu_entry_ev();
+//static void gui_bineditor_stencil_edit_device_entry_ev();
+//static void gui_bineditor_stencil_edit_new_button_ev(GtkButton *bt, gui_stencil_edit_str *gses);
+//static void gui_bineditor_stencil_edit_del_button_ev(GtkButton *bt, gui_stencil_edit_str *gses);
 
 /*************************************************************************************************************************************/
 
@@ -343,7 +343,7 @@ char gui_bineditor_stencil_operation(GuiBineditor *be, const char *fname, const 
 	case GUI_BE_OPERATION_ADD : return gui_bineditor_stencil_add( be );
 	case GUI_BE_OPERATION_REMOVE : return gui_bineditor_stencil_remove( be, device, path );
 	case GUI_BE_OPERATION_NEW: return 0; //return gui_bineditor_stencil_new( be );
-	case GUI_BE_OPERATION_EDIT: return gui_bineditor_stencil_edit( be, fname);
+//	case GUI_BE_OPERATION_EDIT: return gui_bineditor_stencil_edit( be, fname);
     }
     return 0;
 }
@@ -388,6 +388,7 @@ static char gui_bineditor_stencil_new(GuiBineditor *be)
     return 0;
 }
 */
+/*
 static GtkWidget *gui_bineditor_stencil_edit_list()
 {
     GtkWidget *list, *wg;
@@ -411,10 +412,10 @@ static void gui_bineditor_stencil_edit_add_entry(GtkWidget *list, const char *st
     gtk_list_store_append( store, &iter );
     gtk_list_store_set( store, &iter, 0, str, 1, key, -1);    
 }
-
+*/
 /*****************************************************************************************************************************************************/
 
-
+/*
 static void gui_bineditor_stencil_edit_combo(GtkComboBox *cbo, gui_stencil_edit_str *gses)
 {
     int x = gtk_combo_box_get_active( cbo );
@@ -500,7 +501,7 @@ static void gui_bineditor_stencil_edit_combo(GtkComboBox *cbo, gui_stencil_edit_
 //    gui_bineditor_stencil_edit_fill_entries();
     gtk_widget_show_all( gses->vbox );
 }
-
+*/
 typedef struct 
 {
     const char *name;
@@ -548,7 +549,7 @@ return;
 printf(" --> %s\n", en->deflt);
 */
 }
-
+/*
 static void gui_bineditor_stencil_edit_select(GtkTreeSelection *tree, gui_stencil_edit_str *gses)
 {
     GtkWidget *wg, *wgx;
@@ -610,9 +611,9 @@ static void gui_bineditor_stencil_edit_select(GtkTreeSelection *tree, gui_stenci
     gtk_widget_show_all( gses->settings );    
     if( tmp ) free(tmp);
 }
-
-static void gui_bineditor_stencil_edit_add_entries( GtkWidget *list, gui_stencil_edit_str *gses )
-{
+*/
+//static void gui_bineditor_stencil_edit_add_entries( GtkWidget *list, gui_stencil_edit_str *gses )
+//{
 //    char key[64], rr, *tmp;
 //    int i;
 //    const s_cfpq *entries, *cr, *xx;
@@ -638,10 +639,10 @@ static void gui_bineditor_stencil_edit_add_entries( GtkWidget *list, gui_stencil
 	}
     }    
 */
-}
+//}
 
-static inline void gui_bineditor_stencil_edit_build(GuiBineditor *be, GtkWidget *ctx, gui_stencil_edit_str *gses, const char *fname )
-{
+//static inline void gui_bineditor_stencil_edit_build(GuiBineditor *be, GtkWidget *ctx, gui_stencil_edit_str *gses, const char *fname )
+//{
 /*
     GtkWidget *hbox, *wg, *list, *wgx, *tb, *tx;
     char *tmp;
@@ -715,8 +716,8 @@ static inline void gui_bineditor_stencil_edit_build(GuiBineditor *be, GtkWidget 
     gtk_table_attach(GTK_TABLE( tb ), wg, 1, 2, 1, 2, GTK_FILL | GTK_EXPAND, GTK_SHRINK, 0, 0);        
     g_signal_connect(G_OBJECT(wg), "pressed", G_CALLBACK(gui_bineditor_stencil_edit_del_button_ev), gses);
 */
-}
-
+//}
+/*
 static char gui_bineditor_stencil_edit(GuiBineditor *be, const char *fname)
 {
     GtkWidget *dlg, *ctx;
@@ -749,12 +750,13 @@ printf("ulele !\n");
     cfp_free( p );    
     return 0;
 }
-
+*/
 
 /*****************************************************************************************************************************************/
 
 
 void gui_bineditor_stencil_sheet(GuiBineditor *be, const char *device, const char *fname){ printf("stencil: %s - %s\n", fname, device); }
+/*
 static void gui_bineditor_stencil_edit_desc_entry_ev(GtkTextBuffer *txt, gui_stencil_edit_str *gses){ printf("text view\n"); }
 static void gui_bineditor_stencil_edit_fname_entry_ev(){ printf("fname view\n"); }
 static void gui_bineditor_stencil_edit_menu_entry_ev(){ printf("menu view\n"); }
@@ -762,4 +764,5 @@ static void gui_bineditor_stencil_edit_device_entry_ev(){ printf("device view\n"
 static void gui_bineditor_stencil_edit_new_button_ev(GtkButton *bt, gui_stencil_edit_str *gses){ printf("button new\n");}
 static void gui_bineditor_stencil_edit_del_button_ev(GtkButton *bt, gui_stencil_edit_str *gses){ printf("button delete\n");}
 
+*/
 

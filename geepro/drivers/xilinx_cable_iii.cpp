@@ -82,7 +82,7 @@ static int x3_set_tck(char state ) // CLK line
 	return parport_set_bit(gep->ifc->dev->lpt,PA, PP_03);
     return parport_clr_bit(gep->ifc->dev->lpt,PA, PP_03);
 }
-
+/*
 static int x3_reset()
 {
     int err = 0;
@@ -96,7 +96,7 @@ static int x3_reset()
     
     return err;
 }
-
+*/
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */

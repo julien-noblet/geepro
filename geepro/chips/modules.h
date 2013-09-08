@@ -151,10 +151,10 @@
     }
 
 #define to_hex(value, digit)	((value >> (digit * 4)) & 0x0f)
-
-//#define ERROR	\
-//    return -1
-
+/*
+#define ERROR	\
+    return -1
+*/
 #define register_chip_begin(path, name, family, size)	\
     memset(&__init_struct__, 0, sizeof(chip_desc));\
     __init_struct__.chip_path = (char *)path;\

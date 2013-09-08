@@ -18,9 +18,9 @@
 	<frame label="Setting">
 	    <vbox>
 		<chbutton id="ON_OFF" label="VCC and VPP" fillx="true" spacex="5" />
-		<table dim="2,2">
+		<table xhomo="true" yhomo="true">
 		<frame  shadow="etched_in" expand="true" fillx="true" pos="0,1, 0,1">
-		    <table dim="12, 3" fillx="true">
+		    <table xhomo="true" yhomo="true">
 			<chbutton id="SDIN" pos="0,2, 0,1" label="SDIN" fillx="true" spacex="5" />
 			<chbutton id="SCLK" pos="0,2, 1,2" label="SCLK" fillx="true" spacex="5" />
 			<chbutton id="STB" pos="0,2, 2,3" label="STB#" fillx="true" spacex="5" spacey="5" />		
