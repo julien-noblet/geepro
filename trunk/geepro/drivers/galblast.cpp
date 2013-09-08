@@ -64,19 +64,6 @@ static int galb_reset()
     return err;
 }
 
-static int galb_open(const char *ptr, int flags)
-{
-    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
-    return galb_reset();
-}
-
-static int galb_close()
-{
-    if( galb_reset() == PP_ERROR ) return HW_ERROR;
-    parport_close(gep->ifc->dev->lpt);
-    return 0;
-}
-
 /* signals*/
 static int galb_get_sdout()
 {
@@ -177,8 +164,6 @@ int galb_api(void *g, en_hw_api func, int val, void *ptr)
     {
 	case HW_IFACE: return IFACE_LPT;
 	case HW_NAME : DRIVER_NAME(ptr) = (char *)"GALBlast"; return HW_SUCCESS;
-	case HW_OPEN : return galb_open((const char *)ptr, val);
-	case HW_CLOSE: return galb_close();
 	case HW_TEST : return 1; // no programmer identification
 	// GUI
 	case HW_GINIT: return galb_gui( GEEPRO(ptr), (const char *)"none", (const char *)"" );

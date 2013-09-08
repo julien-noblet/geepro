@@ -453,23 +453,10 @@ static int willem_gui_init(void *ptr, const char *chip_name, const char *family,
     return 0;
 }
 
-static int willem_open(const char *ptr, int flags)
-{
-    if(parport_open(gep->ifc->dev->lpt) ) return HW_ERROR;
-    return willem_reset();
-}
-
 static int pcb3_open(const char *ptr, int flags)
 {
     if(parport_open(gep->ifc->dev->lpt) == PP_ERROR) return HW_ERROR;
     return willem_reset();
-}
-
-static int willem_close(void)
-{
-    if(willem_reset() == PP_ERROR) return HW_ERROR;
-    parport_close(gep->ifc->dev->lpt);
-    return 0;
 }
 
 static void willem_set_addr_range(int val )
@@ -491,8 +478,6 @@ int willem_40_hardware_driver(void *g,en_hw_api funct, int val, void *ptr)
 	case HW_TEST:	  return willem_test_connection();
 	case HW_TEST_CONTINUE:	  return 0;
 	case HW_RESET:    return willem_reset();
-	case HW_OPEN:     return willem_open((const char *)ptr,val);
-	case HW_CLOSE:    return willem_close();
 	case HW_SET_VCC:  return willem_set_vcc_voltage(val);
 	case HW_SET_VPP:  return willem_set_vpp_voltage(val);
 	case HW_SW_VCC:	  if(val == 0) return willem_vcc_off(); else return willem_vcc_on();
@@ -544,8 +529,6 @@ int willem4_hardware_driver(void *g,en_hw_api funct, int val, void *ptr)
 	case HW_TEST:	  return willem_test_connection();
 	case HW_TEST_CONTINUE:	  return 0;
 	case HW_RESET:    return willem_reset();
-	case HW_OPEN:     return pcb3_open((const char *)ptr,val);
-	case HW_CLOSE:    return willem_close();
 	case HW_SET_VCC:  return willem_set_vcc_voltage(val);
 	case HW_SET_VPP:  return willem_set_vpp_voltage(val);
 	case HW_SW_VCC:	  if(val == 0) return willem_vcc_off(); else return willem_vcc_on();
@@ -595,8 +578,6 @@ int willempro2_hardware_driver(void *g, en_hw_api funct, int val, void *ptr)
 	case HW_TEST:	  return willem_test_connection();
 	case HW_TEST_CONTINUE:	  return 0;
 	case HW_RESET:    return willem_reset();
-	case HW_OPEN:     return pcb3_open((const char *)ptr,val);
-	case HW_CLOSE:    return willem_close();
 	case HW_SET_VCC:  return willem_set_vcc_voltage(val);
 	case HW_SET_VPP:  return willem_set_vpp_voltage(val);
 	case HW_SW_VCC:	  if(val == 0) return willem_vcc_off(); else return willem_vcc_on();

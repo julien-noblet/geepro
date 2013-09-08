@@ -43,8 +43,8 @@ typedef enum{
     HW_TEST,
     HW_TEST_CONTINUE,
     HW_RESET,
-    HW_OPEN,
-    HW_CLOSE,
+//    HW_OPEN,
+//    HW_CLOSE,
     HW_SET_VCC,	
     HW_SET_VPP,
     HW_SW_VCC,
@@ -131,8 +131,8 @@ typedef int (*hw_driver_type)(void *root, en_hw_api func_id, int arg, void *ptr)
 #define hw_test_conn()		ifc->hwd(gep, HW_TEST,   0, NULL)
 #define hw_test_continue()	ifc->hwd(gep, HW_TEST_CONTINUE,   0, NULL)	// returns true or false flag - if true -> allow continue test
 #define hw_reset()		ifc->hwd(gep, HW_RESET,  0, NULL)
-#define hw_open(dev, flags)	ifc->hwd(gep, HW_OPEN,   flags, dev)
-#define hw_close()		ifc->hwd(gep, HW_CLOSE,  0, NULL)
+//#define hw_open(dev, flags)	ifc->hwd(gep, HW_OPEN,   flags, dev)
+//#define hw_close()		ifc->hwd(gep, HW_CLOSE,  0, NULL)
 #define hw_set_vcc(val)		ifc->hwd(gep, HW_SET_VCC,val, NULL)
 #define hw_set_vpp(val)		ifc->hwd(gep, HW_SET_VPP,val, NULL)
 #define hw_sw_vcc(val)		ifc->hwd(gep, HW_SW_VCC, val, NULL)

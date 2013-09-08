@@ -85,7 +85,6 @@ int parport_open( s_parport *pp )
 {
     if( !pp ) return 0;
     if( !pp->selected ) return 0;
-printf("----->Open\n");
     if( !pp->selected->device_path ){
 	ERR("Device path is NULL !");
 	return 0;
@@ -101,15 +100,15 @@ printf("----->Open\n");
 
     parport_close(pp); // close already opened device
 
-    MSG("Opening device %s\n", pp->selected->device_path);
+    MSG("Opening device %s", pp->selected->device_path);
     if((pp->pd.handler = open(pp->selected->device_path, O_RDWR | pp->selected->flags)) == -1 ){
-	ERR("open(\"%s\", O_RDWR): %s\n", pp->selected->device_path, strerror(errno));    
+	ERR("open(\"%s\", O_RDWR): %s", pp->selected->device_path, strerror(errno));    
 	return PP_ERROR;
     }
     pp->pd.init = 1;
-    MSG("Device %s opened with handler=%d\n", pp->selected->device_path, pp->pd.handler);
+    MSG("Device %s opened with handler=%d", pp->selected->device_path, pp->pd.handler);
     if(ioctl(pp->pd.handler, PPCLAIM) == -1){
-	MSG("ioctl(%d, PPCLAIM): %s\n", pp->pd.handler, strerror(errno));
+	MSG("ioctl(%d, PPCLAIM): %s", pp->pd.handler, strerror(errno));
 	parport_close(pp);
 	return PP_ERROR;
     }
@@ -124,9 +123,8 @@ printf("----->Open\n");
 void parport_close(s_parport *pp)
 {
     int err = 0;
-
     if(!pp) return;
-printf("---->close\n");
+
     if( !pp->pd.opened ) return;
     
 //    if( usb_sw ){ 

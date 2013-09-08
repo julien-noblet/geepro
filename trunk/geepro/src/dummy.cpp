@@ -38,8 +38,8 @@ int dummy_hardware_driver(void *,en_hw_api funct, int val, void *ptr)
 	case HW_TEST:	  return 1; /* zawsze obecny */
 	case HW_TEST_CONTINUE:  return 0; /* zawsze obecny */
 	case HW_RESET:    return 0;
-	case HW_OPEN:     return 0;
-	case HW_CLOSE:    return 0;
+//	case HW_OPEN:     return 0;
+//	case HW_CLOSE:    return 0;
 	case HW_SET_VCC:  return 0;
 	case HW_SET_VPP:  return 0;
 	case HW_SW_VCC:	  return 0;

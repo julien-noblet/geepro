@@ -78,19 +78,6 @@ static int xyz_reset()
     return err;
 }
 
-static int xyz_open(const char *ptr, int flags)
-{
-    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
-    return xyz_reset();
-}
-
-static int xyz_close()
-{
-    if( xyz_reset() == PP_ERROR ) return HW_ERROR;
-    parport_close(gep->ifc->dev->lpt);
-    return 0;
-}
-
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */
@@ -136,8 +123,6 @@ int xyz_api(void *g, en_hw_api func, int val, void *ptr)
     {
 	case HW_IFACE: return IFACE_LPT;
 	case HW_NAME : DRIVER_NAME(ptr) = (char *)"JTAG - unknown name"; return HW_SUCCESS;
-	case HW_OPEN : return xyz_open((const char *)ptr, val);
-	case HW_CLOSE: return xyz_close();
 	case HW_TEST : return 1; // no way to test connected
 	// GUI
 	case HW_GINIT: return xyz_gui( GEEPRO(ptr), (const char *)"none", (const char *)"" );

@@ -142,19 +142,6 @@ static int stk200_reset()
     return err;
 }
 
-static int stk200_open(const char *ptr, int flags)
-{
-    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
-    return stk200_reset();
-}
-
-static int stk200_close()
-{
-    if( stk200_reset() == PP_ERROR ) return HW_ERROR;
-    parport_close(gep->ifc->dev->lpt);
-    return 0;
-}
-
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */
@@ -199,8 +186,6 @@ int stk200_api(void *g, en_hw_api func, int val, void *ptr)
     {
 	case HW_IFACE: return IFACE_LPT;
 	case HW_NAME : DRIVER_NAME(ptr) = (char *)"STK200"; return HW_SUCCESS;
-	case HW_OPEN : return stk200_open((const char *)ptr, val);
-	case HW_CLOSE: return stk200_close();
 	case HW_TEST : return stk200_test_connected();
 	case HW_TEST_CONTINUE : return 1;
 	// GUI
