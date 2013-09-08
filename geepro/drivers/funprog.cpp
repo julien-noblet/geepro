@@ -91,20 +91,6 @@ static int funprog_reset()
     
     return err;
 }
-
-static int funprog_open(const char *ptr, int flags)
-{
-    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
-    return funprog_reset();
-}
-
-static int funprog_close()
-{
-    if( funprog_reset() == PP_ERROR ) return HW_ERROR;
-    parport_close(gep->ifc->dev->lpt);
-    return 0;
-}
-
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */
@@ -150,8 +136,6 @@ int funprog_api(void *g, en_hw_api func, int val, void *ptr)
     {
 	case HW_IFACE: return IFACE_LPT;
 	case HW_NAME : DRIVER_NAME(ptr) = (char *)"Funprog"; return HW_SUCCESS;
-	case HW_OPEN : return funprog_open((const char *)ptr, val);
-	case HW_CLOSE: return funprog_close();
 	case HW_TEST : return 1;
 	// GUI
 	case HW_GINIT: return funprog_gui( GEEPRO(ptr), (const char *)"none", (const char *)"" );

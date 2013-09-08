@@ -116,19 +116,6 @@ static int memsim_reset()
     return err;
 }
 
-static int memsim_open(const char *ptr, int flags)
-{
-    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
-    return memsim_reset();
-}
-
-static int memsim_close()
-{
-    if( memsim_reset() == PP_ERROR ) return HW_ERROR;
-    parport_close(gep->ifc->dev->lpt);
-    return 0;
-}
-
 inline static int memsim_set_test(char test)
 {
     if( test ){
@@ -250,8 +237,6 @@ int memsim_api(void *g,en_hw_api func, int val, void *ptr)
     {
 	case HW_IFACE: return IFACE_LPT;
 	case HW_NAME : DRIVER_NAME(ptr) = (char *)"memSIM"; return HW_SUCCESS;
-	case HW_OPEN : return memsim_open((const char *)ptr, val);
-	case HW_CLOSE: return memsim_close();
 	case HW_TEST : return memsim_test_connected();
 	case HW_TEST_CONTINUE : return 1;
 	case HW_SET_DATA: memsim_wr_data( val ); return HW_SUCCESS;

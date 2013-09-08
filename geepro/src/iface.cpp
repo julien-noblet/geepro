@@ -320,9 +320,7 @@ void iface_rmv_modules(iface *ifc)
 
 void iface_destroy(iface *ifc)
 {
-    geepro *gep = GEEPRO(ifc->gep);
     if(!ifc) return;
-    hw_close();
     iface_rmv_prg(ifc);
     iface_rmv_driver(ifc);
     if(ifc->plugins){
@@ -724,9 +722,10 @@ static void iface_device_set_device( s_iface_device *ifc )
 	    MSG("Cannot store '%s' variable to '%s'", key, ifc->selected->name); 
 	}
     }
-printf("-->Select\n");
     switch(ifc->selected->group){
-	case IFACE_LPT: parport_open( ifc->lpt ); break;
+	case IFACE_LPT: parport_set_device( ifc->lpt, ifc->selected->name); 
+			parport_open( ifc->lpt ); 
+			break;
 	case IFACE_USB:;
 	case IFACE_RS232:;
     }

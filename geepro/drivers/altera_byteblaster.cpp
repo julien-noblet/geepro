@@ -86,20 +86,6 @@ static int altera_bb_reset()
     
     return err;
 }
-
-static int altera_bb_open(const char *ptr, int flags)
-{
-    if(parport_open(gep->ifc->dev->lpt)) return HW_ERROR;
-    return altera_bb_reset();
-}
-
-static int altera_bb_close()
-{
-    if( altera_bb_reset() == PP_ERROR ) return HW_ERROR;
-    parport_close(gep->ifc->dev->lpt);
-    return 0;
-}
-
 /*
     GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI GUI 
 */
@@ -146,8 +132,6 @@ int altera_bb_api(void *g,en_hw_api func, int val, void *ptr)
     {
 	case HW_IFACE: return IFACE_LPT;
 	case HW_NAME : DRIVER_NAME(ptr) = (char *)"JTAG Altera byteblaster"; return HW_SUCCESS;
-	case HW_OPEN : return altera_bb_open((const char *)ptr, val);
-	case HW_CLOSE: return altera_bb_close();
 	case HW_TEST : return altera_bb_test_connected();
 	case HW_TEST_CONTINUE : return 1;
 	// GUI
