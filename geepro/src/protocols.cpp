@@ -34,51 +34,51 @@
 
 void init_i2c(geepro *gep)
 {
-    gep->hw_set_sda(1);
-    gep->hw_set_scl(1);
-    gep->hw_set_hold(0);
-    gep->hw_delay( TI );
-    gep->hw_sw_vcc(1);
-    gep->hw_delay( 10 * TI );  // time for POR (Power On Ready)
+    hw_set_sda(1);
+    hw_set_scl(1);
+    hw_set_hold(0);
+    hw_delay( TI );
+    hw_sw_vcc(1);
+    hw_delay( 10 * TI );  // time for POR (Power On Ready)
 }
 
 void scl_tik_i2c(geepro *gep)
 {
-    gep->hw_delay( TI / 2 );
-    gep->hw_set_scl(1);
-    gep->hw_delay( TI );
-    gep->hw_set_scl(0);
-    gep->hw_delay( TI / 2 );
+    hw_delay( TI / 2 );
+    hw_set_scl(1);
+    hw_delay( TI );
+    hw_set_scl(0);
+    hw_delay( TI / 2 );
 }
 
 void start_i2c(geepro *gep)
 {
-    gep->hw_set_sda(1);
-    gep->hw_delay( TI / 2 );    
-    gep->hw_set_scl(1);
-    gep->hw_delay( TI / 2 );    
+    hw_set_sda(1);
+    hw_delay( TI / 2 );    
+    hw_set_scl(1);
+    hw_delay( TI / 2 );    
 
-    gep->hw_set_sda(0);
-    gep->hw_delay( TI / 2 );
-    gep->hw_set_scl(0);
-    gep->hw_delay( TI / 2 );
+    hw_set_sda(0);
+    hw_delay( TI / 2 );
+    hw_set_scl(0);
+    hw_delay( TI / 2 );
 }
 
 void stop_i2c(geepro *gep)
 {
-    gep->hw_set_sda(0);
-    gep->hw_delay( TI );
-    gep->hw_set_scl(0);
-    gep->hw_delay( TI );
-    gep->hw_set_scl(1);
-    gep->hw_delay( TI );
-    gep->hw_set_sda(1);
-    gep->hw_delay( TI );
+    hw_set_sda(0);
+    hw_delay( TI );
+    hw_set_scl(0);
+    hw_delay( TI );
+    hw_set_scl(1);
+    hw_delay( TI );
+    hw_set_sda(1);
+    hw_delay( TI );
 }
 
 void send_bit_i2c(geepro *gep, char bit )
 {
-    gep->hw_set_sda(bit);
+    hw_set_sda(bit);
     scl_tik_i2c(gep);
 }
 
@@ -86,13 +86,13 @@ char get_bit_i2c(geepro *gep)
 {
     char b;
     
-    gep->hw_set_sda( 1 );
-    gep->hw_set_scl(1);    
-    gep->hw_delay( TI );    
+    hw_set_sda( 1 );
+    hw_set_scl(1);    
+    hw_delay( TI );    
 
-    b = gep->hw_get_sda();
-    gep->hw_delay( TI);    
-    gep->hw_set_scl(0);
+    b = hw_get_sda();
+    hw_delay( TI);    
+    hw_set_scl(0);
     return b;
 }
 
@@ -120,14 +120,14 @@ char wait_ack_i2c(geepro *gep)
     int i;
     char b;
     
-    gep->hw_set_sda( 1 );		// release SDA
-    gep->hw_delay( TI / 2 );    	// wait for stabilize
-    gep->hw_set_scl(1);    		// SCL = 1
+    hw_set_sda( 1 );		// release SDA
+    hw_delay( TI / 2 );    	// wait for stabilize
+    hw_set_scl(1);    		// SCL = 1
     for( b = 1, i = 0; (i < TIMEOUT) && b; i++){
-	gep->hw_delay( TI / 2 );    	// wait for SDA = 0
-	b = gep->hw_get_sda();
+	hw_delay( TI / 2 );    	// wait for SDA = 0
+	b = hw_get_sda();
     }
-    gep->hw_set_scl(0);	
+    hw_set_scl(0);	
     return (b != 0) ? 1:0;
 }
 
@@ -137,31 +137,31 @@ char wait_ack_i2c(geepro *gep)
 
 void uWire_init(geepro *gep, char org )
 {
-//    gep->hw_set_org( org == 16 ? 1:0);
-    gep->hw_set_cs( 0 );
-    gep->hw_set_clk( 0 );
-    gep->hw_set_di( 0 );
-//    gep->hw_set_do( 0 );
-    gep->hw_ms_delay( 100 );    
-    gep->hw_sw_vcc( 1 );
-    gep->hw_ms_delay( 100 );
+//    hw_set_org( org == 16 ? 1:0);
+    hw_set_cs( 0 );
+    hw_set_clk( 0 );
+    hw_set_di( 0 );
+//    hw_set_do( 0 );
+    hw_ms_delay( 100 );    
+    hw_sw_vcc( 1 );
+    hw_ms_delay( 100 );
 }
 
 void uWire_cs(geepro *gep, char state )
 {
-    gep->hw_set_cs( state );
+    hw_set_cs( state );
 }
 
 // send/receive in full duplex one bit
 char uWire_bit(geepro *gep,  char si, int us)
 {
-    gep->hw_set_di( si ? 1 : 0);
-    gep->hw_us_delay(us / 2);
-    gep->hw_set_clk( 1 );    
-    gep->hw_us_delay( us );
-    gep->hw_set_clk( 0 );
-    gep->hw_us_delay(us / 2);
-    return gep->hw_get_do() ? 1 : 0;
+    hw_set_di( si ? 1 : 0);
+    hw_us_delay(us / 2);
+    hw_set_clk( 1 );    
+    hw_us_delay( us );
+    hw_set_clk( 0 );
+    hw_us_delay(us / 2);
+    return hw_get_do() ? 1 : 0;
 }
 
 // send/receive in full duplex word
@@ -190,20 +190,20 @@ void uWire_start(geepro *gep,int opcode, int aaa_mask, int adrlen, int address, 
 
 void uWire_stop(geepro *gep, int us)
 {
-    gep->hw_set_cs( 0 );
-    gep->hw_set_clk( 0 );
-    gep->hw_set_di( 0 );
-    gep->hw_set_cs( 0 );    
-    gep->hw_us_delay( us );
+    hw_set_cs( 0 );
+    hw_set_clk( 0 );
+    hw_set_di( 0 );
+    hw_set_cs( 0 );    
+    hw_us_delay( us );
 }
 
 // return true if timeout
 int uWire_wait_busy(geepro *gep, int us, int timeout)
 {
-    gep->hw_set_cs( 1 );
+    hw_set_cs( 1 );
     for(; timeout; timeout--)
-	if( gep->hw_get_do() ) return 0;
-	gep->hw_us_delay( us );
+	if( hw_get_do() ) return 0;
+	hw_us_delay( us );
     return 1;
 }
 

@@ -150,7 +150,6 @@ static inline char load_variables(geepro *gep)
     if( set_opt_var(gep, "/driver", "willem") ) return -1;
     if( set_opt_var(gep, "/store_vars_dir","~/.geepro") ) return -1;
     if( set_opt_var(gep, "/store_vars_file","geepro.st") ) return -1;
-    if( set_opt_var(gep, "/drivers","willem") ) return -1;
     if( set_opt_var(gep, "/chips","27xx") ) return -1;
     if( set_opt_var(gep, "/shared_drv_xml_path","./") ) return -1;
 
@@ -201,6 +200,7 @@ static inline geepro *geep_init(int argc, char **argv)
 static void destruct(geepro *geep)
 {
     // Destruct
+
     if( geep->ifc ) iface_destroy(geep->ifc);
     if(geep->cfg) cfp_free( geep->cfg );
     if(geep->store) store_destr( geep->store );
@@ -214,13 +214,7 @@ static void kill_me(int signal)
     printf("SIG INT -> KILL\n");
     abort( );
 }
-/*
-static char *get_value_from_enum(int x, char *p)
-{
-    sprintf(p, "%i", x);
-    return p;
-}
-*/
+
 int main(int argc, char **argv)
 {
     geepro *geep = NULL;
@@ -248,16 +242,8 @@ int main(int argc, char **argv)
 	return -4;
     };
 
-    if(( geep->ifc = iface_init(geep->store) )){
-	geep->ifc->gep = geep;
-	iface_driver_allow(geep->ifc, cfp_heap_get(geep->cfg, "drivers"));
-	iface_module_allow(geep->ifc, cfp_heap_get(geep->cfg, "chips"));
-//	iface_load_config(geep->ifc, NULL);
-	iface_make_driver_list(geep->ifc, cfp_heap_get(geep->cfg, "drivers_path"), ".driver");
-	iface_make_modules_list( geep->ifc, cfp_heap_get(geep->cfg, "chips_path"), ".chip"); 
-	iface_prog_select_store(geep->ifc);
-	iface_renew(geep->ifc);
-	iface_device_configure( geep->ifc->dev, geep->cfg); // temporary
+    if(( geep->ifc = iface_init(geep->store, geep->cfg ) )){
+	
     }
     signal(SIGINT, kill_me);
     gui_run( geep );

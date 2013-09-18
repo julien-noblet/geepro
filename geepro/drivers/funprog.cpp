@@ -122,7 +122,7 @@ static int funprog_gui(geepro *gep, const char *chip_name, const char *family)
     // HW test page
     funprog_if_attr[0].val = chip_name;
     funprog_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/funprog.xml", (char *)"info,notebook", funprog_if_attr, gep->shared_geepro_dir);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)iface_get_xml_path(gep->ifc), (char *)"info,notebook", funprog_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), funprog_event);
     return 0;
 }
@@ -140,7 +140,7 @@ int funprog_api(void *g, en_hw_api func, int val, void *ptr)
 	case HW_TEST : return 1;
 	// GUI
 	case HW_GINIT: return funprog_gui( GEEPRO(ptr), (const char *)"none", (const char *)"" );
-	case HW_SET_CHIP: return funprog_gui( GEEPRO(ptr), GEEPRO(ptr)->chp->chip_name, GEEPRO(ptr)->chp->chip_family );
+//	case HW_SET_CHIP: return funprog_gui( GEEPRO(ptr), GEEPRO(ptr)->chp->chip_name, GEEPRO(ptr)->chp->chip_family );
 	// iface
 	case HW_GET_DO	     : // alternative alias 
 	case HW_GET_ISP_MISO : return funprog_get_miso();

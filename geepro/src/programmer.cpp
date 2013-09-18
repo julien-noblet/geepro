@@ -1,6 +1,4 @@
-#ifndef __DRIVERS_H__
-#define __DRIVERS_H__
-/* $Revision: 1.4 $ */
+/* $Revision: 1.1.1.1 $ */
 /* geepro - Willem eprom programmer for linux
  * Copyright (C) 2006 Krzysztof Komarnicki
  * Email: krzkomar@wp.pl
@@ -21,25 +19,15 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include "../src/parport.h"
-#include "willem.h"
-#include "../src/timer.h"
-#include "hwdriver.h"
-#include "../src/iface.h"
+#include "programmer.h"
 
-#include "../src/geepro.h"
+char pgm_select_driver( geepro *gep, const char *drv_name)
+{
+    char err;
 
-#include "../gui-gtk/gui_xml.h"
+    hw_destroy( gep );
+    err = iface_pgm_select(gep->ifc, drv_name );
+    hw_gui_init( gep );
 
-#define DRIVER_NAME(ptr)	(*(char **)ptr)
-
-#define driver_register_begin 	extern "C" int driver_init(s_iface_driver_list *___ptr___){
-#define driver_register_end 	return 0; }
-#define register_api(api)	iface_driver_add(___ptr___, api, 1)
-
-
-#endif
-
+    return err;
+}

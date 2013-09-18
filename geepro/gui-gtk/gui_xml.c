@@ -26,14 +26,13 @@
 #include "gui_xml.h"
 #include "../src/error.h"
 
-//#define DEBUG(fmt, p...)	printf("|-- DEBUG --> " fmt "\n", ## p)
 #define DEBUG(fmt, p...)
 
 static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlNode *cur, gui_xml_ifattr *parm, const char *);
 
 static void gui_xml_event_default(gui_xml_ev *ev, int val, const char *sval)
 {
-    printf("{default dummy xml event handler}: widget: %i '%s' value: %i svalue: '%s'\n", ev->type, ev->id, val, sval);
+    MSG("{default dummy xml event handler}: widget: %i '%s' value: %i svalue: '%s'", ev->type, ev->id, val, sval);
 }
 
 static void gui_xml_gtk_event_handler(GtkWidget *wg, gui_xml_ev *gx)
@@ -79,13 +78,13 @@ static void gui_xml_signal_register(gui_xml *g, GtkWidget *wg, char *id, const c
     DEBUG("Register:%i, id:'%s', signal:'%s'", type, id, signal);    
 
     if(gui_xml_event_lookup(g, id, type)){
-	printf("Error: Duplicate id field '%s' for %i. Register widget event skipped.\n", id, type);
+	ERR("Duplicate id field '%s' for %i. Register widget event skipped.", id, type);
 	return;
     }
 
     /* utworzenie nowego ogniwa */
     if(!(tmp = (gui_xml_ev*)malloc(sizeof(gui_xml_ev)))){
-	printf("Error: out of memory!\n");
+	ERR("out of memory!");
 	return;
     }
 
@@ -95,7 +94,7 @@ static void gui_xml_signal_register(gui_xml *g, GtkWidget *wg, char *id, const c
     tmp->id = NULL;
     if(id){
 	if(!(tmp->id = strdup(id))){
-	    printf("Error: out of memory!\n");
+	    ERR("out of memory!");
 	    free(tmp);
 	    return;
 	}
@@ -122,7 +121,7 @@ static void gui_xml_container_add(gui_xml *g, xmlNode *cur, xmlDocPtr doc, GtkWi
     char *pos;
     
     if( !sgd ){
-	ERR("No shared_xml_dir defined!\n");
+	ERR("No shared_xml_dir defined!");
         return;    
     }
 
@@ -484,7 +483,7 @@ static void gui_xml_parse_element(gui_xml *g, GtkWidget *wg, xmlDocPtr doc, xmlN
     int n, q, i;
 
     if( !shared_geepro_dir ){
-	ERR("No shared_xml_dir defined!\n");
+	ERR("No shared_xml_dir defined!");
         return;
     }
     
@@ -547,7 +546,7 @@ static void gui_xml_parser(gui_xml *g, xmlDocPtr doc, gui_xml_ifattr *parm, cons
     GtkWidget *tmp, *lab;
 
     if( !shared_geepro_dir ){
-	ERR("No shared_xml_dir defined!\n");
+	ERR("No shared_xml_dir defined!");
         return;
     }
 
@@ -592,7 +591,7 @@ int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *pa
     xmlDocPtr doc;
 
     if( !shared_geepro_dir ){
-	ERR("No shared_xml_dir defined!\n");
+	ERR("No shared_xml_dir defined!");
         return -1;
     }
 
@@ -603,7 +602,7 @@ int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *pa
     LIBXML_TEST_VERSION
     
     if(!(ctxt = xmlNewParserCtxt())){
-	printf("Error {gui_xml.c} --> gui_xml_create(): Failed to allocate xml parser context.\n");
+	ERR("Failed to allocate xml parser context.");
 	return -1;
     };
 
@@ -613,12 +612,12 @@ int gui_xml_build(gui_xml *g, char *xml, const char *section, gui_xml_ifattr *pa
 	doc = xmlCtxtReadMemory(ctxt, xml, strlen(xml), "noname.xml", NULL, XML_PARSE_DTDVALID);
 
     if(doc == NULL){
-	printf("Error {gui_xml.c} --> gui_xml_create(): Failed to parse xml string\n");
+	ERR("Failed to parse xml string");
     } else {
 	if(ctxt->valid)
 	    gui_xml_parser(g, doc, parm, section, shared_geepro_dir);
 	else 
-	    printf("Error {gui_xml.c} --> gui_xml_create(): Failed to validate xml.\n");
+	    ERR("Failed to validate xml.");
 	xmlFreeDoc(doc);
     }
     xmlFreeParserCtxt(ctxt);
@@ -634,7 +633,7 @@ void *gui_xml_new(gui *g)
 
     g->xml = NULL;
     if(!(tmp = (gui_xml*)malloc(sizeof(gui_xml)))){
-	printf("Error {gui_xml.c} --> gui_xml_new(): out of memory.\n");
+	ERR("out of memory.");
 	return NULL;
     };
     g->xml = tmp;
@@ -652,7 +651,7 @@ void *gui_xml_new(gui *g)
 void gui_xml_register_event_func(gui_xml *g, gui_xml_event ev)
 {
     if(!ev){
-	printf("Error: gui_xml_register_event_func() ---> ev == NULL ");
+	ERR("ev == NULL ");
 	return;
     }
     g->ev = ev;
@@ -663,7 +662,7 @@ int gui_xml_trans_id(gui_xml_ev *ev, const gui_xml_lt *lt, int size_lt)
     int ret = -1, i;
 
     if(!ev){
-	printf("Error: {gui_xml.c} gui_xml_trans_id() ---> event == NULL !\n");
+	ERR("event == NULL !");
 	return -1;
     };
 
@@ -678,12 +677,12 @@ gui_xml_ev *gui_xml_set_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *i
     gui_xml_ev *event;
 
     if(!val){
-	printf("Error: {gui_xml.c} gui_xml_set_widget_value() ---> val == NULL !\n");
+	ERR("val == NULL !");
 	return NULL;
     }
 
     if(!(event = gui_xml_event_lookup(g, id, wg))){
-	printf("Error: {gui_xml.c} gui_xml_set_widget_value() ---> event == NULL !\n");
+	ERR("event == NULL !");
 	return NULL;
     };
 
@@ -706,7 +705,7 @@ void gui_xml_get_widget_value(gui_xml *g, gui_xml_ev_wg wg, const char *id, gui_
     gui_xml_ev *event;
     
     if(!(event = gui_xml_event_lookup(g, id, wg))){
-	printf("Error: {gui_xml.c} gui_xml_get_widget_value() ---> event == NULL !\n");
+	ERR("event == NULL !");
 	return;
     };
 
@@ -723,7 +722,7 @@ gui_xml_ev *gui_xml_event_lookup(gui_xml *g, const char *id, gui_xml_ev_wg type)
     gui_xml_ev *ev;
     
     if(!g){
-	printf("Error: {gui_xml.c} gui_xml_event_lookup() ---> g == NULL !\n");
+	ERR("g == NULL !");
 	return NULL;
     }
     ev = g->event;

@@ -75,7 +75,7 @@ void write_24Cxx(int dev_size, char addr_mode, char n)
     if( !(*lb & 2) ) return; // Not checked
     
     init_i2c();
-    gep->hw_set_hold( n );
+    hw_set_hold( n );
     progress_loop(i, dev_size, "Writing ...")
 	    break_if( write_byte_24Cxx(i, get_buffer(i), addr_mode) );
     // wait to end of last write cycle
@@ -92,28 +92,28 @@ void write_24Cxx(int dev_size, char addr_mode, char n)
 // Low level
 void spi_start(int voltage)
 {
-    gep->hw_set_clk(0);
-    gep->hw_set_cs(1);
-    gep->hw_set_di(1);
-    gep->hw_set_vpp(0);
-    gep->hw_delay(1000);
-    gep->hw_set_vcc( voltage ); 
-    gep->hw_sw_vcc(1);
-    gep->hw_delay(1000);
-    gep->hw_set_cs(0);        
-    gep->hw_delay(100);
+    hw_set_clk(0);
+    hw_set_cs(1);
+    hw_set_di(1);
+    hw_set_vpp(0);
+    hw_delay(1000);
+    hw_set_vcc( voltage ); 
+    hw_sw_vcc(1);
+    hw_delay(1000);
+    hw_set_cs(0);        
+    hw_delay(100);
 }
 
 void spi_stop()
 {
-    gep->hw_set_clk(0);
-    gep->hw_set_cs(1);
-    gep->hw_set_di(1);
-    gep->hw_set_vpp(0);
-    gep->hw_set_vcc( 0 ); 
-    gep->hw_delay(1000);
-    gep->hw_sw_vcc(0);
-    gep->hw_delay(1000);
+    hw_set_clk(0);
+    hw_set_cs(1);
+    hw_set_di(1);
+    hw_set_vpp(0);
+    hw_set_vcc( 0 ); 
+    hw_delay(1000);
+    hw_sw_vcc(0);
+    hw_delay(1000);
 }
 
 void spi_send_seq( int time, unsigned int bits, char *data)
@@ -121,17 +121,17 @@ void spi_send_seq( int time, unsigned int bits, char *data)
     unsigned int i;
     
     for(i = 0; i < bits; i++){
-	gep->hw_delay( time / 2);
+	hw_delay( time / 2);
 	if( (0x80 >> (i & 0x07)) & data[ i / 8 ]) // get bit
-	    gep->hw_set_di(1);
+	    hw_set_di(1);
 	else
-	    gep->hw_set_di(0);	
-	gep->hw_delay( time / 2);
-	gep->hw_set_clk(1);
-	gep->hw_delay( time );
-	gep->hw_set_clk(0);
+	    hw_set_di(0);	
+	hw_delay( time / 2);
+	hw_set_clk(1);
+	hw_delay( time );
+	hw_set_clk(0);
     }
-    gep->hw_delay( time );
+    hw_delay( time );
 }
 
 void spi_recv_seq( int time, unsigned int bits, char *data)
@@ -140,24 +140,24 @@ void spi_recv_seq( int time, unsigned int bits, char *data)
     char bit;
     
     for(i = 0; i < bits; i++){
-	gep->hw_set_clk(1);	
-	gep->hw_delay( time );
+	hw_set_clk(1);	
+	hw_delay( time );
 	bit = 0x80 >> (i & 0x07);
 	data[ i / 8] &= ~bit; // clear bit
-	if( gep->hw_get_do() ) // set bit if get '1'
+	if( hw_get_do() ) // set bit if get '1'
 	    data[ i / 8] |= bit;
-	gep->hw_set_clk(0);	
-	gep->hw_delay( time );
+	hw_set_clk(0);	
+	hw_delay( time );
     }
 }
 
 void send_cmd( char cmd )
 {
-    gep->hw_delay( 2 );
-    gep->hw_set_cs( 0 );
+    hw_delay( 2 );
+    hw_set_cs( 0 );
     spi_send_seq(2, 8, &cmd);
-    gep->hw_set_cs( 1 );    
-    gep->hw_delay( 2 );
+    hw_set_cs( 1 );    
+    hw_delay( 2 );
 }
 
 inline char get_status()
@@ -177,10 +177,10 @@ inline void write_page(char *buffer, int page_nb)
     buffer[2] = page_nb & 0xff; // LSB
     buffer[3] = 0; // no offset in page
     send_cmd( CMD_WREN ); // send Write Enable command
-    gep->hw_set_cs( 0 );        
+    hw_set_cs( 0 );        
     spi_send_seq( 2, 8 * 260, buffer);
-    gep->hw_set_cs( 1 ); // finish command       
-    gep->hw_delay( 100 );
+    hw_set_cs( 1 ); // finish command       
+    hw_delay( 100 );
 }
 
 void read_page(char *buffer, int page_nb)
@@ -190,11 +190,11 @@ void read_page(char *buffer, int page_nb)
     buffer[1] = (page_nb >> 8) & 0xff; // MSB
     buffer[2] = page_nb & 0xff; // LSB
     buffer[3] = 0; // no offset in page
-    gep->hw_set_cs( 0 );        
+    hw_set_cs( 0 );        
     spi_send_seq( 2, 8 * 4, buffer);
     spi_recv_seq( 2, 8 * 256, buffer + 4);
-    gep->hw_set_cs( 1 ); // finish command       
-    gep->hw_delay( 2 );
+    hw_set_cs( 1 ); // finish command       
+    hw_delay( 2 );
 }
 
 /**************************************************************************************/
@@ -240,19 +240,19 @@ void erase_25lcxx()
     // send command wren
     cmd[0] = CMD_WREN;
     spi_send_seq( 100, 8, cmd);
-    gep->hw_set_cs( 1 );
-    gep->hw_delay(100);
-    gep->hw_set_cs( 0 );
+    hw_set_cs( 1 );
+    hw_delay(100);
+    hw_set_cs( 0 );
     // send command erase
     cmd[0] = CMD_ERASE;
     spi_send_seq( 100, 8, cmd);
-    gep->hw_set_cs( 1 );
-    gep->hw_delay(100);
-    gep->hw_set_cs( 0 );
+    hw_set_cs( 1 );
+    hw_delay(100);
+    hw_set_cs( 0 );
     
     timeout = 0;
     progress_loop(timeout, 20, "Erasing"){
-	gep->hw_delay( 500000 );
+	hw_delay( 500000 );
 	cmd[0] = CMD_RDSR;
 	spi_send_seq( 100, 8, cmd);
 	spi_recv_seq( 10, 8, cmd);
@@ -388,10 +388,10 @@ void write_25lcxx(unsigned int dev_size)
 	// send data to chip
 	write_page( buff, page );
 	// wait for command complete
-	gep->hw_set_cs( 0 ); 
+	hw_set_cs( 0 ); 
 	timeout = 100;
 	do{
-	    gep->hw_delay( 100 );
+	    hw_delay( 100 );
 	    ch = get_status();
 	    timeout--;
 	}while( timeout && (ch & WIP));
@@ -456,7 +456,8 @@ REGISTER_FUNCTION( test, 25l4005, 25lcxx, L4005_SIZE);
 */
 REGISTER_MODULE_BEGIN(25xx)
 
-    register_chip_begin("/Serial EEPROM/25Lxx", "MX25L2005", "25Cxx", L2005_SIZE);
+    register_chip_begin("/Serial EEPROM/25Lxx", "MX25L2005", "25Cxx");
+	add_buffer("Buffer", L2005_SIZE);
 	add_action(MODULE_READ_ACTION, read_25L2005);
 	add_action(MODULE_PROG_ACTION, write_25L2005);
 	add_action(MODULE_VERIFY_ACTION, verify_25L2005);
@@ -465,7 +466,8 @@ REGISTER_MODULE_BEGIN(25xx)
 	add_action(MODULE_ERASE_ACTION, erase_25L2005);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/25Lxx", "MX25L4005", "25Cxx", L4005_SIZE);
+    register_chip_begin("/Serial EEPROM/25Lxx", "MX25L4005", "25Cxx");
+	add_buffer("Buffer", L4005_SIZE);
 	add_action(MODULE_READ_ACTION, read_25l4005);
 	add_action(MODULE_PROG_ACTION, write_25l4005);
 	add_action(MODULE_VERIFY_ACTION, verify_25l4005);

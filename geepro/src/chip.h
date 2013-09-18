@@ -82,22 +82,24 @@ struct _chip_action
     chip_action *next;
 };
 
+
 struct _chip_desc
 {
     int  chip_id;
-    char *chip_path;	/* chip path format (eg "/EPROMs"), visible later in menu */
-    char *chip_name;	/* chip name eg 2716 */
-    char *chip_family;	/* chip family name eg 27xx */
+    char *chip_path;	
+    char *chip_name;	
+    char *chip_family;	
 
-    unsigned int  dev_size;	/* allocation size for buffer */
+    unsigned int  dev_size;	
     long checksum;
-    char *buffer;		/* buffer data */
+    char *buffer;		
 
-    chip_action *actions;	/* action functions */
-    chip_act_func autostart;	/* autostart funkcji zdefiniowanej w pluginie dla danego ukladu po jego wyborze */
+    chip_action *actions;	
+    chip_act_func autostart;	
     
-    chip_desc  *next;		/* pointer to next chip structure */
+    chip_desc  *next;		
 };
+
 
 typedef void (*chip_callback)(chip_desc *, void *, void *);
 
@@ -106,7 +108,7 @@ extern void chip_init_qe(chip_plugins *plg);
 extern void chip_rmv_qe(chip_plugins *plg);
 
 /* rejestrowanie/ wyrejestrowywanie ukladów */
-extern int chip_register_chip(chip_plugins *plg, chip_desc *new_chip);
+//extern int chip_register_chip(chip_plugins *plg, chip_desc *new_chip);
 extern int chip_unregister_chip(chip_plugins *plg, char *name);
 extern chip_desc *chip_lookup_chip(chip_plugins *plg, const char *name);
 extern void chip_destroy(chip_plugins *plg);

@@ -178,7 +178,7 @@ void write_24Cxx(int dev_size, char addr_mode, char n)
     if( !(*lb & 2) ) return; // Not checked
     
     init_i2c(gep);
-    gep->hw_set_hold( n );
+    hw_set_hold( n );
     progress_loop(i, dev_size, "Writing ...")
 	    break_if( write_byte_24Cxx(i, get_buffer(i), addr_mode) );
     // wait to end of last write cycle
@@ -250,73 +250,85 @@ REGISTER_FUNCTION( verify, 24C512, 24Cxx, C512_SIZE, 1  );
 */
 REGISTER_MODULE_BEGIN(24Cxx)
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C01", "24Cxx", C01_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C01", "24Cxx");
+	add_buffer("Buffer", C01_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C01);
 	add_action(MODULE_PROG_ACTION, write_24C01);
 	add_action(MODULE_VERIFY_ACTION, verify_24C01);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C21", "24Cxx", C21_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C21", "24Cxx");
+	add_buffer("Buffer", C21_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C01);
 	add_action(MODULE_PROG_ACTION, write_24C21);
 	add_action(MODULE_VERIFY_ACTION, verify_24C01);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C02", "24Cxx", C02_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C02", "24Cxx");
+	add_buffer("Buffer", C02_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C02);
 	add_action(MODULE_PROG_ACTION, write_24C02);
 	add_action(MODULE_VERIFY_ACTION, verify_24C02);
     register_chip_end;
     
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C04", "24Cxx", C04_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C04", "24Cxx");
+	add_buffer("Buffer", C04_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C04);
 	add_action(MODULE_PROG_ACTION, write_24C04);
 	add_action(MODULE_VERIFY_ACTION, verify_24C04);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C08", "24Cxx", C08_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C08", "24Cxx");
+	add_buffer("Buffer", C08_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C08);
 	add_action(MODULE_PROG_ACTION, write_24C08);
 	add_action(MODULE_VERIFY_ACTION, verify_24C08);
     register_chip_end;
     
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C16", "24Cxx", C16_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C16", "24Cxx");
+	add_buffer("Buffer", C16_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C16);
 	add_action(MODULE_PROG_ACTION, write_24C16);
 	add_action(MODULE_VERIFY_ACTION, verify_24C16);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C32", "24Cxx", C32_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C32", "24Cxx");
+	add_buffer("Buffer", C32_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C32);
 	add_action(MODULE_PROG_ACTION, write_24C32);
 	add_action(MODULE_VERIFY_ACTION, verify_24C32);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C64", "24Cxx", C64_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C64", "24Cxx");
+	add_buffer("Buffer", C64_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C64);
 	add_action(MODULE_PROG_ACTION, write_24C64);
 	add_action(MODULE_VERIFY_ACTION, verify_24C64);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C128", "24Cxx", C128_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C128", "24Cxx");
+	add_buffer("Buffer", C128_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C128);
 	add_action(MODULE_PROG_ACTION, write_24C128);
 	add_action(MODULE_VERIFY_ACTION, verify_24C128);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C256", "24Cxx", C256_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C256", "24Cxx");
+	add_buffer("Buffer", C256_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C256);
 	add_action(MODULE_PROG_ACTION, write_24C256);
 	add_action(MODULE_VERIFY_ACTION, verify_24C256);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/24Cxx", "24C512", "24Cxx", C512_SIZE);
+    register_chip_begin("/Serial EEPROM/24Cxx", "24C512", "24Cxx");
+	add_buffer("Buffer", C512_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C512);
 	add_action(MODULE_PROG_ACTION, write_24C512);
 	add_action(MODULE_VERIFY_ACTION, verify_24C512);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/PCF85xx", "PCF8582", "24Cxx", PCF8582_SIZE);
+    register_chip_begin("/Serial EEPROM/PCF85xx", "PCF8582", "24Cxx");
+	add_buffer("Buffer", PCF8582_SIZE);
 	add_action(MODULE_READ_ACTION, read_24C02);
 	add_action(MODULE_PROG_ACTION, write_PCF_8582);
 	add_action(MODULE_VERIFY_ACTION, verify_24C02);

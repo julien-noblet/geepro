@@ -41,6 +41,7 @@
 #include "../src/checksum.h"
 #include "../src/error.h"
 #include "gui_dialog.h"
+#include "../src/programmer.h"
 
 typedef struct 
 {
@@ -57,6 +58,20 @@ struct chip_tree_
 //    void *key;
     chip_tree *next;
 };
+
+typedef struct 
+{
+    GtkWidget *wg;
+    int	counter;
+} gui_local_1;
+
+typedef struct 
+{
+    geepro *gep;
+    void *ptr;
+} gui_local_2;
+
+
 
 void gui_refresh_button(GtkWidget *, geepro *);
 static void gui_checksum_recalculate( geepro * );
@@ -90,7 +105,7 @@ void gui_action_icon_set()
 
 char gui_test_connection(geepro *gep)
 {
-    if(gep->hw_test_conn()) return 0;
+    if(hw_test_conn()) return 0;
     gui_test_hw( NULL, gep );
     gui_dialog_box(gep, "[ER][TEXT]Programmer unplugged ![/TEXT][BR]OK", NULL, NULL);
     return 1;    
@@ -141,7 +156,7 @@ void gui_stat_rfsh(geepro *gep)
     char tmp_str[40];
 
     if(gep->chp){
-	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), gep->chp->chip_name);
+	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), gep->chp->name);
 	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->device_entry),(unsigned int)gep->chp->dev_size, tmp_str);
 	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->buffer_entry),gui_bineditor_get_buffer_size(GUI_BINEDITOR(GUI(gep->gui)->bineditor)), tmp_str);
 	gui_checksum_rfsh( gep );
@@ -180,21 +195,21 @@ static void gui_load_error_msg(geepro *gep, const char *fname, const char *err)
 }
 
 // Buffer offset
-static void gui_insert_file_ranger0(GtkSpinButton *s, gui_ins_file_str *sb)
-{
-    double val = gtk_spin_button_get_value( s );
-    gtk_spin_button_set_range(GTK_SPIN_BUTTON(sb->sb1), 0, sb->size - val);
-}
+//static void gui_insert_file_ranger0(GtkSpinButton *s, gui_ins_file_str *sb)
+//{
+//    double val = gtk_spin_button_get_value( s );
+//    gtk_spin_button_set_range(GTK_SPIN_BUTTON(sb->sb1), 0, sb->size - val);
+//}
 // Bytes count
-static void gui_insert_file_ranger1(GtkSpinButton *s, gui_ins_file_str *sb)
-{
+//static void gui_insert_file_ranger1(GtkSpinButton *s, gui_ins_file_str *sb)
+//{
 //    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
 //    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
-}
+//}
 // File offset
 static void gui_insert_file_ranger2(GtkSpinButton *s, gui_ins_file_str *sb)
 {
-//    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
+///    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
 //    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
 }
 
@@ -304,14 +319,14 @@ static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
 	    lb = gtk_label_new( DLG_INS_FILE_OFFSET );
 	    gtk_grid_attach(GTK_GRID(grid), lb, 0, 2, 1, 1);
 
-	    sb.size = gep->chp->dev_size;
-	    sb.sb0 = gtk_spin_button_new_with_range(0.0, (double)gep->chp->dev_size, 1.0);
-	    gtk_grid_attach(GTK_GRID(grid), sb.sb0, 1, 0, 1, 1);
-	    g_signal_connect(G_OBJECT(sb.sb0), "value-changed", G_CALLBACK(gui_insert_file_ranger0), &sb);
-	    sb.sb1 = gtk_spin_button_new_with_range(0.0, (double)gep->chp->dev_size, 1.0);
-	    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), (double)gep->chp->dev_size);
-	    gtk_grid_attach(GTK_GRID(grid), sb.sb1, 1, 1, 1, 1);
-	    g_signal_connect(G_OBJECT(sb.sb1), "value-changed", G_CALLBACK(gui_insert_file_ranger1), &sb);
+//	    sb.size = gep->chp->dev_size;
+//	    sb.sb0 = gtk_spin_button_new_with_range(0.0, (double)gep->chp->dev_size, 1.0);
+//	    gtk_grid_attach(GTK_GRID(grid), sb.sb0, 1, 0, 1, 1);
+//	    g_signal_connect(G_OBJECT(sb.sb0), "value-changed", G_CALLBACK(gui_insert_file_ranger0), &sb);
+//	    sb.sb1 = gtk_spin_button_new_with_range(0.0, (double)gep->chp->dev_size, 1.0);
+//	    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), (double)gep->chp->dev_size);
+//	    gtk_grid_attach(GTK_GRID(grid), sb.sb1, 1, 1, 1, 1);
+//	    g_signal_connect(G_OBJECT(sb.sb1), "value-changed", G_CALLBACK(gui_insert_file_ranger1), &sb);
 	    sb.sb2 = gtk_spin_button_new_with_range(0.0, (double)flen, 1.0);
 	    gtk_grid_attach(GTK_GRID(grid), sb.sb2, 1, 2, 1, 1);
 	    g_signal_connect(G_OBJECT(sb.sb2), "value-changed", G_CALLBACK(gui_insert_file_ranger2), &sb);
@@ -529,7 +544,7 @@ static void gui_rem_bt_action(gui *g)
     g->action = NULL;
 }
 
-static int gui_add_action_list(chip_desc *desc, chip_action *act, void *ptr)
+static int gui_add_action_list(s_iface_chip *desc, s_iface_chip_action *act, void *ptr)
 {
     gui_add_bt_action((geepro*)ptr, act->name, act->tip, act->action);
     return 0;
@@ -537,9 +552,9 @@ static int gui_add_action_list(chip_desc *desc, chip_action *act, void *ptr)
 
 static int gui_add_action(geepro *gep, void *chip_str)
 {
-    int x = chip_list_action(gep->chp, gui_add_action_list, (void *)gep);
+    iface_chip_get_actions(gep->ifc->chp, F_IFACE_ACTION(gui_add_action_list), gep);
     gtk_widget_show_all(GTK_WIDGET(GUI(gep->gui)->toolbox));
-    return x;
+    return 0;
 }
 
 static void gui_chip_free(geepro *gep)
@@ -555,32 +570,20 @@ static void gui_chip_free(geepro *gep)
 
 static void gui_chip_select(geepro *gep, const char *name)
 {
-    chip_desc *tmp, *old_chp;
-    chip_plugins *plg = gep->ifc->plugins;
-
     // select new chip as current
-    if(!(tmp = chip_lookup_chip(plg, name))){
+    if( iface_chip_select(gep->ifc->chp, name) ){
 	gui_dialog_box( gep,
-	    "[ER][TEXT]Missing chip description in queue.[/TEXT][BR] OK "
+	    "[ER][TEXT]Cannot set selected chip '%s'.[/TEXT][BR] OK ", name
 	);
 	return;
     }
-    old_chp = gep->chp;
-    gep->chp = tmp; 
+    hw_set_chip( gep );
 
-    // sets programmer for given chip, test if progammer can handle it
-    if(gep->hw_set_chip(gep) < 0){
-	gui_dialog_box( gep,
-	    "[ER][TEXT]Chip %s not supported by current programmer.[/TEXT][BR] OK ",
-	    tmp->chip_name
-	);
-	gep->chp = old_chp;
-	return;
-    }
 
     // destroy menu, free buffer memory 
-    gui_chip_free(gep);
-    gep->chp = tmp; 
+    gui_chip_free( gep );
+
+    gep->chp = gep->ifc->chp->selected; 
 
     // allocate memory for buffer
     if(buffer_alloc(gep->chp)){
@@ -592,7 +595,7 @@ static void gui_chip_select(geepro *gep, const char *name)
     }
 
     // actualize buffer object
-    gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, tmp->dev_size, (unsigned char*)tmp->buffer);
+    gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, gep->chp->dev_size, (unsigned char*)gep->chp->buffer);
 
     // add action buttons to menu    
     gui_add_action(gep, gep->chp );
@@ -627,16 +630,25 @@ static void gui_about(GtkWidget *wg, geepro *gep)
     
 }
 
-static void gui_chip_callback(chip_desc *chp, geepro *gep, chip_tree **tree)
+static void gui_chip_callback(s_iface_chip *chip, s_iface_chip_list *it, gui_local_2 *loc)
 {
-    gui_chip_tree_add( gep, chp->chip_path, chp->chip_name, tree);
+    geepro *gep = loc->gep;
+    chip_tree **tree = (chip_tree **)loc->ptr;
+    
+    if( !it || !gep ) return;
+    if( !it->path || !it->name ) return;
+    if( !gep->gui ) return;
+    gui_chip_tree_add( gep, (char *)it->path, (char*)it->name, tree);
 }
 
-static void gui_device_menu_create(chip_plugins *plg, GtkWidget *wg, geepro *gep)
+static void gui_chip_tree_build(geepro *gep)
 {
-    chip_tree *tree = NULL;    
+    chip_tree *tree = NULL;
+    gui_local_2  local;
 
-    chip_menu_create( plg, CHIP_CALLBACK(gui_chip_callback), (void *)gep, (void *)&tree);
+    local.gep = gep;
+    local.ptr = &tree;
+    iface_chip_get_list(gep->ifc->chp, F_IFACE_CHIP(gui_chip_callback), &local);
     gui_chip_tree_view_create( gep, tree);
     gui_chip_tree_view_free( tree );
 }
@@ -672,6 +684,7 @@ static GtkWidget *gui_iface_list(geepro *gep)
 static void gui_add_iface_combox(geepro *gep)
 {    
     GtkWidget *tmp = gui_iface_list(gep);
+
     gtk_box_pack_start(GTK_BOX(GUI(gep->gui)->table), tmp, FALSE, FALSE, 5);
     GUI(gep->gui)->iface = tmp;
 
@@ -680,60 +693,48 @@ static void gui_add_iface_combox(geepro *gep)
 
 static void gui_iface_rescan(geepro *gep)
 {
-    gtk_widget_destroy( GUI(gep->gui)->iface );
+    if( GUI(gep->gui)->iface ){
+	gtk_widget_destroy( GUI(gep->gui)->iface );
+	GUI(gep->gui)->iface = NULL;
+    }
     gui_add_iface_combox( gep );
 }
 
 static void gui_prog_sel(GtkWidget *wg, geepro *gep)
 {
-    char tmp[256];
     char *name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(wg));
-    iface_prg_api api;    
 
     if(!name) return;
-    if(!(api = iface_get_func(gep->ifc, name))){
-	gui_error_box(NULL,MISSING_PROG_PLUGIN);
-	gtk_combo_box_set_active(GTK_COMBO_BOX(wg), gep->ifc->prog_sel);
-	return;
-    }
-    gep->ifc->prog_sel = gtk_combo_box_get_active(GTK_COMBO_BOX(wg));
-    /* usuniecie listy interfejsów*/
+    // remove old driver
     gtk_widget_destroy(GUI(gep->gui)->iface);
-    gep->hw_destroy(gep);
-    gep->ifc->hwd= api;
-    gep->ifc->cl = gep->hw_get_iface();
-    /* utworzenie wyboru interfaców */
-    gui_add_iface_combox(gep);
-    /* usuniecie menu */
+    GUI(gep->gui)->iface = NULL;
+    // remove old menu
     gui_xml_destroy(GUI(gep->gui)->xml);    
-    /* wywolanie gui dla programatora */
-    gep->hw_gui_init(gep);
-    /* inicjowanie portu, trzeba wysłac sygnał do interfejsu, ze został zmieniony i wymusiś zainicjowanie */
-    g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->iface), "changed");    
-    sprintf(tmp,"%i", gtk_combo_box_get_active(GTK_COMBO_BOX(wg)));
-    if(GUI(gep->gui)->gui_run) store_set(gep->store, IFACE_LAST_SELECTED_PRG_KEY, tmp);
-    // rescan suported ports
-    iface_renew( gep->ifc );
-    iface_device_select_stored( gep->ifc->dev ); // improvisation
+    pgm_select_driver(gep, name); // select new driver
     gui_iface_rescan( gep );
     gui_test_hw( NULL, gep );
 }
 
-
-static void gui_build_prg_menu(iface *ifc, char *name, GtkWidget *wg)
+static void gui_build_prg_menu(s_iface_driver *ifc, s_iface_driver_list *it, gui_local_1 *tmp)
 {
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(wg), name);
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(tmp->wg), it->name);
+    if( !ifc->selected ) return;
+    if( !ifc->selected->name ) return;
+    if( !strcmp(it->name, ifc->selected->name) ){
+	gtk_combo_box_set_active(GTK_COMBO_BOX(tmp->wg), tmp->counter);
+    }
+    tmp->counter++;
 }
 
 static GtkWidget *gui_prog_list(geepro *gep)
 {
     GtkWidget *combox;
+    gui_local_1 tmp;
 
     combox = gtk_combo_box_text_new();
-
-    iface_list_prg(gep->ifc, (iface_prg_func)gui_build_prg_menu, GTK_COMBO_BOX(combox));
-
-    gtk_combo_box_set_active(GTK_COMBO_BOX(combox), gep->ifc->prog_sel);
+    tmp.wg = combox;
+    tmp.counter = 0;
+    iface_driver_get_list(gep->ifc->drv, (f_iface_driver_callback)gui_build_prg_menu, &tmp);
     g_signal_connect(G_OBJECT(combox), "changed", G_CALLBACK(gui_prog_sel), gep);
     GUI(gep->gui)->prog_combox = combox;
 
@@ -840,6 +841,7 @@ void gui_setup_chip_selection_tree(geepro *gep, GtkWidget *wg )
     GtkTreeModel *model;
 
     view = gtk_tree_view_new();
+
     gtk_tree_view_set_headers_visible( GTK_TREE_VIEW( view ), FALSE );
     gtk_tree_view_set_enable_tree_lines( GTK_TREE_VIEW( view ), TRUE );
     gtk_tree_view_insert_column_with_attributes( GTK_TREE_VIEW( view ), -1, CHIP_SELECTION, gtk_cell_renderer_text_new(), "text", 0, NULL);
@@ -848,7 +850,6 @@ void gui_setup_chip_selection_tree(geepro *gep, GtkWidget *wg )
     gtk_tree_view_set_model( GTK_TREE_VIEW( view ), model);        
     g_object_unref( model );
     GUI(gep->gui)->chip_select_store = gtk_tree_view_get_model( GTK_TREE_VIEW( view ) );
-
     g_signal_connect( G_OBJECT( gtk_tree_view_get_selection(GTK_TREE_VIEW( view))), "changed", G_CALLBACK( gui_chip_tree_selected ), gep);
     gtk_container_add(GTK_CONTAINER( wg ), view);
 }
@@ -870,7 +871,7 @@ static void gui_test_hw(GtkWidget *wg, geepro *gep)
     char old;
     if( !gep->ifc || gep->action);
     old = gep->plug;
-    gep->plug = gep->hw_test_conn();
+    gep->plug = hw_test_conn();
     if( old != gep->plug) 
 	gui_set_plug( gep );
 }
@@ -879,7 +880,7 @@ static gboolean gui_test_cyclic_hw(geepro *gep)
 {
     if( !gep->ifc || gep->action ) return TRUE;
     iface_device_event( gep->ifc->dev );
-    if( !gep->hw_test_continue() ) return TRUE;
+    if( !hw_test_continue() ) return TRUE;
     gui_test_hw( NULL, gep);
     return TRUE;
 }
@@ -958,13 +959,13 @@ void gui_run(geepro *gep)
     gui_menu_setup( gep );
     gui_action_icon_set();
     gtk_notebook_set_current_page(GTK_NOTEBOOK(GUI(gep->gui)->notebook), 0);
-    gui_device_menu_create(gep->ifc->plugins, GUI(gep->gui)->mb_dev, gep);
+    gui_chip_tree_build( gep );
 
     GUI(gep->gui)->gui_run = 1;
     gtk_widget_show_all(GUI(gep->gui)->wmain);    
 
     // It is hack for proper work of gtk_file_chooser() 
-    gui_dialog_box(gep, "[IF][TEXT]Annoying popup\n Hack for gtk_file_chooser_new() not crash.[/TEXT][BR]OK", NULL, NULL);    
+//    gui_dialog_box(gep, "[IF][TEXT]Annoying popup\n Hack for gtk_file_chooser_new() not crash.[/TEXT][BR]OK", NULL, NULL);    
 
     /* inicjowanie domyślnego plugina sterownika programatora */
     g_signal_emit_by_name(G_OBJECT(GUI(gep->gui)->prog_combox), "changed");
@@ -1546,7 +1547,6 @@ static void gui_chip_tree_view_free( chip_tree *tree )
 static void gui_chip_tree_view_create_node(geepro *gep, chip_tree *tree, GtkTreeStore *ts, GtkTreeIter *it)
 {
     GtkTreeIter iter;    
-
     for( ;tree; tree = tree->next ){
 	gtk_tree_store_append(ts, &iter, it);
 	gtk_tree_store_set( ts, &iter, 0, tree->name, 1, !tree->branch_flag, -1);	
@@ -1560,7 +1560,6 @@ static void gui_chip_tree_view_create_node(geepro *gep, chip_tree *tree, GtkTree
 static void gui_chip_tree_view_create(geepro *gep, chip_tree *tree)
 {
     GtkTreeStore *ts;
-
     ts = GTK_TREE_STORE(GUI(gep->gui)->chip_select_store);
     gui_chip_tree_view_create_node(gep, tree, ts, NULL);    
 }

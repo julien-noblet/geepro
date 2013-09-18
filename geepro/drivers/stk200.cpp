@@ -171,7 +171,7 @@ static int stk200_gui(geepro *gep, const char *chip_name, const char *family)
     // HW test page
     stk200_if_attr[0].val = chip_name;
     stk200_if_attr[2].val = family;
-    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)"file://./drivers/stk200.xml", (char *)"info,notebook", stk200_if_attr, gep->shared_geepro_dir);
+    gui_xml_build(GUI_XML(GUI(gep->gui)->xml), (char *)iface_get_xml_path(gep->ifc), (char *)"info,notebook", stk200_if_attr, gep->shared_geepro_dir);
     gui_xml_register_event_func(GUI_XML(GUI(gep->gui)->xml), stk200_event);
     return 0;
 }
@@ -190,7 +190,7 @@ int stk200_api(void *g, en_hw_api func, int val, void *ptr)
 	case HW_TEST_CONTINUE : return 1;
 	// GUI
 	case HW_GINIT: return stk200_gui( GEEPRO(ptr), (const char *)"none", (const char *)"" );
-	case HW_SET_CHIP: return stk200_gui( GEEPRO(ptr), GEEPRO(ptr)->chp->chip_name, GEEPRO(ptr)->chp->chip_family );
+//	case HW_SET_CHIP: return stk200_gui( GEEPRO(ptr), GEEPRO(ptr)->chp->chip_name, GEEPRO(ptr)->chp->chip_family );
 	// iface
 	case HW_GET_DO	     : // alternative alias 
 	case HW_GET_ISP_MISO : return stk200_get_miso();

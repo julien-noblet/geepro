@@ -38,37 +38,37 @@ MODULE_IMPLEMENTATION
 #define TT			50	// cycle time
 #define TIMEOUT			500
 
-#define WE_HUB( state )		gep->hw_set_ce( state )
-#define OE_HUB( state )		gep->hw_set_oe( state )
-#define RC_HUB( state )		gep->hw_sw_vcc( state ) // as RC signal in adapter
-#define VCC_HUB( state )	gep->hw_sw_vpp( state ) // as VCC in adapter
+#define WE_HUB( state )		hw_set_ce( state )
+#define OE_HUB( state )		hw_set_oe( state )
+#define RC_HUB( state )		hw_sw_vcc( state ) // as RC signal in adapter
+#define VCC_HUB( state )	hw_sw_vpp( state ) // as VCC in adapter
 
 /********************************* LOW LEVEL OPERATIONS ******************************************************/
 void init_HUB()
 {
-    gep->hw_set_vcc( 500  );
-    gep->hw_set_vpp( 1200 );
+    hw_set_vcc( 500  );
+    hw_set_vpp( 1200 );
     WE_HUB( 1 );
     OE_HUB( 1 );    
     RC_HUB( 1 );    
     VCC_HUB( 1 );    
-    gep->hw_ms_delay(200); // time for reset
+    hw_ms_delay(200); // time for reset
 }
 
 void write_data_HUB( unsigned int addr, unsigned char data)
 {
-    gep->hw_set_addr( addr & 0x7ff );
-    gep->hw_us_delay( TT );    
+    hw_set_addr( addr & 0x7ff );
+    hw_us_delay( TT );    
     RC_HUB( 0 );	 // store low 11 bits of address
     OE_HUB( 1 );    
     WE_HUB( 0 );
-    gep->hw_us_delay( TT );
-    gep->hw_set_addr( (addr >> 11) & 0x7ff );
+    hw_us_delay( TT );
+    hw_set_addr( (addr >> 11) & 0x7ff );
     RC_HUB( 1 );	 // store high 11 bits of address    
-    gep->hw_set_data( data ); // set data
-    gep->hw_us_delay( TT );
+    hw_set_data( data ); // set data
+    hw_us_delay( TT );
     WE_HUB( 1 );	// store data
-    gep->hw_us_delay( TT );
+    hw_us_delay( TT );
 }
 
 unsigned char read_data_HUB( unsigned int addr)
@@ -78,16 +78,16 @@ unsigned char read_data_HUB( unsigned int addr)
     RC_HUB( 1 );	
     OE_HUB( 1 );    
     WE_HUB( 1 );
-    gep->hw_set_addr( addr & 0x7ff ); // low 11 bits
+    hw_set_addr( addr & 0x7ff ); // low 11 bits
     RC_HUB( 0 );	 	 // store low 11 bits of address
-    gep->hw_us_delay( TT );
-    gep->hw_set_addr( (addr >> 11) & 0x7ff );
+    hw_us_delay( TT );
+    hw_set_addr( (addr >> 11) & 0x7ff );
     RC_HUB( 1 );	 // store high 11 bits of address    
-    gep->hw_us_delay( TT );
+    hw_us_delay( TT );
     OE_HUB( 0 );    
-    gep->hw_us_delay( TT );
-    data = gep->hw_get_data();
-    gep->hw_us_delay( TT );
+    hw_us_delay( TT );
+    data = hw_get_data();
+    hw_us_delay( TT );
     OE_HUB( 1 );        
     return data;
 }
@@ -95,11 +95,11 @@ unsigned char read_data_HUB( unsigned int addr)
 unsigned char poll_data_HUB()
 {
     unsigned char data;
-    gep->hw_us_delay( TT );
+    hw_us_delay( TT );
     OE_HUB( 0 );    
-    gep->hw_us_delay( TT );
-    data = gep->hw_get_data();
-    gep->hw_us_delay( TT );
+    hw_us_delay( TT );
+    data = hw_get_data();
+    hw_us_delay( TT );
     OE_HUB( 1 );        
     return data;
 }
@@ -216,10 +216,10 @@ void lock_HUB()
     write_data_HUB( 0x2aaa, 0x55);    
     write_data_HUB( 0x5555, 0x40);
 
-    progress_loop(i, 50, "Chip erasing...") gep->hw_ms_delay(20);
+    progress_loop(i, 50, "Chip erasing...") hw_ms_delay(20);
 
     finish_action();        
-    gep->hw_ms_delay(200);
+    hw_ms_delay(200);
 
     show_dialog("[IF][TEXT]BOOT BLOCK LOCKED[/TEXT][BR]OK","");
 }
@@ -246,9 +246,9 @@ void erase_HUB(unsigned int dev_size, unsigned int start)
     write_data_HUB( 0x5555, 0xaa);    
     write_data_HUB( 0x2aaa, 0x55);    
     write_data_HUB( 0x5555, 0x10);    
-    progress_loop(i, 100, "Chip erasing...") gep->hw_ms_delay(20);
+    progress_loop(i, 100, "Chip erasing...") hw_ms_delay(20);
     finish_action();        
-    gep->hw_ms_delay(200);
+    hw_ms_delay(200);
     
     if( (*lb & 1) && !ERROR_VAL) 
 	test_blank_HUB( dev_size, start);
@@ -259,7 +259,7 @@ char wait_HUB( unsigned char d, char mode) // 0 for polling, 1 for toggle
     int i;
     for(i = 0; i < TIMEOUT; i++){
 	if((poll_data_HUB() & 0x80) == (d & 0x80)) return 0;
-	gep->hw_us_delay(5 * TT);
+	hw_us_delay(5 * TT);
     }
     return 1;
 }
@@ -291,7 +291,7 @@ void prog_HUB(unsigned int dev_size, unsigned int start)
     }
     
     finish_action();        
-    gep->hw_ms_delay(200);
+    hw_ms_delay(200);
     
     if( (*lb & 1) && !ERROR_VAL) 
 	verify_HUB( dev_size, start);
@@ -330,7 +330,8 @@ REGISTER_FUNCTION( prog,  LF008, HUB, LF008_SIZE, LF008_START);
 
 REGISTER_MODULE_BEGIN(HUB_HUB)
 
-    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF002, SST49LF020", "HUB_LPC", LF002_SIZE);
+    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF002, SST49LF020", "HUB_LPC");
+	add_buffer("Buffer", LF002_SIZE);
 	add_action(MODULE_READ_ACTION, read_LF002);
 	add_action(MODULE_VERIFY_ACTION, verify_LF002);
 	add_action(MODULE_TEST_ACTION, test_blank_LF002);
@@ -339,7 +340,8 @@ REGISTER_MODULE_BEGIN(HUB_HUB)
 	add_action(MODULE_PROG_ACTION, prog_LF002);
     register_chip_end;
 
-    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF003", "HUB_LPC", LF003_SIZE);
+    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF003", "HUB_LPC");
+	add_buffer("Buffer", LF003_SIZE);
 	add_action(MODULE_READ_ACTION, read_LF003);
 	add_action(MODULE_VERIFY_ACTION, verify_LF003);
 	add_action(MODULE_TEST_ACTION, test_blank_LF003);
@@ -348,7 +350,8 @@ REGISTER_MODULE_BEGIN(HUB_HUB)
 	add_action(MODULE_PROG_ACTION, prog_LF003);
     register_chip_end;
 
-    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF004, SST49LF040", "HUB_LPC", LF004_SIZE);
+    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF004, SST49LF040", "HUB_LPC");
+	add_buffer("Buffer", LF004_SIZE);
 	add_action(MODULE_READ_ACTION, read_LF004);
 	add_action(MODULE_VERIFY_ACTION, verify_LF004);
 	add_action(MODULE_TEST_ACTION, test_blank_LF004);
@@ -357,7 +360,8 @@ REGISTER_MODULE_BEGIN(HUB_HUB)
 	add_action(MODULE_PROG_ACTION, prog_LF004);
     register_chip_end;
 
-    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF008", "HUB_LPC", LF008_SIZE);
+    register_chip_begin("/HUB LPC/SST49LFxxx", "SST49LF008", "HUB_LPC");
+	add_buffer("Buffer", LF008_SIZE);
 	add_action(MODULE_READ_ACTION, read_LF008);
 	add_action(MODULE_VERIFY_ACTION, verify_LF008);
 	add_action(MODULE_TEST_ACTION, test_blank_LF008);
@@ -366,7 +370,8 @@ REGISTER_MODULE_BEGIN(HUB_HUB)
 	add_action(MODULE_PROG_ACTION, prog_LF008);
     register_chip_end;
 
-    register_chip_begin("/HUB LPC/W49Vxxx", "W49V002", "HUB_LPC", LF002_SIZE);
+    register_chip_begin("/HUB LPC/W49Vxxx", "W49V002", "HUB_LPC");
+	add_buffer("Buffer", LF002_SIZE);
 	add_action(MODULE_READ_ACTION, read_LF002);
 	add_action(MODULE_VERIFY_ACTION, verify_LF002);
 	add_action(MODULE_TEST_ACTION, test_blank_LF002);

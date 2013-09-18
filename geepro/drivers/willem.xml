@@ -395,7 +395,7 @@
 	    </table>
 
 	</frame>
-	<frame label="Pamiec 93Cxx" pos="1,2, 1,2" align="50, 50" filly="true" fillx="true" spacex="5">
+	<frame label="93Cxx memory" pos="1,2, 1,2" align="50, 50" filly="true" fillx="true" spacex="5">
 	    <table xhomo="true" yhomo="true">
 		<chbutton id="pin_cs" pos="0,1, 0,1" label="1-CS" fillx="true" spacex="5" />
 		<chbutton id="pin_clk" pos="0,1, 1,2" label="2-CLK" fillx="true" spacex="5" />

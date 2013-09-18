@@ -266,7 +266,9 @@ REGISTER_FUNCTION(erase, 93C86_8,  93Cxx, SIZE_93C86, 8,  ADDR_SIZE_93C86);
 REGISTER_FUNCTION(erase, 93C86_16, 93Cxx, SIZE_93C86, 16, ADDR_SIZE_93C86);
 
 REGISTER_MODULE_BEGIN( 93Cxx )
-    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C06", "93Cxx", SIZE_93C06);
+
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C06", "93Cxx");
+	add_buffer("Buffer", SIZE_93C06);
 	add_action(MODULE_READ_ACTION, read_93C06);
 	add_action(MODULE_VERIFY_ACTION, verify_93C06);
 	add_action(MODULE_TEST_ACTION, test_blank_93C06);
@@ -274,7 +276,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C06);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C13", "93Cxx", SIZE_93C13);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C13", "93Cxx");
+	add_buffer("Buffer", SIZE_93C13);
 	add_action(MODULE_READ_ACTION, read_93C13);
 	add_action(MODULE_VERIFY_ACTION, verify_93C13);
 	add_action(MODULE_TEST_ACTION, test_blank_93C13);
@@ -282,7 +285,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C13);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C46 (8bit)", "93Cxx", SIZE_93C46);
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C46 (8bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C46);
 	add_action(MODULE_READ_ACTION, read_93C46_8);
 	add_action(MODULE_VERIFY_ACTION, verify_93C46_8);
 	add_action(MODULE_TEST_ACTION, test_blank_93C46_8);
@@ -290,7 +294,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C46_8);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C14", "93Cxx", SIZE_93C14);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C14", "93Cxx");
+	add_buffer("Buffer", SIZE_93C14);
 	add_action(MODULE_READ_ACTION, read_93C14);
 	add_action(MODULE_VERIFY_ACTION, verify_93C14);
 	add_action(MODULE_TEST_ACTION, test_blank_93C14);
@@ -298,7 +303,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C14);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C46 (16bit)", "93Cxx", SIZE_93C46);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C46 (16bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C46);
 	add_action(MODULE_READ_ACTION, read_93C46_16);
 	add_action(MODULE_VERIFY_ACTION, verify_93C46_16);
 	add_action(MODULE_TEST_ACTION, test_blank_93C46_16);
@@ -306,7 +312,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C46_16);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C56 (8bit)", "93Cxx", SIZE_93C56);
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C56 (8bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C56);
 	add_action(MODULE_READ_ACTION, read_93C56_8);
 	add_action(MODULE_VERIFY_ACTION, verify_93C56_8);
 	add_action(MODULE_TEST_ACTION, test_blank_93C56_8);
@@ -314,7 +321,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C56_8);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C56 (16bit)", "93Cxx", SIZE_93C56);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C56 (16bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C56);
 	add_action(MODULE_READ_ACTION, read_93C56_16);
 	add_action(MODULE_VERIFY_ACTION, verify_93C56_16);
 	add_action(MODULE_TEST_ACTION, test_blank_93C56_16);
@@ -322,7 +330,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C56_16);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C66 (8bit)", "93Cxx", SIZE_93C66);
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C66 (8bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C66);
 	add_action(MODULE_READ_ACTION, read_93C66_8);
 	add_action(MODULE_VERIFY_ACTION, verify_93C66_8);
 	add_action(MODULE_TEST_ACTION, test_blank_93C66_8);
@@ -330,7 +339,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C66_8);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C66 (16bit)", "93Cxx", SIZE_93C66);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C66 (16bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C66);
 	add_action(MODULE_READ_ACTION, read_93C66_16);
 	add_action(MODULE_VERIFY_ACTION, verify_93C66_16);
 	add_action(MODULE_TEST_ACTION, test_blank_93C66_16);
@@ -338,7 +348,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C66_16);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C76 (8bit)", "93Cxx", SIZE_93C76);
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C76 (8bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C76);
 	add_action(MODULE_READ_ACTION, read_93C76_8);
 	add_action(MODULE_VERIFY_ACTION, verify_93C76_8);
 	add_action(MODULE_TEST_ACTION, test_blank_93C76_8);
@@ -346,7 +357,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C76_8);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C76 (16bit)", "93Cxx", SIZE_93C76);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C76 (16bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C76);
 	add_action(MODULE_READ_ACTION, read_93C76_16);
 	add_action(MODULE_VERIFY_ACTION, verify_93C76_16);
 	add_action(MODULE_TEST_ACTION, test_blank_93C76_16);
@@ -354,7 +366,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C76_16);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C86 (8bit)", "93Cxx", SIZE_93C86);
+    register_chip_begin("/Serial EEPROM/93Cxx/8bit", "93C86 (8bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C86);
 	add_action(MODULE_READ_ACTION, read_93C86_8);
 	add_action(MODULE_VERIFY_ACTION, verify_93C86_8);
 	add_action(MODULE_TEST_ACTION, test_blank_93C86_8);
@@ -362,7 +375,8 @@ REGISTER_MODULE_BEGIN( 93Cxx )
 	add_action(MODULE_ERASE_ACTION, erase_93C86_8);
     register_chip_end;
 
-    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C86 (16bit)", "93Cxx", SIZE_93C86);
+    register_chip_begin("/Serial EEPROM/93Cxx/16bit", "93C86 (16bit)", "93Cxx");
+	add_buffer("Buffer", SIZE_93C86);
 	add_action(MODULE_READ_ACTION, read_93C86_16);
 	add_action(MODULE_VERIFY_ACTION, verify_93C86_16);
 	add_action(MODULE_TEST_ACTION, test_blank_93C86_16);

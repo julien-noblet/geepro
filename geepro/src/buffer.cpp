@@ -29,7 +29,7 @@ extern "C" {
 #include "main.h"
 #include "../gui-gtk/gui.h"
 
-int buffer_alloc(chip_desc *chip)
+int buffer_alloc(s_iface_chip_list *chip)
 {	
     if(!chip){
 	printf("{buffer.c} buffer_alloc() --> Error: chip == NULL\n");
@@ -55,7 +55,7 @@ int buffer_alloc(chip_desc *chip)
     return 0;
 }
 
-void buffer_free(chip_desc *chip)
+void buffer_free(s_iface_chip_list *chip)
 {
     if(!chip){
 	printf("{buffer.c} buffer_alloc() --> Error: chip == NULL\n");
