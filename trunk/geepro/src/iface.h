@@ -27,19 +27,22 @@
 #include "gep_usb.h"
 #include "cfp.h"
 #include "parport.h"
+#include "serial.h"
 #include "storings.h"
 
 #define IFACE_DRIVER_INIT_FUNC_NAME	"driver_init"
 #define IFACE_MODULE_INIT_FUNC_NAME	"init_module"
+#define DRIVER_FILE_EXTENSION		"driver"
+#define CHIP_PLUGIN_FILE_EXTENSION	"chip"
 
 // variable name in program storings
 #define IFACE_LAST_SELECTED_IFC_KEY	"LAST_SELECTED_INTERFACE" 
 #define IFACE_LAST_SELECTED_PRG_KEY	"LAST_SELECTED_PROGRAMMER" 
+#define IFACE_LAST_SELECTED_CHIP_KEY	"LAST_SELECTED_CHIP"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 typedef int (*iface_regf)(void *ifc);
 
@@ -54,28 +57,42 @@ enum{
     IFACE_PS2,
 };
 
-typedef int  (*iface_prg_api)(void *, en_hw_api func, int arg, void *ptr);
+#define IFACE_F_DEVICE_NOTIFY( x ) ((f_iface_device_notify)x)
+#define IFACE_F_DEVICE( x )	((f_iface_device)x)
+#define IFACE_CHIP( x )		((s_iface_chip *)x)
+#define F_IFACE_CHIP( x )	((f_iface_chip)x)
+#define F_IFACE_ACTION( x ) 	((f_iface_action)x)
+
+typedef struct iface_ iface;
 typedef struct iface_qe iface_qe;
 typedef struct iface_prg iface_prg;
 typedef struct iface_driver iface_driver;
+typedef struct s_iface_device_ s_iface_device;
+typedef struct s_iface_chip_action_ s_iface_chip_action;
 
-struct iface_prg
-{
-    char *name;		/* nazwa sterownika programatora */
-    iface_prg_api api;  /* wskaźnik na funkcję api  */
-    char on;		/* właczony driver, czy nie [ pojedynczy plugin może zawierać wiele sterowników ]*/
-    iface_prg *next;    
-};
-
-struct iface_driver
-{
-    void *phandler;	/* uchwyt pluginu */    
-    iface_regf fc;      /* funkcja rejestrująca */
-    iface_driver *next;
-};
-
-
+typedef struct s_iface_driver_list_ s_iface_driver_list;
 typedef struct s_iface_devlist_ s_iface_devlist;
+typedef struct s_iface_calls_list_ s_iface_calls_list;
+typedef struct s_iface_driver_ s_iface_driver;
+typedef struct s_iface_chip_list_ s_iface_chip_list;
+typedef struct s_iface_chip_ s_iface_chip;
+
+//typedef void (*iface_cb)(iface *, int cl, char *name, char *dev, void *ptr);
+//typedef int  (*iface_cb_fltr)(iface *, const char *path, const char *name, const char *cwd);
+
+typedef void (*iface_prg_func)(iface *, char *name, void *ptr);
+typedef void (*f_iface_device_notify)(s_iface_device *, s_iface_devlist *, void *);
+typedef int  (*iface_prg_api)(void *, en_hw_api func, int arg, void *ptr);
+
+typedef void (*f_iface_device)(s_iface_device *, s_iface_devlist *, void *, int iter);
+typedef void (*f_iface_driver_callback)(s_iface_driver *, s_iface_driver_list *, void *);
+typedef void (*f_iface_chip)(s_iface_chip *, s_iface_chip_list *, void *);
+typedef void (*f_iface_action)(s_iface_chip *, s_iface_chip_action *, void *);
+typedef int (*f_iface_chip_action)(void *);
+/*
+    Interface to device
+*/
+
 struct s_iface_devlist_
 {
     void *handler;	// pointer to interface data stucture
@@ -85,21 +102,12 @@ struct s_iface_devlist_
     s_iface_devlist *next;
 };
 
-typedef struct s_iface_device_ s_iface_device;
-
-typedef void (*f_iface_device)(s_iface_device *, s_iface_devlist *, void *, int iter);
-#define IFACE_F_DEVICE( x )	((f_iface_device)x)
-
-typedef void (*f_iface_device_notify)(s_iface_device *, s_iface_devlist *, void *);
-#define IFACE_F_DEVICE_NOTIFY( x ) ((f_iface_device_notify)x)
-typedef struct iface_ iface;
-
 struct s_iface_device_
 {
     s_iface_devlist	*selected;	// currently selected device
     s_iface_devlist	*list;		// actual list of all supported available devices by given programmer
     s_parport		*lpt;		// all lpt ports available in system
-//    s_serial *com;			// all RS232 ports available in system
+    s_serial 		*com;		// all RS232 ports available in system
     s_usb		*usb;		// all USB devices supported by geepro
     f_iface_device_notify notify;	// notify callback
     void		*notify_ptr;	// notify callback parameter
@@ -108,55 +116,178 @@ struct s_iface_device_
     int			prog_class;	// programmer driver interface class
 };
 
-struct iface_
+/*
+    Driver
+*/
+
+struct s_iface_driver_list_ 
 {
-    char *plg_list;	/* lista plików pluginów, które mogą być załadowane */
-    char *mod_list;	/* lista plików modułów, które mogą być załadowane */
-    chip_plugins *plugins;
-    iface_prg *prg;     /* lista driverów */
-    iface_driver *plg;  /* lista plików pluginów do obsługi programatora */
-/* wybrany programator: */
-    int prog_sel;
-    int cl;		/* klasa urządzenia */
-    void *gep;		/* wskaźnik na główną strukturę danych */
-    hw_driver_type hwd;
-// new api
-    s_iface_device *dev; // lists of interfaces and all connected devices
+    char *driver_path;	// driver file path
+    char *name;		// driver name
+    char *xml;		// full path to xml configuration file
+    char *chips;	// supported chip plugins
+    char iface_class;	// driver interface class IFACE_LPT | IFACE_RS232 | IFACE_USB
+    hw_driver_type api; // callback to driver
+    long flags;         // 1 - enabled, 0 - disabled
+    s_iface_driver *parent;
+    s_iface_driver_list *next; // next link
+};
+/*
+struct s_iface_calls_list_
+{
+    int id;			// function identifier
+    char *func_name;		// function name
+    char *description;
+    char *format;		// parameter format
+    s_iface_calls_list *next;	// next link
+};
+*/
+struct  s_iface_driver_
+{    
+    char *xml_file_path;		// path to xml files
+    char *drv_file_path;		// path to driver plugins files
+    void *dl_handle;			// handle to selected driver plugin
+    store_str *store;
+    s_iface_driver_list *selected;	// currently selected driver
+    s_iface_driver_list *list;    	// list of all available drivers
+//    s_iface_calls_list  *calls;	// function calls list of driver
 };
 
+/*
+    Chip
+*/
 
-typedef void (*iface_cb)(iface *, int cl, char *name, char *dev, void *ptr);
-typedef void (*iface_prg_func)(iface *, char *name, void *ptr);
-typedef int  (*iface_cb_fltr)(iface *, const char *path, const char *name, const char *cwd);
+struct s_iface_chip_action_
+{
+    const char *name;			// Action name
+    const char *tip;			// Action tip help
+    f_iface_chip_action action;		// callback
+    s_iface_chip_action *next;		// next link
+};
 
-/* ogólne */
-extern iface *iface_init(store_str *st); /* inicjuje kolejkę interfejsów */
-extern void iface_destroy(iface *ifc); /* zwalnia pamięć przydzieloną przez ifc */ 
-extern int  iface_load_config(iface *ifc, void *);
+struct s_iface_chip_list_
+{
+    const char	*name;			// chip name
+    const char 	*family;		// chip family
+    const char 	*path;			// menu path
+//    s_buffer	*buffer;		// memory buffers
+//--->> Temporary
+    unsigned int dev_size;
+    long	checksum;
+    char	*buffer;
+//--<<
+    void	*handler;		// plugin handler
+    s_iface_chip_action *action;	// actions queue
+    f_iface_chip_action autostart;	// autostart function
+    s_iface_chip_list *next;
+};
 
-/* wybór drivera programatora */
-extern int  iface_prg_add(iface *ifc, iface_prg_api, char on); /* dodanie programatora do kolejki */
+struct s_iface_chip_ 
+{
+    void		*relay;		// temporary variable for relay dl_handler
+    char		*allowable;	// list of allowable plugins, separated by colon
+    s_cfp		*cfg;		// configuration file
+    store_str		*store;		// storings 
+    s_iface_chip_list	*selected;	// selected and supported by programmer chip from list
+    s_iface_chip_list	*list;		// list of all chips
+};
+
+/*
+    Main structure
+*/
+
+struct iface_
+{	
+    s_iface_chip   *chp;	// list of available chip procedures
+    s_iface_driver *drv;	// list of available programmer drivers
+    s_iface_device *dev;	// list of interfaces and all connected devices
+};
+
+/* ============================================> FUNCTIONS <============================================ */
+
+/* wybór drivera programatora - do usuniecia*/
 extern void iface_list_prg(iface *ifc, iface_prg_func , void *ptr);
 extern iface_prg_api iface_get_func(iface *ifc, char *name);
-extern void iface_rmv_prg(iface *ifc); /* usuwa wszystkie sterowniki z kolejki */
 
-/* lista pluginów */
-extern int  iface_make_driver_list(iface *ifc, const char *path, const char *ext); /* tworzy listę pluginów z danej lokalizacji */
-extern int  iface_add_driver(iface *ifc, void *phandler, iface_regf); /* dodaje plugin */
-extern void iface_rmv_driver(iface *ifc); /* usuwa wszystkie pluginy z kolejki */
-extern int  iface_dir_fltr(iface *ifc, const char *lst, const char *path, const char *ext, iface_cb_fltr);
-extern void iface_driver_allow(iface *ifc, const char *lst); /* lst jest postaci: "plugin1:plugin2:plugin3 .... "*/
 
-/* lista modułów */
-extern void iface_load_drivers(iface *ifc);
-extern void iface_make_modules_list( iface *ifc, const char *path, const char *ext);
-extern void iface_module_allow(iface *ifc, const char *lst); /* lst jest postaci: "plugin1:plugin2:plugin3 .... "*/
-extern void iface_rmv_modules(iface *);
+/*
+	Load/Unload drivers like willem, galblaster, etc    
+*/
+extern iface *iface_init(store_str *st, s_cfp *); /* inicjuje kolejkę interfejsów */
+extern void iface_destroy(iface *ifc); /* zwalnia pamięć przydzieloną przez ifc */ 
+
+char iface_pgm_select(iface *, const char *pgm_name); 
 
 void iface_renew(iface *);
 
-/****************************************************** NEW API ********************************************************************************/
+const char *iface_get_chip_name(iface *);   // return selected chip name or NULL
+const char *iface_get_chip_family(iface *); // return selected chip family or NULL
+const char *iface_get_chip_path(iface *); // return selected chip path or NULL
+
+extern int  iface_driver_add(s_iface_driver_list *ifc, iface_prg_api, char on); /* dodanie programatora do kolejki */
+
 /*
+    Constructor
+      Input:
+	ifc - pointer on s_iface_driver pointer structure
+	str - pointer to storings 
+      Return:
+        0 - success
+        < 0 - error
+*/
+//char iface_driver_init(s_iface_driver **ifc, store_str *str, s_cfp *cfg);
+
+/*
+    Destroy iface_driver. Frees all allocated resources.
+    Input:
+	ifc - s_iface_driver structure
+    Return:
+	None
+*/
+//void iface_driver_exit( s_iface_driver *ifc);
+
+/*
+    Rescan all driver plugins. Renew list.
+*/
+void iface_driver_scan(s_iface_driver *ifc);
+
+/*
+    Invokes callback for each element of driver list.
+    Input:
+	ifc - s_iface_driver structure    
+	callback - callback function
+	ptr - user pointer for callback
+    Return:
+	None
+*/
+void iface_driver_get_list(s_iface_driver *ifc, f_iface_driver_callback callback, void *ptr);
+
+/*
+    Select driver from list.    
+	Input:
+	ifc - s_iface_driver structure    	    
+	driver_name - name of driver
+    Return:
+	0 - if driver found, otherwise < 0
+*/
+char iface_driver_select(s_iface_driver *ifc, const char *driver_name);
+
+/*
+    Return selected driver callback.
+    Input:
+	ifc - s_iface_driver structure    	    	
+    Return:
+	Success: driver's api callback
+	Fail   : internal error func
+*/
+hw_driver_type iface_driver_call(s_iface_driver *ifc);
+
+/*
+    
+*/
+//char iface_driver_configure(s_iface_driver *ifc, s_cfp *cfg);
+
+/******************************************************************
     Functions to manipulate interfaces like LPT, USB, RS232 etc.
 
 */
@@ -193,17 +324,17 @@ char iface_device_connect_notify( s_iface_device *ifc, f_iface_device_notify, vo
     ifc -> pointer to s_iface_device struct pointer.
     return 0 on success
 */
-char iface_device_init( s_iface_device **ifc, store_str *store);
+//char iface_device_init( s_iface_device **ifc, store_str *store);
 
 /*
     Destructor
 */
-void iface_device_destroy( s_iface_device *ifc );
+//void iface_device_destroy( s_iface_device *ifc );
 
 /*
     Load configuration of the devices 
 */
-void iface_device_configure( s_iface_device *ifc, s_cfp *cfg);
+//void iface_device_configure( s_iface_device *ifc, s_cfp *cfg);
 
 /*
     iface_device event - should be invoked periodicaly
@@ -230,10 +361,104 @@ char iface_device_select_stored(s_iface_device *ifc);
 /*
     Return key name for storing 
 */
-const char *iface_device_get_key_stored(s_iface_device *ifc);
+//const char *iface_device_get_key_stored(s_iface_device *ifc);
 
 
-void iface_prog_select_store( iface *);
+//void iface_prog_select_store( iface *);
+
+const char *iface_get_xml_path( iface *);
+
+/************************************************************************************************************************************************/
+/*
+    Create chip structure.
+    Input:
+	chip - pointer to pointer of chip structure - pointer structure have to be initialized as NULL
+	s - storings structure
+	cfg - cfp structure to config file
+    Return:
+	0 - success
+	less than zero - error
+*/
+char iface_chip_init( s_iface_chip **chip, store_str *s, s_cfp *cfg );
+
+/*
+    Free all resources alocated and stored in chip structure
+    Input:
+	chip - pointer to s_iface_chip structure
+    Return:
+	None
+*/
+void iface_chip_exit( s_iface_chip *chip );
+
+/*
+    Register chip. cd is internaly copied
+    Input:
+	chip - pointer to s_iface_chip structure
+	cd   - chip descriptor
+    Return:
+	None
+*/
+void iface_chip_register(s_iface_chip *chip, s_iface_chip_list *cd);
+
+/*
+    Select chip from list.
+    Input:
+	chip - pointer to s_iface_chip structure
+	chip_name - chip name to find on list
+    Return:
+	0 - success    
+	less than 0 - error
+*/
+char iface_chip_select(s_iface_chip *chip, const char *chip_name);
+
+/*
+    List whole content of chip list
+    Input:
+	chip - pointer to s_iface_chip structure
+	f    - callback 
+	ptr  - parameter for callback
+    Return:	
+	None
+*/
+void iface_chip_get_list(s_iface_chip *chip, f_iface_chip f, void *ptr);
+
+/*
+    List all posible actions for selected chip
+    Input:
+	chip - pointer to s_iface_chip structure
+	f    - callback 
+	ptr  - parameter for callback
+    Return:	
+	None
+*/
+void iface_chip_get_actions(s_iface_chip *chip, f_iface_action f, void *ptr);
+
+/******************************************************************************************************************************/
+
+void iface_chip_list_init(s_iface_chip_list *cd, const char *path, const char *chip_name, const char *family);
+
+/*
+    Register callback action function
+    Input:
+	cd   - chip descriptor
+	bt_name - button identifier
+	tip  - tip text
+	f    - callback for action	
+    Return:
+	None
+
+*/
+void iface_chip_list_add_action(s_iface_chip_list *cd, const char *bt_name, const char *tip, f_iface_chip_action f);
+
+/*
+    Add buffer to chip.
+    Input:
+	cd   - chip descriptor
+	buffer_name - name to identify buffer
+	size - buffer bytes count    
+*/
+void iface_chip_list_add_buffer(s_iface_chip_list *cd, const char *buffer_name, int size);
+
 
 #ifdef __cplusplus
 } // extern "C"

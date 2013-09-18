@@ -62,14 +62,14 @@ extern void error_printf(s_error *err, const char *fmt, ... ); // prints formatt
 
 #define E_T_MALLOC			"malloc() == NULL"
 #define MALLOC_ERR			"malloc!\n"
-#define _ERROR(err, err_class, format, x...)  error_printf(err, "EC[%i]{%i}:%s:%s()->"format"\n", err_class, __LINE__, __FILE__,__FUNCTION__, ##x)
+#define _ERROR(err, err_class, format, x...)  error_printf(err, "[ERR]{%i-%i}:%s:%s()->"format"\n", err_class, __LINE__, __FILE__,__FUNCTION__, ##x)
 #define _ERR( err, fmt, x...)		ERROR( err, E_ERR, fmt, ##x)
 #define _MSG( err, fmt, x...)		ERROR( err, E_MSG, fmt, ##x)
 #define _WRN( err, fmt, x...)		ERROR( err, E_WRN, fmt, ##x)
 #define _CRIT( err, fmt, x...)		ERROR( err, E_CRIT, fmt, ##x)
 #define EMALLOC( err )			CRIT( err, E_T_MALLOC);
 
-#define ERROR(err_class, format, x...)  printf("EC[%i]{%i}:%s:%s()->"format"\n", err_class, __LINE__, __FILE__,__FUNCTION__, ##x)
+#define ERROR(err_class, format, x...)  printf("[ERR]{%i-%i}:%s:%s()->"format"\n", err_class, __LINE__, __FILE__,__FUNCTION__, ##x)
 #define MESSAGE(format, x...)   printf("[MSG] "format"\n", ##x)
 #define ERR( fmt, x...)		ERROR( E_ERR, fmt, ##x)
 #define MSG( fmt, x...)		MESSAGE( fmt, ##x)

@@ -33,7 +33,7 @@ MODULE_IMPLEMENTATION
 
 static void send_m52749(char func, char val)
 {
-    gep->hw_ms_delay( 5 );
+    hw_ms_delay( 5 );
     start_i2c(gep);    
     send_byte_i2c(gep, M52749FP_ADDR );
     if( wait_ack_i2c(gep) ) throw "Chip select address";
@@ -42,7 +42,7 @@ static void send_m52749(char func, char val)
     send_byte_i2c(gep, val ); // value
     if( wait_ack_i2c(gep) ) throw "Value set";
     stop_i2c(gep);        
-    gep->hw_ms_delay( 5 );
+    hw_ms_delay( 5 );
 }
 
 static void m52749_value_set(int val, void *ptr, int ipar)
@@ -95,7 +95,7 @@ void write_m52749_()
 // ------------------------------------------------------------- M62392 --------
 static void send_m62392(char ch, char val)
 {
-    gep->hw_ms_delay( 5 );
+    hw_ms_delay( 5 );
     start_i2c(gep);    
     send_byte_i2c(gep,  0x90 | ((get_buffer( 0 ) && 0x07) << 1) ); 
     if( wait_ack_i2c(gep) ) throw "Chip select address";
@@ -104,7 +104,7 @@ static void send_m62392(char ch, char val)
     send_byte_i2c(gep, val ); // value
     if( wait_ack_i2c(gep) ) throw "Value set";
     stop_i2c(gep);        
-    gep->hw_ms_delay( 5 );
+    hw_ms_delay( 5 );
 }
 
 static void m62392_value_set(int val, void *ptr, int ipar)
@@ -151,11 +151,13 @@ REGISTER_FUNCTION( write, m62392fp, m62392_);
 
 REGISTER_MODULE_BEGIN(I2c_peripheral)
 
-    register_chip_begin("/I2c peripheral/Video", "M52749FP", "I2C_PERIPHERAL", M52749FP_SIZE);
+    register_chip_begin("/I2c peripheral/Video", "M52749FP", "I2C_PERIPHERAL" );
+	add_buffer("Registers", M52749FP_SIZE);
 	add_action(MODULE_PROG_ACTION, write_m52749fp);
     register_chip_end;
 
-    register_chip_begin("/I2c peripheral/DAC", "M62392FP", "I2C_PERIPHERAL", M62392FP_SIZE);
+    register_chip_begin("/I2c peripheral/DAC", "M62392FP", "I2C_PERIPHERAL");
+	add_buffer("Registers", M62392FP_SIZE);
 	add_action(MODULE_PROG_ACTION, write_m62392fp);
     register_chip_end;
 

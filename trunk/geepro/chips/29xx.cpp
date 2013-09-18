@@ -26,33 +26,33 @@ MODULE_IMPLEMENTATION
 
 static void init_flash5V()
 {
-    gep->hw_set_ce(1);
-    gep->hw_set_oe(1);
-    gep->hw_set_we(1);
-    gep->hw_set_vcc(500);
-    gep->hw_sw_vcc(1);
-    gep->hw_ms_delay(200);
+    hw_set_ce(1);
+    hw_set_oe(1);
+    hw_set_we(1);
+    hw_set_vcc(500);
+    hw_sw_vcc(1);
+    hw_ms_delay(200);
 }
 
 static void read_data_init_flash()
 {
-    gep->hw_set_ce(0);
-    gep->hw_set_oe(0);
-    gep->hw_set_we(1);
+    hw_set_ce(0);
+    hw_set_oe(0);
+    hw_set_we(1);
 }
 
 static char read_data_flash(int addr)
 {
-    gep->hw_set_addr( addr );
-    gep->hw_us_delay(1);
-    return gep->hw_get_data();
+    hw_set_addr( addr );
+    hw_us_delay(1);
+    return hw_get_data();
 }
 
 static void read_flash29C(int dev_size, int range)
 {
     int addr;
     init_flash5V();
-    gep->hw_set_addr_range( range );
+    hw_set_addr_range( range );
     read_data_init_flash();
     progress_loop( addr, dev_size, "Reading...")
 	put_buffer( addr, read_data_flash(addr) );
@@ -66,7 +66,7 @@ static void verify_flash29C(int dev_size, int range)
     unsigned char rdata = 0, bdata = 0, tries = 0;
     
     init_flash5V();
-    gep->hw_set_addr_range( range );
+    hw_set_addr_range( range );
     read_data_init_flash();
     progress_loop( addr, dev_size, "Verify..."){
 	rdata = read_data_flash( addr );
@@ -93,7 +93,7 @@ static void test_blank_flash29C(int dev_size, int range)
     int addr;
     unsigned char rdata = 0;
     init_flash5V();
-    gep->hw_set_addr_range( range );
+    hw_set_addr_range( range );
     read_data_init_flash();
     progress_loop( addr, dev_size, "Reading..."){
 	rdata = read_data_flash( addr );
@@ -108,15 +108,15 @@ static void test_blank_flash29C(int dev_size, int range)
 
 void load_byte( int addr, char data )
 {
-    gep->hw_set_oe(1); 
-    gep->hw_set_we(1);    
-    gep->hw_set_ce(0); // ignore in willem
-    gep->hw_set_addr( addr );
-    gep->hw_set_we(0);  // latch address on falling edge
-    gep->hw_set_data( data );
-    gep->hw_set_we(1);  // latch data on rising edge
-    gep->hw_set_ce(1); // ignore in willem
-    gep->hw_us_delay(200);
+    hw_set_oe(1); 
+    hw_set_we(1);    
+    hw_set_ce(0); // ignore in willem
+    hw_set_addr( addr );
+    hw_set_we(0);  // latch address on falling edge
+    hw_set_data( data );
+    hw_set_we(1);  // latch data on rising edge
+    hw_set_ce(1); // ignore in willem
+    hw_us_delay(200);
 }
 
 
@@ -125,7 +125,7 @@ static void send_cmd_flash29C( char cmd )
     load_byte( 0x5555, 0xAA );
     load_byte( 0x2AAA, 0x55 );
     load_byte( 0x5555, cmd  );
-    gep->hw_ms_delay( 10 );
+    hw_ms_delay( 10 );
 }
 
 static void sign_flash29C()
@@ -156,26 +156,18 @@ REGISTER_FUNCTION( verify,	29EE020, flash29C, SIZE_256K, RANGE_256K );
 REGISTER_FUNCTION( test_blank,	29EE020, flash29C, SIZE_256K, RANGE_256K );
 REGISTER_FUNCTION( sign,	29EE020, flash29C);
 
-/*
-    register_chip_begin("/EEPROM 29EExx", "SST29EE010", "29x010", SIZE_29EE010);
-	add_action(MODULE_READ_ACTION, read_29EE010);
-	add_action(MODULE_VERIFY_ACTION, verify_29EE010);
-	add_action(MODULE_TEST_BLANK_ACTION, test_blank_29EE010);
-	add_action(MODULE_SIGN_ACTION, sign_29EE010);
-//	add_action(MODULE_ERASE_ACTION, erase_29EE010);
-//	add_action(MODULE_WRITE_ACTION, write_29EE010);
-    register_chip_end;
-*/
-
 REGISTER_MODULE_BEGIN( 29xx )
-    register_chip_begin("/Flash 29Cxxx", "AT29C256", "29Cxx", SIZE_32K);
+
+    register_chip_begin("/Flash 29Cxxx", "AT29C256", "29Cxx");
+	add_buffer("Buffer", SIZE_32K);
 	add_action(MODULE_READ_ACTION, read_29C256);
 	add_action(MODULE_VERIFY_ACTION, verify_29C256);
 	add_action(MODULE_TEST_BLANK_ACTION, test_blank_29C256);
 	add_action(MODULE_SIGN_ACTION, sign_29C256);
     register_chip_end;
 
-    register_chip_begin("/Flash 29EExxx", "SST29EE020", "29x010", SIZE_256K);
+    register_chip_begin("/Flash 29EExxx", "SST29EE020", "29x010");
+	add_buffer("Buffer", SIZE_256K);
 	add_action(MODULE_READ_ACTION, read_29EE020);
 	add_action(MODULE_VERIFY_ACTION, verify_29EE020);
 	add_action(MODULE_TEST_BLANK_ACTION, test_blank_29EE020);

@@ -55,7 +55,7 @@ char read_byte_2716( int addr )
     char data;
     set_address( addr );
     oe(0, 1);
-    data = gep->hw_get_data();
+    data = hw_get_data();
     oe(1, 1);
     return data;
 }
@@ -122,9 +122,9 @@ void write_byte_2716(int addr, char data)
 {
     oe(1, 1);
     set_address( addr );
-    gep->hw_delay(100);
+    hw_delay(100);
     set_data(data);    
-    gep->hw_delay(100);
+    hw_delay(100);
     ce(1, 50000); // positive program pulse 50ms
     ce(0, 1000); 
 }
@@ -150,7 +150,7 @@ void prog_2716_(int size)
 	if(test_2716_(size, 0, 1)) return;
 
     start_action(0, 0);
-    gep->hw_sw_vpp(1);
+    hw_sw_vpp(1);
     progress_loop(addr, size, "Writing data"){
         tries = 0;
 	do{
@@ -181,15 +181,15 @@ void write_byte_2732(int addr, char data)
 {
     oe(0, 1);
     ce(1, 100);
-    gep->hw_sw_vpp(1);
-    gep->hw_delay( 100 );
+    hw_sw_vpp(1);
+    hw_delay( 100 );
     set_address( addr );
     set_data(data);    
-    gep->hw_delay( 5 );
-    gep->hw_delay( 100 );
+    hw_delay( 5 );
+    hw_delay( 100 );
     ce(0, 50000);
     ce(1, 5);
-    gep->hw_sw_vpp(0);   
+    hw_sw_vpp(0);   
     ce(0, 1);
     oe(1, 100); 
 }
@@ -200,7 +200,7 @@ void write_eprom(int addr, char data, int time, char ce_pgm)
     oe(1, 10);
     set_address( addr );
     set_data(data);    
-    gep->hw_delay( 2 ); 	// data and address valid, oe = 1, PGM = 1
+    hw_delay( 2 ); 	// data and address valid, oe = 1, PGM = 1
     if( ce_pgm ){
 	ce(0, time);	// ce = 0
 	ce(1, 100);	// ce = 1
@@ -214,16 +214,16 @@ char read_eprom(int addr, char oe_vpp)
 {
     char data;
     set_address(addr);
-    gep->hw_delay(5); // tPHQX + tQXGL
+    hw_delay(5); // tPHQX + tQXGL
     oe(0, 5);
     if(oe_vpp){
-        gep->hw_sw_vpp(0);
+        hw_sw_vpp(0);
         ce(0, 1);
     }
-    data = gep->hw_get_data();
+    data = hw_get_data();
     if(oe_vpp){
       ce(1, 1);
-      gep->hw_sw_vpp(1);
+      hw_sw_vpp(1);
     }
     oe(1, 2);
     return data;
@@ -251,12 +251,12 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
     if(!(( x == 1) || (x == 2) || (x == 4))) return; // missing algorithm choice
     if( *lb & 0x08 )	// test blank
 	if(test_2716_(size, !ce_pgm, 1)) return;
-    if( !ce_pgm ) gep->hw_pragma( PRAGMA_CE_EQ_PGM ); // if set, ignoring ce() command for programmers like willem, PROG() will be CE
+    if( !ce_pgm ) hw_pragma( PRAGMA_CE_EQ_PGM ); // if set, ignoring ce() command for programmers like willem, PROG() will be CE
     ce(ce_pgm, 10);
     pgm(1, 10 );
-    gep->hw_set_vcc( 6 );
-    gep->hw_sw_vcc(1);
-    gep->hw_sw_vpp( 1 );
+    hw_set_vcc( 6 );
+    hw_sw_vcc(1);
+    hw_sw_vpp( 1 );
     progress_loop(addr, size, "Writing data"){
 	wdata = get_buffer( addr );	
 	if(wdata != 0xff){
@@ -286,8 +286,8 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
 	    rdata = read_eprom( addr, oe_vpp );
 	break_if( rdata != wdata );
     }    
-    gep->hw_sw_vpp(0);
-    gep->hw_sw_vcc(0);    
+    hw_sw_vpp(0);
+    hw_sw_vcc(0);    
     set_address(0);
     set_data(0);
     if(rdata != wdata ){
@@ -298,12 +298,12 @@ void prog_eprom(int size, char ce_pgm, char oe_vpp)
 	    to_hex(wdata, 1), to_hex(wdata, 0)
 	);    
 	show_message(0, (rdata == wdata) ? "[IF][TEXT]Chip program OK.[/TEXT][BR]OK" : text, NULL, NULL);
-	gep->hw_pragma( 0 );
+	hw_pragma( 0 );
 	return;
     }
     if( *lb & 0x10 )
 	verify_2716_( size, !ce_pgm );
-    gep->hw_pragma( 0 );
+    hw_pragma( 0 );
 }
 
 /*********************************************************************************************************/
@@ -383,118 +383,138 @@ REGISTER_FUNCTION( prog,   27C322, eprom, SIZE_27C322, 1, 1 );
 
 /********************************************************************************************/
 REGISTER_MODULE_BEGIN( 27xx )
-/* 24 PIN EPROM */
-    register_chip_begin("/EPROM/24 pin", "2716", "2716", SIZE_2716);
+
+// 24 PIN EPROM 
+    register_chip_begin("/EPROM/24 pin", "2716", "2716");
+	add_buffer("Buffer", SIZE_2716 );
 	add_action(MODULE_READ_ACTION, read_2716);
 	add_action(MODULE_PROG_ACTION, prog_2716);
 	add_action(MODULE_VERIFY_ACTION, verify_2716);
 	add_action(MODULE_TEST_ACTION, test_2716);
     register_chip_end;
-    register_chip_begin("/EPROM/24 pin", "2732", "2732", SIZE_2732);
+    register_chip_begin("/EPROM/24 pin", "2732", "2732");
+	add_buffer("Buffer", SIZE_2732 );
 	add_action(MODULE_READ_ACTION, read_2732);
 	add_action(MODULE_PROG_ACTION, prog_2732);
 	add_action(MODULE_VERIFY_ACTION, verify_2732);
 	add_action(MODULE_TEST_ACTION, test_2732);
     register_chip_end;
-/* 28 PIN EPROM */
-    register_chip_begin("/EPROM/28 pin", "2764", "2764_128", SIZE_2764);
+// 28 PIN EPROM 
+    register_chip_begin("/EPROM/28 pin", "2764", "2764_128");
+	add_buffer("Buffer", SIZE_2764 );
 	add_action(MODULE_READ_ACTION, read_2764);
 	add_action(MODULE_PROG_ACTION, prog_2764);
 	add_action(MODULE_VERIFY_ACTION, verify_2764);
 	add_action(MODULE_TEST_ACTION, test_2764);
     register_chip_end;
-    register_chip_begin("/EPROM/28 pin", "27128", "2764_128", SIZE_27128);
+    register_chip_begin("/EPROM/28 pin", "27128", "2764_128");
+	add_buffer("Buffer", SIZE_27128 );
 	add_action(MODULE_READ_ACTION, read_27128);
 	add_action(MODULE_PROG_ACTION, prog_27128);
 	add_action(MODULE_VERIFY_ACTION, verify_27128);
 	add_action(MODULE_TEST_ACTION, test_27128);
     register_chip_end;
-    register_chip_begin("/EPROM/28 pin", "27256", "27256", SIZE_27256);
+    register_chip_begin("/EPROM/28 pin", "27256", "27256");
+	add_buffer("Buffer", SIZE_27256 );
 	add_action(MODULE_READ_ACTION, read_27256);
 	add_action(MODULE_PROG_ACTION, prog_27256);
 	add_action(MODULE_VERIFY_ACTION, verify_27256);
 	add_action(MODULE_TEST_ACTION, test_27256);
     register_chip_end;
-    register_chip_begin("/EPROM/28 pin", "27512", "27512", SIZE_27512);
+    register_chip_begin("/EPROM/28 pin", "27512", "27512");
+	add_buffer("Buffer", SIZE_27512 );
 	add_action(MODULE_READ_ACTION, read_27512);
 	add_action(MODULE_PROG_ACTION, prog_27512);
 	add_action(MODULE_VERIFY_ACTION, verify_27512);
 	add_action(MODULE_TEST_ACTION, test_27512);
     register_chip_end;
-//    register_chip_begin("/EPROM Electrically Erasable/Winbond", "W27x512", "27512", SIZE_27512);
+//    register_chip_begin("/EPROM Electrically Erasable/Winbond", "W27x512", "27512");
+//	add_buffer("Buffer", SIZE_27512 );
 //	add_action(MODULE_READ_ACTION, read_27512);
 //	add_action(MODULE_VERIFY_ACTION, verify_27512);
 //	add_action(MODULE_TEST_ACTION, test_27512);
 //	add_action(MODULE_ERASE_ACTION, test_27512);
 //	add_action(MODULE_PROG_ACTION, erase_27512);
 //    register_chip_end;
-/* 32 PIN EPROM */
-    register_chip_begin("/EPROM/32 pin", "27C010,27C1000,27C1001", "27C010", SIZE_27C010);
+// 32 PIN EPROM 
+    register_chip_begin("/EPROM/32 pin", "27C010,27C1000,27C1001", "27C010");
+	add_buffer("Buffer", SIZE_27C010 );
 	add_action(MODULE_READ_ACTION, read_27C010);
 	add_action(MODULE_PROG_ACTION, prog_27C010);
 	add_action(MODULE_VERIFY_ACTION, verify_27C010);
 	add_action(MODULE_TEST_ACTION, test_27C010);
     register_chip_end;
-    register_chip_begin("/EPROM/32 pin", "27C020,27C2000,27C2001", "27C010", SIZE_27C020);
+    register_chip_begin("/EPROM/32 pin", "27C020,27C2000,27C2001", "27C010");
+	add_buffer("Buffer", SIZE_27C020 );
 	add_action(MODULE_READ_ACTION, read_27C020);
 	add_action(MODULE_PROG_ACTION, prog_27C020);
 	add_action(MODULE_VERIFY_ACTION, verify_27C020);
 	add_action(MODULE_TEST_ACTION, test_27C020);
     register_chip_end;
-    register_chip_begin("/EPROM/32 pin", "27C040,27C4000,27C4001", "27C040", SIZE_27C040);
+    register_chip_begin("/EPROM/32 pin", "27C040,27C4000,27C4001", "27C040");
+	add_buffer("Buffer", SIZE_27C040 );
 	add_action(MODULE_READ_ACTION, read_27C040);
 	add_action(MODULE_PROG_ACTION, prog_27C040);
 	add_action(MODULE_VERIFY_ACTION, verify_27C040);
 	add_action(MODULE_TEST_ACTION, test_27C040);
     register_chip_end;
-    register_chip_begin("/EPROM/32 pin", "27C080,27C8000,27C8001", "27C080", SIZE_27C080);
+    register_chip_begin("/EPROM/32 pin", "27C080,27C8000,27C8001", "27C080");
+	add_buffer("Buffer", SIZE_27C080 );
 	add_action(MODULE_READ_ACTION, read_27C080);
 	add_action(MODULE_PROG_ACTION, prog_27C080);
 	add_action(MODULE_VERIFY_ACTION, verify_27C080);
 	add_action(MODULE_TEST_ACTION, test_27C080);
     register_chip_end;
-/* 40 PIN 16bit EPROM */
-    register_chip_begin("/EPROM/40 pin", "27C1024,27C210", "27C1024", SIZE_27C1024);
+// 40 PIN 16bit EPROM 
+    register_chip_begin("/EPROM/40 pin", "27C1024,27C210", "27C1024");
+	add_buffer("Buffer", SIZE_27C1024 );
 	add_action(MODULE_READ_ACTION, read_27C010);
 	add_action(MODULE_PROG_ACTION, prog_27C010);
 	add_action(MODULE_VERIFY_ACTION, verify_27C010);
 	add_action(MODULE_TEST_ACTION, test_27C010);
     register_chip_end;
-    register_chip_begin("/EPROM/40 pin", "27C2048,27C220", "27C1024", SIZE_27C2048);
+    register_chip_begin("/EPROM/40 pin", "27C2048,27C220", "27C1024");
+	add_buffer("Buffer", SIZE_27C2048 );
 	add_action(MODULE_READ_ACTION, read_27C020);
 	add_action(MODULE_PROG_ACTION, prog_27C020);
 	add_action(MODULE_VERIFY_ACTION, verify_27C020);
 	add_action(MODULE_TEST_ACTION, test_27C020);
     register_chip_end;
-    register_chip_begin("/EPROM/40 pin", "27C4096,27C240,27C4002,27C042", "27C4096", SIZE_27C4096);
+    register_chip_begin("/EPROM/40 pin", "27C4096,27C240,27C4002,27C042", "27C4096");
+	add_buffer("Buffer", SIZE_27C4096 );
 	add_action(MODULE_READ_ACTION, read_27C040);
 	add_action(MODULE_PROG_ACTION, prog_27C040);
 	add_action(MODULE_VERIFY_ACTION, verify_27C040);
 	add_action(MODULE_TEST_ACTION, test_27C040);
     register_chip_end;
-/* 42 PIN 16bit EPROM */
-    register_chip_begin("/EPROM/42 pin", "27C400", "27C400", SIZE_27C400);
+// 42 PIN 16bit EPROM 
+    register_chip_begin("/EPROM/42 pin", "27C400", "27C400");
+	add_buffer("Buffer", SIZE_27C400 );
 	add_action(MODULE_READ_ACTION, read_27C400);
 	add_action(MODULE_PROG_ACTION, prog_27C400);
 	add_action(MODULE_VERIFY_ACTION, verify_27C400);
 	add_action(MODULE_TEST_ACTION, test_27C400);
     register_chip_end;
-    register_chip_begin("/EPROM/42 pin", "27C800", "27C400", SIZE_27C800);
+    register_chip_begin("/EPROM/42 pin", "27C800", "27C400");
+	add_buffer("Buffer", SIZE_27C800 );
 	add_action(MODULE_READ_ACTION, read_27C800);
 	add_action(MODULE_PROG_ACTION, prog_27C800);
 	add_action(MODULE_VERIFY_ACTION, verify_27C800);
 	add_action(MODULE_TEST_ACTION, test_27C800);
     register_chip_end;
-    register_chip_begin("/EPROM/42 pin", "27C160", "27C400", SIZE_27C160);
+    register_chip_begin("/EPROM/42 pin", "27C160", "27C400");
+	add_buffer("Buffer", SIZE_27C160 );
 	add_action(MODULE_READ_ACTION, read_27C160);
 	add_action(MODULE_PROG_ACTION, prog_27C160);
 	add_action(MODULE_VERIFY_ACTION, verify_27C160);
 	add_action(MODULE_TEST_ACTION, test_27C160);
     register_chip_end;
-    register_chip_begin("/EPROM/42 pin", "27C322", "27C322", SIZE_27C322);
+    register_chip_begin("/EPROM/42 pin", "27C322", "27C322");
+	add_buffer("Buffer", SIZE_27C322 );
 	add_action(MODULE_READ_ACTION, read_27C322);
 	add_action(MODULE_PROG_ACTION, prog_27C322);
 	add_action(MODULE_VERIFY_ACTION, verify_27C322);
 	add_action(MODULE_TEST_ACTION, test_27C322);
     register_chip_end;
+
 REGISTER_MODULE_END

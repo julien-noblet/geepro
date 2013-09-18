@@ -31,18 +31,18 @@ MODULE_IMPLEMENTATION
 REG_FUNC_BEGIN(read_474)
     int addr;
 
-    gep->hw_sw_vpp(0);
-    gep->hw_sw_vcc(1);
-    gep->hw_set_addr(0);
-    gep->hw_set_data(0);
-    gep->hw_delay(1000);
+    hw_sw_vpp(0);
+    hw_sw_vcc(1);
+    hw_set_addr(0);
+    hw_set_data(0);
+    hw_delay(1000);
     progress_loop(addr, SIZE_PROM_474, "Reading..."){
-	gep->hw_set_oe(1);
-	gep->hw_set_ce(1);
-	gep->hw_set_addr(addr | ADDR_MASK_474);	
-	gep->hw_delay(200);
-	buffer_write(___geep___,addr,gep->hw_get_data());
-	gep->hw_delay(200);
+	hw_set_oe(1);
+	hw_set_ce(1);
+	hw_set_addr(addr | ADDR_MASK_474);	
+	hw_delay(200);
+	buffer_write(___geep___,addr,hw_get_data());
+	hw_delay(200);
     }
     finish_action();
 REG_FUNC_END
@@ -50,42 +50,46 @@ REG_FUNC_END
 REG_FUNC_BEGIN(verify_474)
     int addr;
 
-    gep->hw_sw_vpp(0);
-    gep->hw_sw_vcc(1);
-    gep->hw_set_addr(0);
-    gep->hw_set_data(0);
-    gep->hw_delay(1000);
+    hw_sw_vpp(0);
+    hw_sw_vcc(1);
+    hw_set_addr(0);
+    hw_set_data(0);
+    hw_delay(1000);
     progress_loop(addr, SIZE_PROM_474, "Veryfying..."){
-	gep->hw_set_oe(1);
-	gep->hw_set_ce(1);
-	gep->hw_set_addr(addr | ADDR_MASK_474);	
-	gep->hw_delay(200);
-	if(buffer_read(___geep___,addr) != gep->hw_get_data() ){
+	hw_set_oe(1);
+	hw_set_ce(1);
+	hw_set_addr(addr | ADDR_MASK_474);	
+	hw_delay(200);
+	if(buffer_read(___geep___,addr) != hw_get_data() ){
 // ?????
 	}
-	gep->hw_delay(200);
+	hw_delay(200);
     }
     finish_action();
 REG_FUNC_END
 
 REGISTER_MODULE_BEGIN( PROM )
 
-    register_chip_begin("/PROM","74S474", "74S47x", SIZE_PROM_474);
+    register_chip_begin("/PROM","74S474", "74S47x");
+	add_buffer("PROM", SIZE_PROM_474);
 	add_action(MODULE_READ_ACTION, read_474);
 	add_action(MODULE_VERIFY_ACTION, verify_474);
     register_chip_end;
 
-    register_chip_begin("/PROM","74S475", "74S47x", SIZE_PROM_474);
+    register_chip_begin("/PROM","74S475", "74S47x");
+	add_buffer("PROM", SIZE_PROM_474);
 	add_action(MODULE_READ_ACTION, read_474);
 	add_action(MODULE_VERIFY_ACTION, verify_474);
     register_chip_end;
 
-    register_chip_begin("/PROM","74S475", "74S47x", SIZE_PROM_474);
+    register_chip_begin("/PROM","74S475", "74S47x");
+	add_buffer("PROM", SIZE_PROM_474);
 	add_action(MODULE_READ_ACTION, read_474);
 	add_action(MODULE_VERIFY_ACTION, verify_474);
     register_chip_end;
 
-    register_chip_begin("/PROM","KR556RT5", "74S47x", SIZE_PROM_474);
+    register_chip_begin("/PROM","KR556RT5", "74S47x");
+	add_buffer("PROM", SIZE_PROM_474);
 	add_action(MODULE_READ_ACTION, read_474);
 	add_action(MODULE_VERIFY_ACTION, verify_474);
     register_chip_end;

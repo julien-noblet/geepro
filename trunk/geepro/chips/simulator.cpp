@@ -42,38 +42,38 @@ static void send_data(int size)
 {
     int addr;
     
-    gep->hw_set_pgm( 0 );
-    gep->hw_set_addr_range( (size - 1) >> 10 );
-    gep->hw_sw_dpsw( 1 );        
+    hw_set_pgm( 0 );
+    hw_set_addr_range( (size - 1) >> 10 );
+    hw_sw_dpsw( 1 );        
     progress_loop(addr, size, "Transmission..."){
-	gep->hw_set_addr( addr );
-	gep->hw_set_data( get_buffer( addr ) );
+	hw_set_addr( addr );
+	hw_set_data( get_buffer( addr ) );
     }
-    gep->hw_sw_dpsw( 0 );
+    hw_sw_dpsw( 0 );
     finish_action();
-    gep->hw_set_pgm( 1 );
+    hw_set_pgm( 1 );
 }
 
 static void send_rst()
 {
-    gep->hw_rst_addr();
+    hw_rst_addr();
 }
 
 static void rst_polarity(int val, void *ptr, int id)
 {
-    gep->hw_set_cs( val );    
+    hw_set_cs( val );    
 }
 
 static void rst_time(int val, void *ptr, int id)
 {
-    gep->hw_set_we( val );
+    hw_set_we( val );
 }
 
 static void settings_y()
 {
     dialog_start("Reset pin settings", 300, 200);
-	spin_add("Polarity", 0, 1, gep->hw_get_do(), rst_polarity, 0, NULL);
-	slider_add("Time [ms]", 0, 2000, gep->hw_get_data(), rst_time, 0, NULL);
+	spin_add("Polarity", 0, 1, hw_get_do(), rst_polarity, 0, NULL);
+	slider_add("Time [ms]", 0, 2000, hw_get_data(), rst_time, 0, NULL);
     dialog_end();
 }
 
@@ -93,49 +93,57 @@ REGISTER_MODULE_BEGIN( PROM )
 //    rst_polarity( 1, 0,0 );
 //    rst_time( 100, 0, 0 );
     
-    register_chip_begin("/simulators/momik/memsim 8bit","2x16", "2x16", SIZE_2716);
+    register_chip_begin("/simulators/momik/memsim 8bit","2x16", "2x16");
+	add_buffer("Buffer", SIZE_2716);
 	add_action(MODULE_TRANSMIT_ACTION, send_16);
 	add_action(MODULE_RESET_ACTION, send_reset);
 	add_action(MODULE_SETTINGS_ACTION, settings_x);
     register_chip_end;
 
-    register_chip_begin("/simulators/momik/memsim 8bit","2x32", "2x32", SIZE_2732);
+    register_chip_begin("/simulators/momik/memsim 8bit","2x32", "2x32");
+	add_buffer("Buffer", SIZE_2732);
 	add_action(MODULE_TRANSMIT_ACTION, send_32);
 	add_action(MODULE_RESET_ACTION, send_reset);
 	add_action(MODULE_SETTINGS_ACTION, settings_x);
     register_chip_end;
 
-    register_chip_begin("/simulators/momik/memsim 8bit","2x64", "2x64", SIZE_2764);
+    register_chip_begin("/simulators/momik/memsim 8bit","2x64", "2x64");
+	add_buffer("Buffer", SIZE_2764);
 	add_action(MODULE_TRANSMIT_ACTION, send_64);
 	add_action(MODULE_RESET_ACTION, send_reset);
 	add_action(MODULE_SETTINGS_ACTION, settings_x);
     register_chip_end;
 
-    register_chip_begin("/simulators/momik/memsim 8bit","2x128", "2x128", SIZE_27128);
+    register_chip_begin("/simulators/momik/memsim 8bit","2x128", "2x128");
+	add_buffer("Buffer", SIZE_27128);
 	add_action(MODULE_TRANSMIT_ACTION, send_128);
 	add_action(MODULE_RESET_ACTION, send_reset);
 	add_action(MODULE_SETTINGS_ACTION, settings_x);
     register_chip_end;
 
-    register_chip_begin("/simulators/momik/memsim 8bit","2x256", "2x256", SIZE_27256);
+    register_chip_begin("/simulators/momik/memsim 8bit","2x256", "2x256");
+	add_buffer("Buffer", SIZE_27256);
 	add_action(MODULE_TRANSMIT_ACTION, send_256);
 	add_action(MODULE_RESET_ACTION, send_reset);
 	add_action(MODULE_SETTINGS_ACTION, settings_x);
     register_chip_end;
 
-    register_chip_begin("/simulators/momik/memsim 8bit","2x512", "2x512", SIZE_27512);
+    register_chip_begin("/simulators/momik/memsim 8bit","2x512", "2x512");
+	add_buffer("Buffer", SIZE_27512);
 	add_action(MODULE_TRANSMIT_ACTION, send_512);
 	add_action(MODULE_RESET_ACTION, send_reset);
 	add_action(MODULE_SETTINGS_ACTION, settings_x);
     register_chip_end;
 
-    register_chip_begin("/simulators/momik/memsim 8bit","2x1024", "2x1024", SIZE_271024);
+    register_chip_begin("/simulators/momik/memsim 8bit","2x1024", "2x1024");
+	add_buffer("Buffer", SIZE_271024);
 	add_action(MODULE_TRANSMIT_ACTION, send_1024);
 	add_action(MODULE_RESET_ACTION, send_reset);
 	add_action(MODULE_SETTINGS_ACTION, settings_x);
     register_chip_end;
 
-    register_chip_begin("/simulators/momik/memsim 8bit","2x2048", "2x2048", SIZE_272048);
+    register_chip_begin("/simulators/momik/memsim 8bit","2x2048", "2x2048");
+	add_buffer("Buffer", SIZE_272048);
 	add_action(MODULE_TRANSMIT_ACTION, send_2048);
 	add_action(MODULE_RESET_ACTION, send_reset);
 	add_action(MODULE_SETTINGS_ACTION, settings_x);

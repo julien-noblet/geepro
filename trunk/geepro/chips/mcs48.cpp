@@ -38,7 +38,7 @@ MODULE_IMPLEMENTATION
 
 void set_address_mcs48(int addr, char mode)
 {
-    gep->hw_delay(100);
+    hw_delay(100);
     set_address( ((addr >> 8) & 0x0f) | mode);
     oe(0, 1500);  // ustawienie RESET = 0
     set_data(addr & 0xff);
@@ -51,10 +51,10 @@ void read_mcs48(int size)
 
     ce(0, 1);
     oe(1, 1);
-    gep->hw_sw_vcc(1);
-    gep->hw_delay(3000);    
+    hw_sw_vcc(1);
+    hw_delay(3000);    
     oe(0, 3000);  // RESET = 0, VPP = VCC
-    gep->hw_sw_vpp(1); // VPP = Uvpp
+    hw_sw_vpp(1); // VPP = Uvpp
     oe(1, 3000);  // RESET = 1, VPP = VCC    
     progress_loop(addr, size, "Reading"){
 	set_address_mcs48( addr, MCS48_READ_MODE );
@@ -72,14 +72,14 @@ void test_blank_mcs48(int size)
 
     ce(0, 1);
     oe(1, 1);
-    gep->hw_sw_vcc(1);
-    gep->hw_delay(3000);    
+    hw_sw_vcc(1);
+    hw_delay(3000);    
     oe(0, 3000);  // RESET = 0, VPP = VCC
-    gep->hw_sw_vpp(1); // VPP = Uvpp
+    hw_sw_vpp(1); // VPP = Uvpp
     oe(1, 3000);  // RESET = 1, VPP = VCC    
     progress_loop(addr, size, "Test blank"){
 	set_address_mcs48( addr, MCS48_READ_MODE );
-	data = gep->hw_get_data();
+	data = hw_get_data();
 	break_if( data != 0xff );
     }
     set_address(0);
@@ -99,14 +99,14 @@ void verify_mcs48(int size)
 
     ce(0, 1);
     oe(1, 1);
-    gep->hw_sw_vcc(1);
-    gep->hw_delay(3000);    
+    hw_sw_vcc(1);
+    hw_delay(3000);    
     oe(0, 3000);  // RESET = 0, VPP = VCC
-    gep->hw_sw_vpp(1); // VPP = Uvpp
+    hw_sw_vpp(1); // VPP = Uvpp
     oe(1, 3000);  // RESET = 1, VPP = VCC    
     progress_loop(addr, size, "Verification"){
 	set_address_mcs48( addr, MCS48_READ_MODE );
-	rdata = gep->hw_get_data();
+	rdata = hw_get_data();
 	wdata = get_buffer( addr );
 	break_if( rdata != wdata );
     }
@@ -137,10 +137,10 @@ void prog_mcs48(int size)
 
     ce(0, 1);
     oe(1, 1);
-    gep->hw_sw_vcc(1);
-    gep->hw_delay(3000);    
+    hw_sw_vcc(1);
+    hw_delay(3000);    
     oe(0, 3000);  // RESET = 0, VPP = VCC
-    gep->hw_sw_vpp(1); // VPP = Uvpp
+    hw_sw_vpp(1); // VPP = Uvpp
     oe(1, 3000);  // RESET = 1, VPP = VCC    
     progress_loop(addr, size, "Programm"){
 	set_address_mcs48( addr, MCS48_WRITE_MODE );
@@ -148,7 +148,7 @@ void prog_mcs48(int size)
 	set_data( wdata );
 	prog_pulse_mcs48();	
 	set_address_mcs48( addr, MCS48_READ_MODE );
-	rdata = gep->hw_get_data();
+	rdata = hw_get_data();
 	break_if( rdata != wdata );
     }
     set_address(0);
@@ -191,42 +191,51 @@ REGISTER_FUNCTION( test_blank, 8049, mcs48, SIZE_8049 );
 
 /*************************************************************************/
 REGISTER_MODULE_BEGIN( MCS-48 )
+
 // ROM Version
-    register_chip_begin("/uk/MCS-48/ROM", "i8048", "MCS-48", SIZE_8048);
+    register_chip_begin("/uk/MCS-48/ROM", "i8048", "MCS-48");
+	add_buffer("ROM", SIZE_8048);
 	add_action(MODULE_READ_ACTION, read_8048);
 	add_action(MODULE_VERIFY_ACTION, verify_8048);
     register_chip_end;
-    register_chip_begin("/uk/MCS-48/ROM", "i8049", "MCS-48", SIZE_8049);
+    register_chip_begin("/uk/MCS-48/ROM", "i8049", "MCS-48");
+	add_buffer("ROM", SIZE_8049);
 	add_action(MODULE_READ_ACTION, read_8049);
 	add_action(MODULE_VERIFY_ACTION, verify_8049);
     register_chip_end;
-    register_chip_begin("/uk/MCS-48/ROM", "i8050", "MCS-48", SIZE_8050);
+    register_chip_begin("/uk/MCS-48/ROM", "i8050", "MCS-48");
+	add_buffer("ROM", SIZE_8050);
 	add_action(MODULE_READ_ACTION, read_8050);
 	add_action(MODULE_VERIFY_ACTION, verify_8050);
     register_chip_end;
 // EPROM/OTP Version
-//    register_chip_begin("/uk/MCS-48/EPROM", "i8741", "MCS-48", SIZE_8041);
+//    register_chip_begin("/uk/MCS-48/EPROM", "i8741", "MCS-48");
+//	add_buffer("ROM", SIZE_8041);
 //	add_action(MODULE_READ_ACTION, read_8041);
 //	add_action(MODULE_VERIFY_ACTION, verify_8041);
 //	add_action(MODULE_PROG_ACTION, prog_8741);
 //	add_action(MODULE_TEST_BLANK_ACTION, test_blank_8041);
 //    register_chip_end;
-//    register_chip_begin("/uk/MCS-48/EPROM", "i8742", "MCS-48", SIZE_8042);
+//    register_chip_begin("/uk/MCS-48/EPROM", "i8742", "MCS-48");
+//	add_buffer("ROM", SIZE_8042);
 //	add_action(MODULE_READ_ACTION, read_8042);
 //	add_action(MODULE_VERIFY_ACTION, verify_8042);
 //	add_action(MODULE_PROG_ACTION, prog_8742);
 //	add_action(MODULE_TEST_BLANK_ACTION, test_blank_8042);
 //    register_chip_end;
-    register_chip_begin("/uk/MCS-48/EPROM", "i8748", "MCS-48", SIZE_8048);
+    register_chip_begin("/uk/MCS-48/EPROM", "i8748", "MCS-48");
+	add_buffer("Buffer", SIZE_8048);
 	add_action(MODULE_READ_ACTION, read_8048);
 	add_action(MODULE_VERIFY_ACTION, verify_8048);
 	add_action(MODULE_PROG_ACTION, prog_8748);
 	add_action(MODULE_TEST_BLANK_ACTION, test_blank_8048);
     register_chip_end;
-    register_chip_begin("/uk/MCS-48/EPROM", "i8749", "MCS-48", SIZE_8049);
+    register_chip_begin("/uk/MCS-48/EPROM", "i8749", "MCS-48");
+	add_buffer("Buffer", SIZE_8049);
 	add_action(MODULE_READ_ACTION, read_8049);
 	add_action(MODULE_VERIFY_ACTION, verify_8049);
 	add_action(MODULE_PROG_ACTION, prog_8749);
 	add_action(MODULE_TEST_BLANK_ACTION, test_blank_8049);
     register_chip_end;
+
 REGISTER_MODULE_END

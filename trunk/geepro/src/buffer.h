@@ -24,13 +24,14 @@
 #define __buffer_h__
 #include "chip.h"
 #include "geepro.h"
+#include "iface.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int  buffer_alloc(chip_desc *chip);
-extern void buffer_free(chip_desc *chip);
+extern int  buffer_alloc(s_iface_chip_list *chip);
+extern void buffer_free(s_iface_chip_list *chip);
 extern void buffer_clear(geepro *gep);
 extern long buffer_checksum(geepro *gep);
 extern char buffer_write(geepro *gep, unsigned int addr, unsigned char byte);

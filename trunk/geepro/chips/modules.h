@@ -30,32 +30,33 @@
 #include "../gui-gtk/gui_dialog.h"
 #include "../src/buffer.h"
 #include "../src/geepro.h"
-
+#include "../src/error.h"
+#include "../src/iface.h"
 
 #define ms_delay(ms)	\
-    gep->hw_delay((ms)*1000)
+    hw_delay((ms)*1000)
     
 #define set_data(value)\
-    gep->hw_set_data((value) & 0xff)
+    hw_set_data((value) & 0xff)
     
 #define set_address(a)	\
-    gep->hw_set_addr(a)
+    hw_set_addr(a)
 
 #define oe(state, delay)	\
-    gep->hw_set_oe(state);\
-    gep->hw_delay(delay)
+    hw_set_oe(state);\
+    hw_delay(delay)
     
 #define ce(state, delay)	\
-    gep->hw_set_ce(state);\
-    gep->hw_delay(delay)
+    hw_set_ce(state);\
+    hw_delay(delay)
 
 #define we(state, delay)	\
-    gep->hw_set_we(state);\
-    gep->hw_delay(delay)
+    hw_set_we(state);\
+    hw_delay(delay)
 
 #define pgm(state, delay)	\
-    gep->hw_set_pgm(state);\
-    gep->hw_delay(delay)
+    hw_set_pgm(state);\
+    hw_delay(delay)
 
 #define progress_loop(cn, rounds, title)		\
 	for(cn = 0, gui_progress_bar_init(___geep___,title, rounds);\
@@ -68,24 +69,24 @@
 	}
 
 #define finish_action()	\
-    gep->hw_sw_vpp(0);\
-    gep->hw_set_oe(0);\
-    gep->hw_set_ce(0);\
-    gep->hw_sw_vcc(0);\
+    hw_sw_vpp(0);\
+    hw_set_oe(0);\
+    hw_set_ce(0);\
+    hw_sw_vcc(0);\
     set_address(0);\
     set_data(0);\
     buffer_checksum(___geep___);\
     gui_stat_rfsh(___geep___)
 
 #define start_action(oe_,ce_)   \
-    gep->hw_sw_vpp(0);\
-    gep->hw_sw_vcc(1);\
-    gep->hw_set_oe(oe_);\
-    gep->hw_set_ce(ce_);\
-    gep->hw_delay(5000)
+    hw_sw_vpp(0);\
+    hw_sw_vcc(1);\
+    hw_set_oe(oe_);\
+    hw_set_ce(ce_);\
+    hw_delay(5000)
 
 #define copy_data_to_buffer(addr)	\
-    buffer_write(___geep___,addr, gep->hw_get_data())
+    buffer_write(___geep___,addr, hw_get_data())
 
 #define put_buffer( addr, data) buffer_write(___geep___,addr, data)
 
@@ -96,7 +97,7 @@
 #define progressbar_free() gui_progress_bar_free(___geep___)
 
 #define cmp_data_and_buffer_ploop(addr, error) \
-	if(gep->hw_get_data() != buffer_read(___geep___,addr)){\
+	if(hw_get_data() != buffer_read(___geep___,addr)){\
 	    error = 0;\
 	    gui_progress_bar_free(___geep___);\
 	    break;\
@@ -115,16 +116,15 @@
 #define REGISTER_MODULE_BEGIN(name)	\
     extern "C" int init_module(geepro *gep___)\
     {\
-	int __id__=0, __i__ =0 ;\
+	int __i__ =0 ;\
 	___geep___ = gep___;\
-	chip_desc __init_struct__; \
+	s_iface_chip_list __init_struct__; \
 	__i__++;\
-	printf("Init " #name " module.\n");\
+	PRN(" * init '%s' module.\n", #name);\
 	{
 
 #define REGISTER_MODULE_END	\
-	} __id__ = 0;\
-	__i__ = 0;\
+	} __i__ = 0;\
 	return 0;\
     }
 
@@ -155,22 +155,19 @@
 #define ERROR	\
     return -1
 */
-#define register_chip_begin(path, name, family, size)	\
-    memset(&__init_struct__, 0, sizeof(chip_desc));\
-    __init_struct__.chip_path = (char *)path;\
-    __init_struct__.chip_name = (char *)name;\
-    __init_struct__.chip_family = (char *)family;\
-    __init_struct__.chip_id = ++__id__;\
-    __init_struct__.dev_size = size
+#define register_chip_begin(path, name, family )	iface_chip_list_init( &__init_struct__, path, name, family )
 
 #define register_chip_end	\
-    chip_register_chip(___geep___->ifc->plugins, &__init_struct__)
+    iface_chip_register(IFACE_CHIP(___geep___), &__init_struct__)
 
 #define add_action(bt_name, callback)	\
-    chip_add_action(&__init_struct__, bt_name, (int (*)(void *))(callback))
+    iface_chip_list_add_action(&__init_struct__, bt_name, (f_iface_chip_action)(callback))
 
 #define add_autostart(callback)	\
     __init_struct__.autostart = callback
+
+#define add_buffer( name, size )	iface_chip_list_add_buffer(&__init_struct__, name, size);
+#define set_buffer( name )		...
 
 #define MODULE_WRITE_ACTION MODULE_PROG_ACTION
 #define MODULE_TEST_BLANK_ACTION MODULE_TEST_ACTION
@@ -191,8 +188,8 @@
 #define MODULE_VERIFY_EEPROM_ACTION 	"geepro-verify-eeprom-action", "Verify EEPROM chip memory with buffer"
 #define MODULE_LOCKBIT_ACTION		"geepro-lockbit-action", "Set lock-bits and fuses"
 
-#define SET_Vcc_VOLTAGE( x )	gep->hw_set_vcc( (int)((x) * 100.00) )
-#define SET_Vpp_VOLTAGE( x )	gep->hw_set_vpp( (int)((x) * 100.00) )
+#define SET_Vcc_VOLTAGE( x )	hw_set_vcc( (int)((x) * 100.00) )
+#define SET_Vpp_VOLTAGE( x )	hw_set_vpp( (int)((x) * 100.00) )
 
 #define REGISTER_FUNCTION_( registered_func, exec_func, call_parameters... )	\
     REG_FUNC_BEGIN( registered_func )	\
