@@ -167,7 +167,7 @@ int galb_api(void *g, en_hw_api func, int val, void *ptr)
 	case HW_TEST : return 1; // no programmer identification
 	// GUI
 	case HW_GINIT: return galb_gui( GEEPRO(ptr), (const char *)"none", (const char *)"" );
-//	case HW_SET_CHIP: return galb_gui( GEEPRO(ptr), GEEPRO(ptr)->chp->chip_name, GEEPRO(ptr)->chp->chip_family );
+	case HW_SET_CHIP: return galb_gui( GEEPRO(ptr), iface_get_chip_name(GEEPRO(ptr)->ifc), iface_get_chip_family(GEEPRO(ptr)->ifc) );
 	// iface
 	case HW_SET_VPP	     : return galb_set_vpp( val );
 	case HW_SW_VCC	     : return galb_sw_vcc( val );

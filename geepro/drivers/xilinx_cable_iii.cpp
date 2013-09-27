@@ -146,7 +146,7 @@ int x3_api(void *g,en_hw_api func, int val, void *ptr)
 	case HW_TEST_CONTINUE : return 1;	
 	// GUI
 	case HW_GINIT: return x3_gui( GEEPRO(ptr), (const char *)"none", (const char *)"" );
-//	case HW_SET_CHIP: return x3_gui( GEEPRO(ptr), GEEPRO(ptr)->chp->chip_name, GEEPRO(ptr)->chp->chip_family );
+	case HW_SET_CHIP: return x3_gui( GEEPRO(ptr), iface_get_chip_name(GEEPRO(ptr)->ifc), iface_get_chip_family(GEEPRO(ptr)->ifc) );
 	// iface
 	case HW_GET_JTAG_TDO : return x3_get_tdo();
 	case HW_SET_JTAG_TDO : return x3_set_tdo( val );

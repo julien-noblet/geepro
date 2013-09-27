@@ -566,7 +566,7 @@ static void gui_bineditor_aux_exec( GuiBineditor *be, GtkWidget *ctx, gui_be_aux
 static void gui_bineditor_sum_exec( GtkWidget *wg, gui_be_sum_str *str )
 {
     unsigned int start, stop;
-    ChecksumAlgo algo;
+    e_checksum_algo algo;
     int result = 0;
     const char *id;
     char res[16];

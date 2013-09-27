@@ -124,7 +124,7 @@ typedef enum
     CHECKSUM_ALG_LRC,
     CHECKSUM_ALG_CRC16,
     CHECKSUM_ALG_CRC32,
-} ChecksumAlgo;
+} e_checksum_algo;
 
 /*
     Liczy sume kontrolna na podstawie wybranego algorytmu i zawartosci bufora
@@ -133,7 +133,7 @@ typedef enum
     Jesli obszar wykluczony z liczenia start == stop wówczas nie jest brany pod uwage 
 */
  int checksum_calculate(
-	ChecksumAlgo algo, 
+	e_checksum_algo algo, 
 	int bfsize, unsigned char *buffer, 
 	int start, int stop, 
 	int start_sk1, int stop_sk1,

@@ -31,3 +31,36 @@ char pgm_select_driver( geepro *gep, const char *drv_name)
 
     return err;
 }
+
+char pgm_select_chip( geepro *gep, const char *chip_name)
+{
+    char err;
+
+    if((err = iface_chip_select(gep->ifc->chp, chip_name))) return err;
+    return hw_set_chip( gep );
+}
+
+/****************************************/
+
+char pgm_buffer_write(geepro *gep, unsigned int addr, unsigned char data)
+{
+    return 0;
+}
+
+
+int pgm_buffer_read(geepro *gep, unsigned int addr)
+{
+    return 0;
+}
+
+void pgm_buffer_checksum(geepro *gep )
+{
+    
+}
+
+void pgm_autostart(geepro *gep)
+{
+//    if(chp->autostart) chp->autostart( gep );
+}
+
+

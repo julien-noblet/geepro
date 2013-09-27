@@ -28,7 +28,7 @@
 #include "../src/protocols.h"
 #include "../gui-gtk/gui.h"
 #include "../gui-gtk/gui_dialog.h"
-#include "../src/buffer.h"
+#include "../src/programmer.h"
 #include "../src/geepro.h"
 #include "../src/error.h"
 #include "../src/iface.h"
@@ -75,7 +75,7 @@
     hw_sw_vcc(0);\
     set_address(0);\
     set_data(0);\
-    buffer_checksum(___geep___);\
+    pgm_buffer_checksum(___geep___);\
     gui_stat_rfsh(___geep___)
 
 #define start_action(oe_,ce_)   \
@@ -86,18 +86,18 @@
     hw_delay(5000)
 
 #define copy_data_to_buffer(addr)	\
-    buffer_write(___geep___,addr, hw_get_data())
+    pgm_buffer_write(___geep___,addr, hw_get_data())
 
-#define put_buffer( addr, data) buffer_write(___geep___,addr, data)
+#define put_buffer( addr, data) pgm_buffer_write(___geep___,addr, data)
 
-#define get_buffer(addr) buffer_read(___geep___,addr)
+#define get_buffer(addr) pgm_buffer_read(___geep___,addr)
 
-#define copy_data_from_buffer(addr)  set_data( get_buffer(addr) )
+#define copy_data_from_buffer(addr)  set_data( pgm_get_buffer(addr) )
 
 #define progressbar_free() gui_progress_bar_free(___geep___)
 
 #define cmp_data_and_buffer_ploop(addr, error) \
-	if(hw_get_data() != buffer_read(___geep___,addr)){\
+	if(hw_get_data() != pgm_buffer_read(___geep___,addr)){\
 	    error = 0;\
 	    gui_progress_bar_free(___geep___);\
 	    break;\
@@ -166,7 +166,7 @@
 #define add_autostart(callback)	\
     __init_struct__.autostart = callback
 
-#define add_buffer( name, size )	iface_chip_list_add_buffer(&__init_struct__, name, size);
+#define add_buffer( name, size )	iface_chip_register_buffer(&__init_struct__, name, size, 0);
 #define set_buffer( name )		...
 
 #define MODULE_WRITE_ACTION MODULE_PROG_ACTION

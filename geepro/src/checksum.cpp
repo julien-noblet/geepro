@@ -26,7 +26,7 @@ CHECKSUM_CRC16_STATIC_TABLE;
 CHECKSUM_CRC32_STATIC_TABLE;
 
 int checksum_calculate(
-    ChecksumAlgo algo,
+    e_checksum_algo algo,
     int bfsize, unsigned char *buffer,
     int start, int stop,
     int start_sk1, int stop_sk1,

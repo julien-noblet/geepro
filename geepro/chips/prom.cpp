@@ -41,7 +41,7 @@ REG_FUNC_BEGIN(read_474)
 	hw_set_ce(1);
 	hw_set_addr(addr | ADDR_MASK_474);	
 	hw_delay(200);
-	buffer_write(___geep___,addr,hw_get_data());
+	pgm_buffer_write(___geep___,addr,hw_get_data());
 	hw_delay(200);
     }
     finish_action();
@@ -60,7 +60,7 @@ REG_FUNC_BEGIN(verify_474)
 	hw_set_ce(1);
 	hw_set_addr(addr | ADDR_MASK_474);	
 	hw_delay(200);
-	if(buffer_read(___geep___,addr) != hw_get_data() ){
+	if(pgm_buffer_read(___geep___,addr) != hw_get_data() ){
 // ?????
 	}
 	hw_delay(200);

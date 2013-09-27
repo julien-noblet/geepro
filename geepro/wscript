@@ -25,7 +25,7 @@ def configure(conf):
   conf.env.LIB_Dl      = 'dl'
   conf.env.LINKFLAGS_DL = ['-rdynamic']
   conf.env.append_value('LINKFLAGS', '-ldl')
-  conf.check_cfg(package='gtk+-3.0'  , atleast_version='3.8.2')
+  conf.check_cfg(package='gtk+-3.0'  , atleast_version='3.6.0')
   conf.check_cfg(package='cairo'     , atleast_version='0.0.0')
   conf.check_cfg(package='libxml-2.0', atleast_version='0.0.0')
   conf.check_cfg(package='libusb-1.0', atleast_version='1.0.16')

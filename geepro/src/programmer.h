@@ -30,6 +30,15 @@ extern "C" {
 #endif
 
 char pgm_select_driver(geepro *gep, const char *driver_name);
+char pgm_select_chip( geepro *gep, const char *chip_name);
+void pgm_autostart(geepro *gep);
+
+/*
+    Buffer operations
+*/
+char pgm_buffer_write(geepro *gep, unsigned int addr, unsigned char data);
+int  pgm_buffer_read(geepro *gep, unsigned int addr);
+void pgm_buffer_checksum(geepro *gep );
 
 
 #ifdef __cplusplus
