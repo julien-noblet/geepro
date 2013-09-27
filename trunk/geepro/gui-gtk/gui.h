@@ -48,6 +48,7 @@ struct _gui_action
 
 typedef struct
 {
+    int  checksum;
     char gui_run;	/* true if in gui event loop */
     void *wmain;        /* glówne okno */
     void *mb_dev;       /* lista ukladów do wyboru */

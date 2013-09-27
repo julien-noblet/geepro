@@ -22,6 +22,7 @@
 
 #ifndef __iface_h__
 #define __iface_h__
+#include "buffer.h"
 #include "chip.h"
 #include "../drivers/hwdriver.h"
 #include "gep_usb.h"
@@ -69,6 +70,7 @@ typedef struct iface_prg iface_prg;
 typedef struct iface_driver iface_driver;
 typedef struct s_iface_device_ s_iface_device;
 typedef struct s_iface_chip_action_ s_iface_chip_action;
+typedef struct s_iface_desc_buffer_ s_iface_desc_buffer;
 
 typedef struct s_iface_driver_list_ s_iface_driver_list;
 typedef struct s_iface_devlist_ s_iface_devlist;
@@ -165,17 +167,20 @@ struct s_iface_chip_action_
     s_iface_chip_action *next;		// next link
 };
 
+struct s_iface_desc_buffer_
+{
+    char *name;				// buffer name
+    unsigned int size;			// buffer size in bytes
+    unsigned int offset;
+    s_iface_desc_buffer *next;		// next link
+};
+
 struct s_iface_chip_list_
 {
     const char	*name;			// chip name
     const char 	*family;		// chip family
     const char 	*path;			// menu path
-//    s_buffer	*buffer;		// memory buffers
-//--->> Temporary
-    unsigned int dev_size;
-    long	checksum;
-    char	*buffer;
-//--<<
+    s_iface_desc_buffer *desc_buffer;	// memory buffers description
     void	*handler;		// plugin handler
     s_iface_chip_action *action;	// actions queue
     f_iface_chip_action autostart;	// autostart function
@@ -189,6 +194,7 @@ struct s_iface_chip_
     s_cfp		*cfg;		// configuration file
     store_str		*store;		// storings 
     s_iface_chip_list	*selected;	// selected and supported by programmer chip from list
+    s_buffer		*buffer;	// selected chip buffer 
     s_iface_chip_list	*list;		// list of all chips
 };
 
@@ -220,9 +226,13 @@ char iface_pgm_select(iface *, const char *pgm_name);
 
 void iface_renew(iface *);
 
-const char *iface_get_chip_name(iface *);   // return selected chip name or NULL
-const char *iface_get_chip_family(iface *); // return selected chip family or NULL
-const char *iface_get_chip_path(iface *); // return selected chip path or NULL
+const char *iface_get_chip_name(const iface *);   // return selected chip name or NULL
+const char *iface_get_chip_family(const iface *); // return selected chip family or NULL
+const char *iface_get_chip_path(const iface *); // return selected chip path or NULL
+const s_buffer *iface_get_chip_buffer(const iface *); // return selected chip buffer or NULL
+
+const s_iface_chip_list *iface_get_selected_chip(const iface *); // return selected chip or NULL
+void iface_unselect_chip(const iface *);
 
 extern int  iface_driver_add(s_iface_driver_list *ifc, iface_prg_api, char on); /* dodanie programatora do kolejki */
 
@@ -337,7 +347,14 @@ char iface_device_connect_notify( s_iface_device *ifc, f_iface_device_notify, vo
 //void iface_device_configure( s_iface_device *ifc, s_cfp *cfg);
 
 /*
-    iface_device event - should be invoked periodicaly
+    Checks hotpluuged USB devices. If new device appears or disappears
+    actualize list of them (invokes also f_iface_notify if defined).
+    New device is tested for compatibility with choosed programmer.
+    Function should be called periodicaly. It is non blocking function.
+    Input:
+	ifc - pointer to s_iface_device structure    
+    Return:
+	None
 */
 void iface_device_event( s_iface_device *ifc );
 
@@ -451,13 +468,13 @@ void iface_chip_list_init(s_iface_chip_list *cd, const char *path, const char *c
 void iface_chip_list_add_action(s_iface_chip_list *cd, const char *bt_name, const char *tip, f_iface_chip_action f);
 
 /*
-    Add buffer to chip.
+    Register buffers for given chip.
     Input:
 	cd   - chip descriptor
 	buffer_name - name to identify buffer
 	size - buffer bytes count    
 */
-void iface_chip_list_add_buffer(s_iface_chip_list *cd, const char *buffer_name, int size);
+void iface_chip_register_buffer(s_iface_chip_list *cd, const char *buffer_name, unsigned int size, unsigned int offset);
 
 
 #ifdef __cplusplus

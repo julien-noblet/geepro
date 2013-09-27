@@ -54,6 +54,9 @@ static char iface_driver_configure(s_iface_driver *ifc, s_cfp *cfg);
 static char iface_driver_select_driver(s_iface_driver *ifc, const char *driver_name);
 static char iface_chip_select_last( s_iface_chip *chip);
 static char iface_chip_test_allowable(s_iface_chip *chip, const char *name, int len);
+static void iface_desc_buffer_free(s_iface_desc_buffer *buf);
+static char iface_desc_buffer_add(s_iface_desc_buffer **buf, int size, const char *name, unsigned int offset);
+static char iface_buffer_create(s_iface_chip *ifc);
 
 // candidates for static 
 char iface_driver_init(s_iface_driver **ifc, store_str *str, s_cfp *cfg);
@@ -1092,15 +1095,16 @@ static void iface_chip_destroy( s_iface_chip *chip)
 	tmp = it->next;
 	if(it->action) iface_chip_list_destroy_action( it->action );
 	if(it->handler) dlclose( it->handler );
+	if(it->desc_buffer) iface_desc_buffer_free( it->desc_buffer );
 	free( it );
 	it = tmp;
     }
 }
 
-
 void iface_chip_exit(s_iface_chip *chip)
 {
     if( !chip ) return;
+    if( chip->buffer ) buffer_exit( chip->buffer );
     iface_chip_destroy( chip );
     free( chip );
 }
@@ -1157,7 +1161,7 @@ char iface_chip_select( s_iface_chip *chip, const char *chip_name)
 		ERR("Cannot store variable '%s'", IFACE_LAST_SELECTED_CHIP_KEY);
 		return -3;
 	    }
-	    return 0;
+	    return iface_buffer_create( chip );
 	}
     }
     return -2;
@@ -1212,21 +1216,14 @@ void iface_chip_list_add_action(s_iface_chip_list *cl, const char *bt_name, cons
     it->next = tmp;
 }
 
-// temporary implementation
-void iface_chip_list_add_buffer(s_iface_chip_list *cl, const char *name, int size)
+void iface_chip_register_buffer(s_iface_chip_list *cl, const char *name, unsigned int size, unsigned int offset)
 {
-    cl->buffer = NULL;
-    cl->dev_size = size;
+    if(iface_desc_buffer_add(&cl->desc_buffer, size, name, offset)){
+	ERR("Dsecrition memory buffer failed.");
+    }
 }
 
-static char iface_chip_test_allowable(s_iface_chip *chip, const char *name, int len)
-{
-    if( len < 0 ) return -2;
-// test allowable to write
-    return 0;
-}
-
-const char *iface_get_chip_name( iface *ifc)
+const char *iface_get_chip_name(const  iface *ifc)
 {
     if( !ifc ) return NULL;
     if( !ifc->chp ) return NULL;    
@@ -1234,7 +1231,7 @@ const char *iface_get_chip_name( iface *ifc)
     return ifc->chp->selected->name;
 }
 
-const char *iface_get_chip_family( iface *ifc)
+const char *iface_get_chip_family(const  iface *ifc)
 {
     if( !ifc ) return NULL;
     if( !ifc->chp ) return NULL;    
@@ -1242,11 +1239,100 @@ const char *iface_get_chip_family( iface *ifc)
     return ifc->chp->selected->family;
 }
 
-const char *iface_get_chip_path( iface *ifc)
+const char *iface_get_chip_path(const  iface *ifc)
 {
     if( !ifc ) return NULL;
     if( !ifc->chp ) return NULL;    
     if( !ifc->chp->selected ) return NULL;    
     return ifc->chp->selected->path;
+}
+
+const s_buffer *iface_get_chip_buffer(const iface *ifc)
+{
+    if( !ifc ) return NULL;
+    if( !ifc->chp ) return NULL;    
+    if( !ifc->chp->buffer ) return NULL;    
+    return ifc->chp->buffer;
+}
+
+const s_iface_chip_list *iface_get_selected_chip(const iface *ifc)
+{
+    if( !ifc ) return NULL;
+    if( !ifc->chp ) return NULL;    
+    return ifc->chp->selected;
+}
+
+void iface_unselect_chip(const iface *ifc)
+{
+    if( !ifc ) return;
+    if( !ifc->chp ) return;    
+    ifc->chp->selected = NULL;
+}
+
+/******************************************************************************************************************
+    Buffer description - local
+*/
+static void iface_desc_buffer_free(s_iface_desc_buffer *buf)
+{
+    s_iface_desc_buffer *it, *tmp;
+    
+    for( it = buf; it; ){
+	tmp = it->next;
+	if(it->name) free(it->name);
+	free( it );
+	it = tmp;
+    }
+}
+
+static char iface_desc_buffer_add(s_iface_desc_buffer **buf, int size, const char *name, unsigned int offset)
+{
+    s_iface_desc_buffer *tmp, *it;
+
+    if( !name ) return -2;
+    MALLOC(tmp, s_iface_desc_buffer, 1 ){
+	ERR_MALLOC_MSG;
+	return ERR_MALLOC_CODE;    
+    }
+    memset(tmp, 0, sizeof(s_iface_desc_buffer));
+    MALLOC(tmp->name, char, strlen( name ) + 1){
+	ERR_MALLOC_MSG;
+	free( tmp );
+	return ERR_MALLOC_CODE;    
+    }
+    strcpy( tmp->name, name);
+    tmp->size = size;
+    tmp->offset = offset;
+    
+    if(!*buf){
+	*buf = tmp;
+	return 0;
+    }
+    for( it = *buf; it->next; it = it->next);
+    it->next = tmp;
+    
+    return 0;
+}
+
+static char iface_buffer_create(s_iface_chip *ifc)
+{
+    s_iface_desc_buffer *it;
+    
+    if( !ifc ) return 0;
+    if( !ifc->buffer ){
+	if(buffer_init( &ifc->buffer )) return -2; // create buffer if not created
+    }
+    if(!ifc->selected) return 0; // chip not selected
+    buffer_delete_all( ifc->buffer ); // delete all existed buffers
+    for(it = ifc->selected->desc_buffer; it; it= it->next){
+	if(buffer_new(ifc->buffer, it->name, it->size, it->offset)) return -3;
+    }
+    return 0;
+}
+
+static char iface_chip_test_allowable(s_iface_chip *chip, const char *name, int len)
+{
+    if( len < 0 ) return -2;
+// test allowable to write
+    return 0;
 }
 

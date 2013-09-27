@@ -200,31 +200,41 @@ int file_test_extension(FILE *f, const char *fname, const char *ext)
 
 const char *file_load(geepro *gep, const char *fname, long file_offset, long buffer_offset, long bytes_count )
 {
+    const s_buffer *bf;
     FILE *f;
     int err = 0, x=0;
+    unsigned int dev_size;
+    char *data;
 
-    if(!gep->chp) return "No chip memory size specified.";    
+    if(!gep->ifc) return NULL;    
+
+    bf = iface_get_chip_buffer(gep->ifc);
+    if(!bf) return "No chip memory size specified.";    
+
+    dev_size = buffer_get_size( bf );
+    data = buffer_get_pointer( bf );
+    if( !data ) return NULL;
     
-    if( file_offset < 0 )
-	memset(gep->chp->buffer, 0xff, gep->chp->dev_size); // set buffer by 0xff
+    if( file_offset < 0 ) buffer_fill(bf, 0xff);
 
     if(!(f = fopen(fname , "r-"))) return "Open file error.";
 
+
     if( file_offset >= 0){
-        err = file_load_bin(f, gep->chp->dev_size, gep->chp->buffer, file_offset, buffer_offset, bytes_count);
+        err = file_load_bin(f, dev_size, data, file_offset, buffer_offset, bytes_count);
         x = 2;
     } else {
 	if((x = file_test_extension(f, fname, "hex")) == 2) 
-	    err = file_load_hex(f, gep->chp->dev_size, gep->chp->buffer);
+	    err = file_load_hex(f, dev_size, data);
 	else
     	    if((x = file_test_extension(f, fname, "srec")) == 2) 
-		err = file_load_srec(f, gep->chp->dev_size, gep->chp->buffer);
+		err = file_load_srec(f, dev_size, data);
 	else
     	    if((x = file_test_extension(f, fname, "s19")) == 2) 
-		err = file_load_srec(f, gep->chp->dev_size, gep->chp->buffer);
+		err = file_load_srec(f, dev_size, data);
 	else
     	    if(x == 1) 
-    		err = file_load_bin(f, gep->chp->dev_size, gep->chp->buffer, -1, -1, -1);
+    		err = file_load_bin(f, dev_size, data, -1, -1, -1);
     }
     if(x == 0) return "Filename error."; // no fname or NULL
     if(err == -10) err = 0; // end of HEX file, normal termination
@@ -339,25 +349,35 @@ int file_save_hex(FILE *f, int size, char *buffer)
 
 const char *file_save(geepro *gep, const char *fname)
 {
+    const s_buffer *bf;
+    char *data;
     FILE *f;
-    int err = 0, x=0, size = gep->chp->dev_size;
+    int err = 0, x=0, size;
 
+    if(!gep->ifc)  return NULL;
     if(!fname)  return "No file name";
     if(fname[0] == 0)  return "No file name";
+    
+    if(!(bf = iface_get_chip_buffer( gep->ifc ))) return NULL;
+    size = buffer_get_size( bf );
+    data = buffer_get_pointer( bf );    
+
+    if( !bf ) return NULL;
     if( !size ) return "Buffer size is 0 bytes.";
-    for(; size && (((gep->chp->buffer[size - 1]) & 0xff) == 0xff); size--); // skraca bufor o puste 'FF'
-    if(!gep->chp) return "No chip memory size specified.";    
+
+    for(; size && (((data[size - 1]) & 0xff) == 0xff); size--); // skraca bufor o puste 'FF'
+
     if(!(f = fopen(fname , "w"))) return "Open file error.";
     if((x = file_test_extension(f, fname, "hex")) == 2) 
-	err = file_save_hex(f, size, gep->chp->buffer);
+	err = file_save_hex(f, size, data);
     else
       if((x = file_test_extension(f, fname, "srec")) == 2) 
-	err = file_save_srec(f, size, gep->chp->buffer);
+	err = file_save_srec(f, size, data);
     else
       if((x = file_test_extension(f, fname, "s19")) == 2) 
-	err = file_save_srec(f, size, gep->chp->buffer);
+	err = file_save_srec(f, size, data);
     else
-      if(x == 1) err = file_save_bin(f, size, gep->chp->buffer);
+      if(x == 1) err = file_save_bin(f, size, data);
     if(x == 0) return "Filename error."; // no fname or NULL
 
     fclose(f);    

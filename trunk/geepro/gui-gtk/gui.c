@@ -114,16 +114,17 @@ char gui_test_connection(geepro *gep)
 static void gui_checksum_rfsh(geepro *gep)
 {
     char tmp_str[40];
-    sprintf(tmp_str, "0x%x", (unsigned int)gep->chp->checksum); 
+    sprintf(tmp_str, "0x%x", GUI(gep->gui)->checksum); 
     gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->crc_entry), tmp_str);  
 }
 
 static void gui_checksum_recalculate(geepro *gep)
 {
-    if( !gep->chp ) return;
-    if(gep->chp->dev_size == 0) return;
+    const s_buffer *bf;
 // to add algorithm selection
-    gep->chp->checksum = checksum_calculate( CHECKSUM_ALG_LRC, gep->chp->dev_size, (unsigned char *)gep->chp->buffer, 0, gep->chp->dev_size - 1, 0, 0, 0, 0);
+    bf = iface_get_chip_buffer( gep->ifc );
+    if( !bf ) return;
+    GUI(gep->gui)->checksum = buffer_checksum( (s_buffer *)bf, CHECKSUM_ALG_LRC );
     gui_checksum_rfsh( gep );
 }
 
@@ -154,10 +155,15 @@ void gui_entry_update(GtkEntry *entry, long size, char *tmp_str)
 void gui_stat_rfsh(geepro *gep)
 {
     char tmp_str[40];
-
-    if(gep->chp){
-	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), gep->chp->name);
-	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->device_entry),(unsigned int)gep->chp->dev_size, tmp_str);
+    const char *cname;
+    const s_buffer *bf;
+    
+    if( !gep->ifc ) return;    
+    if((bf = iface_get_chip_buffer( gep->ifc ) )){
+	cname = iface_get_chip_name( gep->ifc );
+	if( !cname ) cname = "Not selected";
+	gtk_entry_set_text( GTK_ENTRY(GUI(gep->gui)->dev_entry ), cname );
+	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->device_entry),(unsigned int)buffer_get_size( bf ), tmp_str);
 	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->buffer_entry),gui_bineditor_get_buffer_size(GUI_BINEDITOR(GUI(gep->gui)->bineditor)), tmp_str);
 	gui_checksum_rfsh( gep );
     } else {
@@ -550,7 +556,7 @@ static int gui_add_action_list(s_iface_chip *desc, s_iface_chip_action *act, voi
     return 0;
 }
 
-static int gui_add_action(geepro *gep, void *chip_str)
+static int gui_add_action(geepro *gep)
 {
     iface_chip_get_actions(gep->ifc->chp, F_IFACE_ACTION(gui_add_action_list), gep);
     gtk_widget_show_all(GTK_WIDGET(GUI(gep->gui)->toolbox));
@@ -559,50 +565,39 @@ static int gui_add_action(geepro *gep, void *chip_str)
 
 static void gui_chip_free(geepro *gep)
 {
-    if(gep->chp){
+    if( iface_get_selected_chip( gep->ifc ) ){
 	gui_rem_bt_action(GUI(gep->gui));
-	buffer_free(gep->chp);
     }
-    gep->chp = NULL;
+    iface_unselect_chip( gep->ifc );
 }
 
 /***************************************************************************************************************************/
 
 static void gui_chip_select(geepro *gep, const char *name)
 {
+    s_buffer *bf;
+
+    // destroy menu, free buffer memory 
+    gui_chip_free( gep );
+
     // select new chip as current
-    if( iface_chip_select(gep->ifc->chp, name) ){
+    if( pgm_select_chip(gep, name) ){
 	gui_dialog_box( gep,
 	    "[ER][TEXT]Cannot set selected chip '%s'.[/TEXT][BR] OK ", name
 	);
 	return;
     }
-    hw_set_chip( gep );
 
+    bf = (s_buffer *)iface_get_chip_buffer(gep->ifc);
 
-    // destroy menu, free buffer memory 
-    gui_chip_free( gep );
-
-    gep->chp = gep->ifc->chp->selected; 
-
-    // allocate memory for buffer
-    if(buffer_alloc(gep->chp)){
-	gui_dialog_box( gep,
-	    "[ER][TEXT]Out of memory.[/TEXT][BR] OK "
-	);
-	gep->chp = NULL;
-	return;
-    }
-
-    // actualize buffer object
-    gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, gep->chp->dev_size, (unsigned char*)gep->chp->buffer);
+    // actualize buffer object 
+    gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, buffer_get_size( bf ), (unsigned char*)buffer_get_pointer( bf ));
 
     // add action buttons to menu    
-    gui_add_action(gep, gep->chp );
+    gui_add_action(gep);
 
     // autostart for choosed chip, if defined
-    if(gep->chp->autostart)
-	     gep->chp->autostart(gep);
+    pgm_autostart( gep );
 
     gui_stat_rfsh(gep);
 }
@@ -986,8 +981,6 @@ void gui_kill_me(geepro *gep)
     free(GUI(gep->gui)->xml);
     gui_chip_free(gep);
     gtk_main_quit();
-    if(gep->chp)
-	buffer_free(gep->chp);
 }
 
 /**************************************************************************************************************************/
@@ -1800,16 +1793,7 @@ void gui_menu_setup(geepro *gep)
     gtk_box_pack_start(GTK_BOX(wg4), wg1, FALSE, FALSE, 0);
     GUI(gep->gui)->toolbox = wg1;
     // static toolbar items
-/*
-ti0 = gtk_tool_button_new_from_stock(GTK_STOCK_OPEN);
-g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_load_file), gep);
-gtk_tool_item_set_tooltip_text( ti0, OPEN_FILE_TIP);
-gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
-ti0 = gtk_tool_button_new_from_stock(GTK_STOCK_SAVE);
-g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_save_file), gep);
-gtk_tool_item_set_tooltip_text( ti0, SAVE_FILE_TIP);
-gtk_toolbar_insert(GTK_TOOLBAR(wg1), ti0, -1);
-*/
+
     ti0 = gtk_tool_button_new_from_stock( GTK_STOCK_PREFERENCES );
     g_signal_connect(G_OBJECT(ti0), "clicked", G_CALLBACK(gui_config), gep);
 gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);

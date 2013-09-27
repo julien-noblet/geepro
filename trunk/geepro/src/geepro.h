@@ -64,7 +64,6 @@ typedef struct
     char  **argv;
     iface *ifc;	/* plugins queue */
     void  *gui;
-    s_iface_chip_list  *chp;
     s_cfp *cfg;
     store_str *store; // variables stored after close program
     const char *shared_drivers_xml_file;
