@@ -1,5 +1,5 @@
 /* XPM */
-static char * logo_xpm[] = {
+char * logo_xpm[] = {
 "128 128 4 1",
 " 	c None",
 ".	c #000000",

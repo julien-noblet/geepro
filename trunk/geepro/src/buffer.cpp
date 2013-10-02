@@ -78,7 +78,7 @@ char buffer_new( s_buffer *bf, const char *name, int size, int offset)
 	bf->selected = tmp;	// default
 	return 0;
     }
-    for( it = bf->list; it; it = it->next);
+    for( it = bf->list; it->next; it = it->next);
     it->next = tmp;
     return 0;
 }
@@ -196,6 +196,75 @@ long buffer_checksum( s_buffer *bf, e_checksum_algo algo)
     if( !bf ) return -2;
     if( !bf->selected ) return -3;    
     return checksum_calculate( algo, bf->selected->size, (unsigned char *)bf->selected->data, 0, bf->selected->size - 1, 0, 0, 0, 0);
+}
+
+long buffer_checksum_count( s_buffer_list *bf, e_checksum_algo algo)
+{
+    if( !bf ) return -2;
+    return checksum_calculate( algo, bf->size, (unsigned char *)bf->data, 0, bf->size - 1, 0, 0, 0, 0);
+}
+
+void buffer_get_list( s_buffer *bf, f_buffer cb, void *ptr)
+{
+    s_buffer_list *it;
+    if( !bf || !cb ) return;
+    if( !bf->list ) return;    
+    
+    for(it = bf->list; it; it = it->next) 
+	cb(bf, it, ptr);
+}
+
+/***********************************************************************************************************************
+    LOAD/SAVE to file
+*/
+
+const char *buffer_get_last_loaded_fname( s_buffer_list *bf )
+{
+    return "--aaa--";
+}
+
+const char *buffer_get_last_loaded_at_fname( s_buffer_list *bf )
+{
+    return "--bbbb--";
+}
+
+const char *buffer_get_last_saved_fname( s_buffer_list *bf )
+{
+    return "--cccc--";
+}
+
+const char *buffer_get_last_saved_at_fname( s_buffer_list *bf )
+{
+    return "--dddd--";
+}
+
+char buffer_load(s_buffer_list *bf, store_str *st, const char *name)
+{ 
+    printf("---- Load ----\n");
+    return 0;
+}
+char buffer_load_at(s_buffer_list *bf, store_str *st, const char *name, unsigned int buff_pos, unsigned int filpos, unsigned int count)
+{ 
+    printf("---- Load AT ----\n");
+    return 0;
+}
+
+char buffer_save(s_buffer_list *bf, store_str *st, const char *name, char flags)
+{ 
+    printf("---- Save ----\n");
+    return 0;
+}
+
+char buffer_save_at(s_buffer_list *bf, store_str *st, const char *name, char flags, unsigned int buff_pos, unsigned int count)
+{ 
+    printf("---- Save AT ----\n");
+    return 0;
+}
+
+char buffer_file_check_valid(s_buffer_list *bf)
+{ 
+    printf("---- FILE VALID ? ----\n");
+    return 0;
 }
 
 

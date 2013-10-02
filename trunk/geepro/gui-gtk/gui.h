@@ -80,8 +80,11 @@ void *iface;        /* combox wyboru urzadzenia */
     /* lista wskaznikow do przycisków akcji */
     gui_action *action;
 
+    void *buffer; 	// buffers structure s_gui_buffer
+    void *buffer_tabs;	// Vertical GtkNotepad 
+
     /* MISC */
-    long long fct;		/* Last loaded file creation/modify time to detect file change during program run */
+long long fct;		/* Last loaded file creation/modify time to detect file change during program run */
     int	 cbtable[MAX_CB_TABLE];	/* checkbox values */
 //    const char *shared_geepro_dir;
 } gui;
@@ -186,6 +189,9 @@ struct _sqw_gen
 #define FO_NONE		0
 #define FO_H_FIRST	1
 #define FO_H_NEXT	2
+
+/* temp */
+void gui_load_error_msg(geepro *gep, const char *, const char *);
 
 //extern void gui_set_default(geepro *gep);
 extern void gui_stat_rfsh(geepro*);
