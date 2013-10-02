@@ -1,4 +1,4 @@
-#define EVERSION	"0.1"
+#define EVERSION	"0.0.5"
 #define AUTORS	\
 "Krzysztof Komarnicki krzkomar@wp.pl",\
 "Ypatois",\

@@ -24,6 +24,7 @@
 #define __buffer_h__
 
 #include "checksum.h"
+#include "storings.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +47,10 @@ typedef struct
     s_buffer_list *selected;	// selected buffer from list
     s_buffer_list *list;	// buffers list
 } s_buffer;
+
+typedef void (*f_buffer)(s_buffer *, s_buffer_list *, void *);
+
+#define BUFFER_CB(x)	((f_buffer)x)
 
 //---
 /*
@@ -192,15 +197,106 @@ void buffer_fill(const s_buffer *buffer, char data);
 long buffer_checksum( s_buffer *buffer, e_checksum_algo algo);
 
 /*
+    Calculate checksum on specified buffer
+    Input:
+	buffer  - pointer buffer structure.
+	algo    - name of checksum algorithm
+    Return:
+	None
+*/
+long buffer_checksum_count( s_buffer_list *buffer, e_checksum_algo algo);
+
+/*
+    Load file to buffer. Type of file is automaticaly determined.
+    Loaded file is cut to buffer size.
+    Input:
+	buffer - buffer structure
+	str    - storing values structure
+	name   - file name or NULL if reload already loaded file
+    Return:
+	0 - success
+	value less then zero - error
+*/
+char buffer_load(s_buffer_list *buffer, store_str *str, const char *name);
+
+/*
+    Load binary file to buffer at specified location.
+    Loaded file is cut to buffer maximal address.
+    Input:
+	buffer - buffer structure
+	str    - storing values structure
+	name   - file name	
+	buff_pos - buffer osition to insert file content
+	filepos  - offset in file
+	count    - bytes count to load
+    Return:
+	0 - success
+	value less then zero - error    
+*/
+char buffer_load_at(s_buffer_list *buffer, store_str *str, const char *name, unsigned int buff_pos, unsigned int filepos, unsigned int count);
+
+/*
+    Save buffer to file. Type of file is automaitacaly determined by extension.
+    Input:
+	buffer - buffer structure
+	str    - storing values structure
+	name   - file name
+	flags  - 1 - allow overrwrite
+    Return:
+	0 - success
+	value less then zero - error                
+	1 - file already exist
+*/
+char buffer_save(s_buffer_list *buffer, store_str *str, const char *name, char flags);
+
+/*
+    Save buffer to binary file from position buff_pos. 
+    Input:
+	buffer - buffer structure
+	str    - storing values structure
+	name   - file name
+	buff_pos - start position in buffer
+	count    - count bytes;
+	flags  - 1 - allow overrwrite
+    Return:
+	0 - success
+	value less then zero - error                
+*/
+char buffer_save_at(s_buffer_list *buffer, store_str *str, const char *name, char flags, unsigned int buff_pos, unsigned int count);
+
+/*
+    Check if the last loaded file for specified buffer is valid. 
+    Input:
+	buffer - buffer structure
+    Return:
+	0 - file is valid
+	1 - file is out of date
+	-2 - error on stat on file
+*/
+char buffer_file_check_valid(s_buffer_list *buffer);
+
+const char *buffer_get_last_loaded_fname(s_buffer_list *buffer);
+const char *buffer_get_last_loaded_at_fname(s_buffer_list *buffer);
+const char *buffer_get_last_saved_fname(s_buffer_list *buffer);
+const char *buffer_get_last_saved_at_fname(s_buffer_list *buffer);
+
+/*
     return selected buffer size or 0
 */
 int buffer_get_size( const s_buffer *buffer );
 
+
+/*
+    Lists all buffers. For each buffer call cb.
+
+*/
+void buffer_get_list( s_buffer *buffer, f_buffer cb, void *ptr);
+
 //---
 
-void buffer_push(s_buffer *buffer);
-void buffer_pop(s_buffer *buffer);
-void buffer_get_name(s_buffer *buffer);
+//void buffer_push(s_buffer *buffer);
+//void buffer_pop(s_buffer *buffer);
+//void buffer_get_name(s_buffer *buffer);
 
 #ifdef __cplusplus
 };

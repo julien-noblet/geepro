@@ -101,7 +101,6 @@ static void gui_beneditor_destroy(GObject *obj)
 
     g_return_if_fail(obj != NULL);
     g_return_if_fail(GUI_IS_BINEDITOR(obj));
-
     be = GUI_BINEDITOR(obj);    
     if(be->priv->vfind) free(be->priv->vfind);
     be->priv->vfind = NULL;

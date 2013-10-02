@@ -1352,7 +1352,7 @@ REGISTER_MODULE_BEGIN( MCS-51 )
 
 // ATMEL AT89Cx051
     register_chip_begin("/uk/MCS-51/ATMEL/AT89Cx051","AT89C1051", "AT89Cxx51");
-	add_buffer("Flash", SIZE_AT89C1051);
+	add_buffer("Flash", SIZE_AT89C1051);	
 	add_action(MODULE_READ_ACTION, read_AT89C1051);
 	add_action(MODULE_PROG_ACTION, write_AT89C1051);
 	add_action(MODULE_VERIFY_ACTION, verify_AT89C1051);
@@ -1405,6 +1405,7 @@ REGISTER_MODULE_BEGIN( MCS-51 )
 // ATMEL 90S1200 & 90S2313
     register_chip_begin("/uk/AVR/AT90S","AT90S1200", "AT90S20pin");
 	add_buffer("Flash", SIZE_AT90S1200);
+	add_buffer("EEPROM", SIZE_AT90S1200_EEPROM);
 	add_action(MODULE_READ_FLASH_ACTION, read_flash_AT90S1200);
 	add_action(MODULE_READ_EEPROM_ACTION, read_eeprom_AT90S1200);
 	add_action(MODULE_PROG_FLASH_ACTION, write_flash_AT90S1200);
@@ -1418,6 +1419,7 @@ REGISTER_MODULE_BEGIN( MCS-51 )
     register_chip_end;
     register_chip_begin("/uk/AVR/AT90S","AT90S2313", "AT90S20pin");
 	add_buffer("Flash", SIZE_AT90S2313);
+	add_buffer("EEPROM", SIZE_AT90S2313_EEPROM);
 	add_action(MODULE_READ_FLASH_ACTION, read_flash_AT90S2313);
 	add_action(MODULE_READ_EEPROM_ACTION, read_eeprom_AT90S2313);
 	add_action(MODULE_PROG_FLASH_ACTION, write_flash_AT90S2313);

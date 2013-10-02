@@ -19,6 +19,7 @@
  *
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,18 +37,13 @@
 #include "../pixmaps/xpms.c"
 #include "../drivers/hwdriver.h"
 #include "../src/iface.h"
-#include "bineditor.h"
 #include "icons_xpm.c"
+#include "icons_xpm.h"
 #include "../src/checksum.h"
 #include "../src/error.h"
 #include "gui_dialog.h"
 #include "../src/programmer.h"
-
-typedef struct 
-{
-    GtkWidget *sb0, *sb1, *sb2;
-    long size;
-} gui_ins_file_str;
+#include "gui_buffer.h"
 
 typedef struct chip_tree_ chip_tree;
 struct chip_tree_
@@ -71,10 +67,6 @@ typedef struct
     void *ptr;
 } gui_local_2;
 
-
-
-void gui_refresh_button(GtkWidget *, geepro *);
-static void gui_checksum_recalculate( geepro * );
 static void gui_chip_tree_add(geepro *gep, const char *path, char *name, chip_tree **tree);
 static void gui_chip_tree_view_create(geepro *gep, chip_tree *tree);
 static void gui_chip_tree_view_free( chip_tree *tree );
@@ -111,67 +103,18 @@ char gui_test_connection(geepro *gep)
     return 1;    
 }
 
-static void gui_checksum_rfsh(geepro *gep)
-{
-    char tmp_str[40];
-    sprintf(tmp_str, "0x%x", GUI(gep->gui)->checksum); 
-    gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->crc_entry), tmp_str);  
-}
 
-static void gui_checksum_recalculate(geepro *gep)
-{
-    const s_buffer *bf;
-// to add algorithm selection
-    bf = iface_get_chip_buffer( gep->ifc );
-    if( !bf ) return;
-    GUI(gep->gui)->checksum = buffer_checksum( (s_buffer *)bf, CHECKSUM_ALG_LRC );
-    gui_checksum_rfsh( gep );
-}
 
-void gui_shortcut_size(char *tmp_str, unsigned long size)
-{
-    unsigned int a, i;
-    const char kx[5] = {'k','M','G','T','P'};
-    char  b[3] = {'B',0,0};
-
-    a = size;
-    i = 0;
-    while( (a >= 1024) && (i < 5)){
-        b[0] = kx[i];
-        b[1] = 'B';
-        a = a / 1024;
-        i++;
-    }
-    sprintf(tmp_str + strlen(tmp_str), "(%i %s)", a, b); 
-}
-
-void gui_entry_update(GtkEntry *entry, long size, char *tmp_str)
-{
-    sprintf(tmp_str, "0x%x", (unsigned int)size); 
-    gui_shortcut_size( tmp_str, size);
-    gtk_entry_set_text(entry, tmp_str);  
-}
 
 void gui_stat_rfsh(geepro *gep)
 {
-    char tmp_str[40];
     const char *cname;
-    const s_buffer *bf;
     
     if( !gep->ifc ) return;    
-    if((bf = iface_get_chip_buffer( gep->ifc ) )){
-	cname = iface_get_chip_name( gep->ifc );
-	if( !cname ) cname = "Not selected";
-	gtk_entry_set_text( GTK_ENTRY(GUI(gep->gui)->dev_entry ), cname );
-	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->device_entry),(unsigned int)buffer_get_size( bf ), tmp_str);
-	gui_entry_update(GTK_ENTRY(GUI(gep->gui)->buffer_entry),gui_bineditor_get_buffer_size(GUI_BINEDITOR(GUI(gep->gui)->bineditor)), tmp_str);
-	gui_checksum_rfsh( gep );
-    } else {
-	gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->dev_entry), "--------");
-	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->device_entry), tmp_str);  
-	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->buffer_entry), tmp_str);  
-	sprintf(tmp_str,"0x%x", 0); gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->crc_entry), tmp_str);  
-    }
+    cname = iface_get_chip_name( gep->ifc );
+    if( !cname ) cname = "Not selected";
+    gtk_entry_set_text( GTK_ENTRY(GUI(gep->gui)->dev_entry ), cname );
+    gui_buffer_refresh( GUI(gep->gui)->buffer );
 }
 
 static int gui_exit_program(GtkWidget *wg, geepro *gep, geepro *gep1)
@@ -192,7 +135,7 @@ void gui_exit(geepro *gep)
     gui_exit_program(NULL, gep, gep);
 }
 
-static void gui_load_error_msg(geepro *gep, const char *fname, const char *err)
+void gui_load_error_msg(geepro *gep, const char *fname, const char *err)
 {
     if(err[0] != '!') 
 	gui_error_box(gep, "Error loading file:\n%s\n%s", fname, err);
@@ -200,268 +143,9 @@ static void gui_load_error_msg(geepro *gep, const char *fname, const char *err)
 	gui_dialog_box(gep, "[WN][TEXT]%s[/TEXT][BR]OK", err + 1); 
 }
 
-// Buffer offset
-//static void gui_insert_file_ranger0(GtkSpinButton *s, gui_ins_file_str *sb)
-//{
-//    double val = gtk_spin_button_get_value( s );
-//    gtk_spin_button_set_range(GTK_SPIN_BUTTON(sb->sb1), 0, sb->size - val);
-//}
-// Bytes count
-//static void gui_insert_file_ranger1(GtkSpinButton *s, gui_ins_file_str *sb)
-//{
-//    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
-//    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
-//}
-// File offset
-static void gui_insert_file_ranger2(GtkSpinButton *s, gui_ins_file_str *sb)
-{
-///    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
-//    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), sb.size);
-}
-
-static void gui_load_file_(GtkWidget *w, geepro *gep, gboolean flag)
-{ 
-    char *tmp;
-    GtkWidget *wg;    
-    GtkFileFilter *filter;
-    GtkWidget *wgi, *ca, *grid, *lb;
-    gui_ins_file_str sb;
-    gint result;
-    long offset, size, fofs, flen;
-
-    wg = gtk_file_chooser_dialog_new(
-	    "Open file", GUI(gep->gui)->wmain, 
-	    GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_CANCEL,
-	    GTK_RESPONSE_CANCEL, GTK_STOCK_OPEN, 
-	    GTK_RESPONSE_ACCEPT, NULL
-	);
-    // file filters
-    if(!flag){
-	filter = gtk_file_filter_new();
-	gtk_file_filter_set_name(filter, "hex");
-	gtk_file_filter_add_pattern(filter, "*.hex");
-	gtk_file_filter_add_pattern(filter, "*.HEX");
-	gtk_file_filter_add_pattern(filter, "*.Hex");    
-	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-
-	filter = gtk_file_filter_new();
-	gtk_file_filter_set_name(filter, "srec");
-	gtk_file_filter_add_pattern(filter, "*.srec");
-	gtk_file_filter_add_pattern(filter, "*.SREC");
-	gtk_file_filter_add_pattern(filter, "*.Srec");
-	gtk_file_filter_add_pattern(filter, "*.s19");
-	gtk_file_filter_add_pattern(filter, "*.S19");
-	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-    }
-
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "bin");
-    gtk_file_filter_add_pattern(filter, "*.bin");
-    gtk_file_filter_add_pattern(filter, "*.BIN");
-    gtk_file_filter_add_pattern(filter, "*.Bin");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "ALL");
-    gtk_file_filter_add_pattern(filter, "*.*");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-
-    if(!flag){
-	tmp = NULL;
-	if(store_get(gep->store, "LAST_OPENED_PATH", &tmp) == 0){
-	    if( tmp ){
-		gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
-		free(tmp);
-	    }
-	}
-
-      tmp = NULL;
-	if(store_get(gep->store, "LAST_OPENED_FILE", &tmp) == 0){
-	    if( tmp ){
-		gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(wg), tmp);
-		free(tmp);
-	    }
-	}
-    }
-    if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
-	char *fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
-	const char *err;
-
-        if(!flag){
-	    store_set(gep->store, "LAST_OPENED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
-    	    store_set(gep->store, "LAST_OPENED_FILE", gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg)));
-	    gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->file_entry), fname);
-	    gtk_editable_set_position(GTK_EDITABLE(GUI(gep->gui)->file_entry), -1);
-	}
-
-	gtk_widget_destroy(wg);    
-
-	fofs = -1; offset = -1; size = -1;
-	if(flag){
-
-	    flen = file_length( fname );
-	    if( flen < 0){
-		gui_load_error_msg(gep, fname, "");
-		g_free( fname );
-		return;
-	    }
-	    
-	    wgi = gtk_dialog_new_with_buttons("Insert file to buffer", GUI(gep->gui)->wmain, 
-		    GTK_DIALOG_DESTROY_WITH_PARENT, 
-		    GTK_STOCK_OK, GTK_RESPONSE_ACCEPT, 
-		    GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
-		    NULL
-		  );
-	    ca = gtk_dialog_get_content_area(GTK_DIALOG( wgi ));
-	    grid = gtk_grid_new();
-	    gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
-	    gtk_grid_set_column_spacing(GTK_GRID(grid), 5);
-	    gtk_container_add(GTK_CONTAINER(ca), grid);
-
-	    lb = gtk_label_new( DLG_INS_FILE_BUFFER_OFFSET );
-	    gtk_grid_attach(GTK_GRID(grid), lb, 0, 0, 1, 1);
-	    lb = gtk_label_new( DLG_INS_FILE_SIZE );
-	    gtk_grid_attach(GTK_GRID(grid), lb, 0, 1, 1, 1);
-	    lb = gtk_label_new( DLG_INS_FILE_OFFSET );
-	    gtk_grid_attach(GTK_GRID(grid), lb, 0, 2, 1, 1);
-
-//	    sb.size = gep->chp->dev_size;
-//	    sb.sb0 = gtk_spin_button_new_with_range(0.0, (double)gep->chp->dev_size, 1.0);
-//	    gtk_grid_attach(GTK_GRID(grid), sb.sb0, 1, 0, 1, 1);
-//	    g_signal_connect(G_OBJECT(sb.sb0), "value-changed", G_CALLBACK(gui_insert_file_ranger0), &sb);
-//	    sb.sb1 = gtk_spin_button_new_with_range(0.0, (double)gep->chp->dev_size, 1.0);
-//	    gtk_spin_button_set_value(GTK_SPIN_BUTTON(sb.sb1), (double)gep->chp->dev_size);
-//	    gtk_grid_attach(GTK_GRID(grid), sb.sb1, 1, 1, 1, 1);
-//	    g_signal_connect(G_OBJECT(sb.sb1), "value-changed", G_CALLBACK(gui_insert_file_ranger1), &sb);
-	    sb.sb2 = gtk_spin_button_new_with_range(0.0, (double)flen, 1.0);
-	    gtk_grid_attach(GTK_GRID(grid), sb.sb2, 1, 2, 1, 1);
-	    g_signal_connect(G_OBJECT(sb.sb2), "value-changed", G_CALLBACK(gui_insert_file_ranger2), &sb);
-	    gtk_widget_show_all( ca );
-    
-	    result = gtk_dialog_run(GTK_DIALOG( wgi ) );
-	    offset = gtk_spin_button_get_value(GTK_SPIN_BUTTON( sb.sb0 ));
-	    size = gtk_spin_button_get_value(GTK_SPIN_BUTTON( sb.sb1 ));
-	    fofs = gtk_spin_button_get_value(GTK_SPIN_BUTTON( sb.sb2 ));
-
-	    gtk_widget_destroy( wgi );
-	    if( result != GTK_RESPONSE_ACCEPT ){
-		g_free( fname );
-		return;
-	    }
-	}
-
-	err = file_load(gep, fname, fofs, offset, size);
-	if(err)
-	    gui_load_error_msg(gep, fname, err);
-	if(!flag) file_get_time(gep, &GUI(gep->gui)->fct, fname);
-	g_free(fname);
-    } else
-	gtk_widget_destroy(wg);    
-
-    gui_checksum_recalculate( gep );
-    gtk_widget_queue_draw( GUI(gep->gui)->wmain );
-    gui_bineditor_redraw( GUI(gep->gui)->bineditor );
-}
-
-static void gui_load_file(GtkWidget *w, geepro *gep)
-{
-    gui_load_file_( w, gep, FALSE);
-}
-
-static void gui_load_file_at(GtkWidget *w, geepro *gep)
-{
-    gui_load_file_( w, gep, TRUE);    
-}
-
-
-static void gui_save_file(GtkWidget *w, geepro *gep)
-{ 
-    char *tmp;
-    GtkWidget *wg;    
-    GtkFileFilter *filter;
-
-    wg = gtk_file_chooser_dialog_new(
-	    "Save file", GUI(gep->gui)->wmain, 
-	    GTK_FILE_CHOOSER_ACTION_SAVE,GTK_STOCK_CANCEL,
-	    GTK_RESPONSE_CANCEL, GTK_STOCK_SAVE,
-	    GTK_RESPONSE_ACCEPT, NULL
-	);
-
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(wg), TRUE);
-
-    // file filters
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "hex");
-    gtk_file_filter_add_pattern(filter, "*.hex");
-    gtk_file_filter_add_pattern(filter, "*.HEX");
-    gtk_file_filter_add_pattern(filter, "*.Hex");    
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "bin");
-    gtk_file_filter_add_pattern(filter, "*.bin");
-    gtk_file_filter_add_pattern(filter, "*.BIN");
-    gtk_file_filter_add_pattern(filter, "*.Bin");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "srec");
-    gtk_file_filter_add_pattern(filter, "*.srec");
-    gtk_file_filter_add_pattern(filter, "*.SREC");
-    gtk_file_filter_add_pattern(filter, "*.Srec");
-    gtk_file_filter_add_pattern(filter, "*.s19");
-    gtk_file_filter_add_pattern(filter, "*.S19");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-    filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "ALL");
-    gtk_file_filter_add_pattern(filter, "*.*");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(wg), filter);
-
-    tmp = NULL;
-    if(store_get(gep->store, "LAST_SAVED_PATH", &tmp) == 0){
-	if( tmp ){
-	    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(wg), tmp);
-	    free(tmp);
-	}
-    }
-
-    if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
-	char *fname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
-	store_set(gep->store, "LAST_SAVED_PATH", gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(wg)));
-	if(file_save(gep, fname)){
-	    gui_error_box(gep, "Error saving file");
-	}
-	g_free(fname);
-    }
-
-    gtk_widget_destroy(wg);    
-
-}
-
 /***************************************************************************************************************************/
 // adding action button to tool bar
 
-static void gui_test_file( geepro *gep )
-{
-    long long time;
-
-    const char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));    
-
-    if( !fname ) return;
-    if( !fname[0] ) return;
-
-    file_get_time(gep, &time, fname);
-
-    if( GUI(gep->gui)->fct < 0){
-	GUI(gep->gui)->fct = time;
-	return;
-    }
-    
-    if( GUI(gep->gui)->fct != time){
-	if(gui_dialog_box(gep, "[QS][TEXT]"RELOAD_QUESTION"[/TEXT][BR]  NO  [BR]  YES  ", fname) == 2){
-	    gui_refresh_button(NULL, gep);
-	    return;
-	}
-    }
-}
 
 static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 {
@@ -477,10 +161,10 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 	return;
     }
 // program, compare -> test bin file for changes
-    if( !strcmp(ga->name, "geepro-write-action") ) gui_test_file( gep );
-    if( !strcmp(ga->name, "geepro-write-eeprom-action") ) gui_test_file( gep );
-    if( !strcmp(ga->name, "geepro-verify-action") ) gui_test_file( gep );
-    if( !strcmp(ga->name, "geepro-verify-eeprom-action") ) gui_test_file( gep );
+    if( !strcmp(ga->name, "geepro-write-action") ) gui_buffer_check_valid( GUI(gep->gui)->buffer );
+    if( !strcmp(ga->name, "geepro-write-eeprom-action") ) gui_buffer_check_valid( GUI(gep->gui)->buffer );
+    if( !strcmp(ga->name, "geepro-verify-action") ) gui_buffer_check_valid( GUI(gep->gui)->buffer );
+    if( !strcmp(ga->name, "geepro-verify-eeprom-action") ) gui_buffer_check_valid( GUI(gep->gui)->buffer );
     gep->action = 1;
     gui_test_hw( NULL, gep );
     if( !gui_test_connection( gep ) ){
@@ -495,8 +179,8 @@ static void gui_invoke_action(GtkWidget *wg, gui_action *ga)
 	        "Action returned error: %i"
 		"[/TEXT][BR] OK ", x
 	    ); 
-    gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
-    gui_checksum_recalculate( gep );
+
+    gui_buffer_refresh(GUI(gep->gui)->buffer);
     gep->action = 0;
 }
 
@@ -573,6 +257,15 @@ static void gui_chip_free(geepro *gep)
 
 /***************************************************************************************************************************/
 
+static void gui_add_buffer( s_buffer *bf, s_buffer_list *it, geepro *gep)
+{
+    GtkWidget *wg, *lbl;
+    wg = gui_buffer_new( GUI(gep->gui)->buffer, it, GUI(gep->gui)->wmain);
+    lbl = gtk_label_new(it->name);
+    gtk_label_set_angle(GTK_LABEL(lbl), 90);
+    gtk_notebook_append_page( GTK_NOTEBOOK(GUI(gep->gui)->buffer_tabs), wg, lbl);
+}
+
 static void gui_chip_select(geepro *gep, const char *name)
 {
     s_buffer *bf;
@@ -588,10 +281,11 @@ static void gui_chip_select(geepro *gep, const char *name)
 	return;
     }
 
+    gui_buffer_delete( GUI(gep->gui)->buffer );
     bf = (s_buffer *)iface_get_chip_buffer(gep->ifc);
-
     // actualize buffer object 
-    gui_bineditor_set_buffer(GUI(gep->gui)->bineditor, buffer_get_size( bf ), (unsigned char*)buffer_get_pointer( bf ));
+    buffer_get_list(bf, BUFFER_CB(gui_add_buffer), gep);
+    gtk_widget_show_all(GUI(gep->gui)->buffer_tabs);
 
     // add action buttons to menu    
     gui_add_action(gep);
@@ -789,26 +483,6 @@ static void gui_add_images(geepro *gep)
 
 }
 
-void gui_refresh_button(GtkWidget *wg, geepro *gep)
-{
-    const char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));
-    const char *err;
-
-
-    err = file_load(gep, (char *)fname, -1, -1, -1);
-    if( err ) 
-	    gui_load_error_msg(gep, fname, err);
-    else {
-	gui_dialog_box(gep, "[IF][TEXT]File reloaded[/TEXT][BR]OK");
-	
-    }
-
-    err = file_get_time(gep, &GUI(gep->gui)->fct, fname);
-    if( err ) 
-        gui_error_box(gep, "Error get creation time of file :\n%s\n%s", fname, err);    
-    gui_checksum_recalculate( gep );
-    gui_bineditor_redraw( ((gui *)(gep->gui))->bineditor );
-}
 
 static void gui_select_chip(geepro *gep, const char *name)
 {
@@ -880,60 +554,6 @@ static gboolean gui_test_cyclic_hw(geepro *gep)
     return TRUE;
 }
 
-static GtkWidget *gui_info_field(const char *title, void **entry)
-{
-    GtkWidget *wg1, *wg2;
-    wg1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    wg2 = gtk_label_new(title);
-//    gtk_misc_set_alignment(GTK_MISC(wg2), 0, 0);
-    gtk_box_pack_start(GTK_BOX(wg1), wg2, FALSE, FALSE, 0);
-    wg2 = gtk_entry_new();
-    gtk_editable_set_editable(GTK_EDITABLE(wg2), FALSE);
-    gtk_box_pack_start(GTK_BOX(wg1), wg2, TRUE, TRUE, 0);
-    *entry = wg2;
-    return wg1;
-}
-
-static void gui_device_buffer_info(geepro *gep, GtkWidget *wg)
-{
-    GtkWidget *wg1, *wg2;
-    char *tmp;
-
-    wg1 = gtk_frame_new( NULL );
-    gtk_container_add( GTK_CONTAINER( wg ), wg1);
-    wg2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_container_add( GTK_CONTAINER( wg1 ), wg2);
-    // Size of device
-    gtk_container_add( GTK_CONTAINER( wg2 ), gui_info_field(SIZE_DEVICE_HEX_LB, &GUI(gep->gui)->device_entry) );
-    // Size of buffer
-    gtk_container_add( GTK_CONTAINER( wg2 ), gui_info_field(SIZE_BUFFER_HEX_LB, &GUI(gep->gui)->buffer_entry) );
-    // CRC sum   
-    gtk_container_add( GTK_CONTAINER( wg2 ), gui_info_field(CHECKSUM_LB, &GUI(gep->gui)->crc_entry) );
-    // file entry and reload button
-    wg1 = gtk_frame_new( NULL );
-    gtk_container_add( GTK_CONTAINER( wg ), wg1);
-    wg2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_container_add( GTK_CONTAINER( wg1 ), wg2);
-    gtk_box_pack_start(GTK_BOX(wg2), gui_info_field(FILE_LB, &GUI(gep->gui)->file_entry),  TRUE, TRUE, 0);
-    tmp = NULL;
-    if(!store_get(gep->store, "LAST_OPENED_FILE", &tmp)){
-	if(tmp){
-	    gtk_entry_set_text(GTK_ENTRY(GUI(gep->gui)->file_entry), tmp);
-	    gtk_editable_set_position(GTK_EDITABLE(GUI(gep->gui)->file_entry), -1);
-	}
-    }
-    wg1 = gtk_button_new();
-    gtk_container_add(GTK_CONTAINER(wg1), gtk_image_new_from_stock("gtk-refresh", GTK_ICON_SIZE_BUTTON));
-    gtk_widget_set_tooltip_text(wg1, TEXT(GUI_RELOAD) );
-    g_signal_connect(G_OBJECT(wg1), "pressed", G_CALLBACK(gui_refresh_button), gep);
-    gtk_box_pack_start(GTK_BOX(wg2), wg1,  FALSE, FALSE, 0);
-
-}
-
-void gui_bineditor_update(GuiBineditor *be, geepro *gep)
-{
-    gui_stat_rfsh( gep );
-}
 
 void gui_usb_port_notify(s_iface_device *dev, s_iface_devlist *list, geepro *gep)
 {
@@ -969,8 +589,8 @@ void gui_run(geepro *gep)
     if(!store_get(gep->store, "LAST_CHIP_SELECTED", &tmp)){
 	if( tmp ) gui_chip_select(gep, tmp);
     }
-
     gtk_main(); /* jesli programator ok to startuj program inaczej wyjdź */
+    gui_buffer_exit( GUI(gep->gui)->buffer );
 }
 
 void gui_kill_me(geepro *gep)
@@ -1653,9 +1273,9 @@ static void gui_help(geepro *gep)
     gtb = gtk_text_view_get_buffer( GTK_TEXT_VIEW( cta ));
     gtk_container_add(GTK_CONTAINER( wg1 ), cta);
     // read file, temporary fixed path
-    if(cfp_get_string(gep->cfg, "/docfile", &path)){
-	printf("[WRN] Missing docfile variable in config\n");    
-    }
+//    if(cfp_get_string(gep->cfg, "/docfile", &path)){
+//	printf("[WRN] Missing docfile variable in config\n");    
+//    }
 //printf( "--->%s \n", path);    
 path = "./doc/doc_eng.txt";
     if( path ){
@@ -1735,32 +1355,7 @@ void gui_menu_setup(geepro *gep)
     gtk_container_add(GTK_CONTAINER(wg2), wg5);    
     gtk_box_pack_start(GTK_BOX(wg3), wg2, FALSE, FALSE, 0);
 
-/* menu File */
-//wg2 = gtk_menu_item_new_with_label(MB_FILE);
-//gtk_menu_shell_append(GTK_MENU_SHELL(wg1), wg2);
-//wg3 = gtk_menu_new();
-//gtk_menu_item_set_submenu(GTK_MENU_ITEM(wg2), wg3);
-    /* load file */
-//wg2 = gtk_menu_item_new_with_label(MB_LOAD_FILE);
-//gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
-//g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_load_file), gep);
     gui_set_plug( gep );
-    /* load file at specified address */
-//wg2 = gtk_menu_item_new_with_label(MB_LOAD_FILE_AT);
-//gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
-//g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_load_file_at), gep);
-
-    /* save file */
-//wg2 = gtk_menu_item_new_with_label(MB_SAVE_FILE);
-//gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
-//g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_save_file), gep);
-    /* spacer */
-//wg2 = gtk_menu_item_new();
-//gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
-    /* exit */
-//wg2 = gtk_menu_item_new_with_label(MB_EXIT_FILE);
-//gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
-//g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_exit_program), gep);
 
 /* Menu Help */
     wg2 = gtk_menu_item_new_with_label( MB_HELP );    
@@ -1778,7 +1373,7 @@ void gui_menu_setup(geepro *gep)
     wg2 = gtk_menu_item_new_with_label(MB_ABOUT_FILE);
     gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
     g_signal_connect(G_OBJECT(wg2), "activate", G_CALLBACK(gui_about), gep);
-// --
+
     /* spacer */
     wg2 = gtk_menu_item_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(wg3), wg2);    
@@ -1847,42 +1442,71 @@ gtk_widget_set_sensitive(GTK_WIDGET(ti0), FALSE);
     gtk_box_pack_start(GTK_BOX(wg3), wg1 = gui_prog_list(gep), FALSE, FALSE, 5);
     gui_add_iface_combox(gep);
 
-/* ======================================= */
-/* -----> notebook page 2 'bufor' <------- */
-/* ======================================= */
-    wg1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
-
-    wg0 = gui_bineditor_new(GUI(gep->gui)->wmain);
-    GUI_BINEDITOR(wg0)->priv->store = gep->store;
-    GUI(gep->gui)->bineditor = wg0;
-    g_signal_connect(G_OBJECT(wg0), "changed", G_CALLBACK(gui_bineditor_update), gep);    
-    gui_bineditor_set_icon( GUI_BINEDITOR(wg0), LOGO_ICON );
-
-    wg2 = GTK_WIDGET(gtk_separator_tool_item_new());
-    gui_bineditor_tool_insert(GUI_BINEDITOR(wg0), GTK_TOOL_ITEM(wg2), 0);
-
-    wg2 = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_SAVE ));
-    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(wg2), TIP_BE_WRITE);    
-    gui_bineditor_tool_insert(GUI_BINEDITOR(wg0),  GTK_TOOL_ITEM(wg2), 0);
-    g_signal_connect(G_OBJECT(wg2), "clicked", G_CALLBACK(gui_save_file), gep);
-
-    wg2 = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_EDIT ));
-    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(wg2), TIP_BE_OPEN_AT);    
-    gui_bineditor_tool_insert(GUI_BINEDITOR(wg0),  GTK_TOOL_ITEM(wg2), 0);
-    g_signal_connect(G_OBJECT(wg2), "clicked", G_CALLBACK(gui_load_file_at), gep);
-
-    wg2 = GTK_WIDGET(gtk_tool_button_new_from_stock( GTK_STOCK_OPEN ));
-    gtk_tool_item_set_tooltip_text(GTK_TOOL_ITEM(wg2), TIP_BE_OPEN);    
-    gui_bineditor_tool_insert(GUI_BINEDITOR(wg0),  GTK_TOOL_ITEM(wg2), 0);
-    g_signal_connect(G_OBJECT(wg2), "clicked", G_CALLBACK(gui_load_file), gep);
-
-    gtk_notebook_append_page( GTK_NOTEBOOK( GUI(gep->gui)->notebook), wg1, gtk_label_new(TXT_BUFFER) );
-    gui_device_buffer_info( gep, wg1 );
-    gtk_box_pack_start(GTK_BOX(wg1), wg0, TRUE, TRUE, 0);    
 /* Koniec inicjowania Gui */
     gui_set_default(gep);
     gui_xml_new(GUI(gep->gui)); /* zainicjowanie struktury gui_xml */
 // test connection automaticaly
     g_timeout_add( 1000, (GSourceFunc)(gui_test_cyclic_hw), gep); // automatic test connection
     gui_port_devices_set( gep );
+    
+/* ======================================== */
+/* --> notebook page 2 'Buffers' <--- */
+/* ======================================== */
+    GUI(gep->gui)->buffer_tabs = gtk_notebook_new();
+    gtk_notebook_set_tab_pos(GTK_NOTEBOOK(GUI(gep->gui)->buffer_tabs), GTK_POS_LEFT);
+//    gtk_widget_set_sensitive(GTK_WIDGET(GUI(gep->gui)->buffer_tabs), FALSE);
+//    gtk_widget_hide(GTK_WIDGET(GUI(gep->gui)->buffer_tabs));
+    gtk_notebook_append_page( GTK_NOTEBOOK(GUI(gep->gui)->notebook), GUI(gep->gui)->buffer_tabs, gtk_label_new("Buffers") );
+    if(gui_buffer_init((s_gui_buffer **)&GUI(gep->gui)->buffer, gep->store, GUI(gep->gui)->buffer_tabs)){
+	ERR( "Creating buffers fail." );
+    }
 }
+
+/*
+static void gui_test_file( geepro *gep )
+{
+    long long time;
+
+    const char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));    
+
+    if( !fname ) return;
+    if( !fname[0] ) return;
+
+    file_get_time(gep, &time, fname);
+
+    if( GUI(gep->gui)->fct < 0){
+	GUI(gep->gui)->fct = time;
+	return;
+    }
+    
+    if( GUI(gep->gui)->fct != time){
+	if(gui_dialog_box(gep, "[QS][TEXT]"RELOAD_QUESTION"[/TEXT][BR]  NO  [BR]  YES  ", fname) == 2){
+	    gui_refresh_button(NULL, gep);
+	    return;
+	}
+    }
+}
+
+
+void gui_refresh_button(GtkWidget *wg, geepro *gep)
+{
+    const char *fname = gtk_entry_get_text(GTK_ENTRY(GUI(gep->gui)->file_entry));
+    const char *err;
+
+
+    err = file_load(gep, (char *)fname, -1, -1, -1);
+    if( err ) 
+	    gui_load_error_msg(gep, fname, err);
+    else {
+	gui_dialog_box(gep, "[IF][TEXT]File reloaded[/TEXT][BR]OK");
+	
+    }
+
+    err = file_get_time(gep, &GUI(gep->gui)->fct, fname);
+    if( err ) 
+        gui_error_box(gep, "Error get creation time of file :\n%s\n%s", fname, err);    
+    gui_buffer_refresh( GUI(gep->gui)->buffer );
+}
+
+*/
+
