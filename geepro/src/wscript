@@ -4,7 +4,7 @@ def build(bld):
   print('→ building src')
   sources=[
     'error.cpp', 'intl.cpp',
-    'buffer.cpp', 'chip.cpp', 'dummy.cpp', 'storings.cpp', 
+    'chip.cpp', 'dummy.cpp', 'storings.cpp', 'buffer.cpp',
     'iface.cpp', 'files.cpp', 'parport.cpp', 'timer.cpp', 
     'protocols.cpp', 'script.cpp', 'checksum.cpp', 'cfp.cpp',
     'usb2lpt.cpp', 'gep_usb.cpp', 'serial.cpp', 'programmer.cpp'

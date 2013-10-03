@@ -21,25 +21,25 @@
 
 #ifndef __files_h__
 #define __files_h__
-#include "geepro.h"
+#include "buffer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // false on fail
-typedef boolean (*file_ls_callback)(const char *fname, const char *error, void *arg);
+typedef char (*file_ls_callback)(const char *fname, const char *error, void *arg);
 
-extern const char *file_load(geepro *gep, const char *fname, long file_offset, long buffer_offset, long bytes_count);
-extern const char *file_save(geepro *gep, const char *fname);
-extern const char *file_get_time(geepro *gep, long long *time, const char *fname);
+extern const char *file_load(s_buffer_list *, const char *fname, long file_offset, long buffer_offset, long bytes_count);
+extern const char *file_save(s_buffer_list *, const char *fname);
+extern const char *file_get_time(long long *time, const char *fname);
 extern long file_length(const char *fname); // returns -1 on fail
 
 // lists directory content pointed by 'path' and filtered by 'regex'
 // on each match entry callback is called, 'arg' is the custom argument for callback
 // 'error' have to point array string of 256 size.  It returns error message strings on error. It should be cleared by 0.
 // return false on fail
-extern boolean file_ls(const char *path, const char *regex, char *error, file_ls_callback, void *arg);
+extern char file_ls(const char *path, const char *regex, char *error, file_ls_callback, void *arg);
 
 #ifdef __cplusplus
 }

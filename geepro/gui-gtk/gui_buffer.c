@@ -135,7 +135,7 @@ static void gui_load_file(GtkWidget *w, s_gui_buffer_list *it)
     gui_add_file_filter(wg, "srec", "*.srec:*.SREC:*.Srec:*.s19:*.S19");
     gui_add_file_filter(wg, "bin", "*.bin:*.BIN:*.Bin:*.rom:*.ROM:*.Rom");
     gui_add_file_filter(wg, "ALL", "*.*");
-    if( (tmp = (char *)buffer_get_last_loaded_fname( it->buffer )) )
+    if( (tmp = (char *)buffer_get_last_loaded_fname( it->buffer, it->parent->store )) )
 	gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(wg), tmp);
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
 	tmp = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
@@ -162,7 +162,7 @@ static void gui_load_file_at(GtkWidget *w, s_gui_buffer_list *it)
 	);
     gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(wg), FALSE);
     gui_add_file_filter(wg, "ALL", "*.*");
-    if( (tmp = (char *)buffer_get_last_loaded_at_fname( it->buffer )) )
+    if( (tmp = (char *)buffer_get_last_loaded_at_fname( it->buffer,it->parent->store )) )
 	gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(wg), tmp);
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
 	tmp = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(wg));
@@ -222,7 +222,7 @@ static void gui_save_file(GtkWidget *w, s_gui_buffer_list *it)
     gui_add_file_filter( wg, "srec", "*.srec:*.SREC:*.Srec:*s19:*.S19");
     gui_add_file_filter( wg, "ALL", "*.*");
 
-    if( (tmp = (char *)buffer_get_last_saved_fname( it->buffer )) )
+    if( (tmp = (char *)buffer_get_last_saved_fname( it->buffer, it->parent->store )) )
 	gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(wg), tmp);
 
     if(gtk_dialog_run(GTK_DIALOG(wg)) == GTK_RESPONSE_ACCEPT){
@@ -270,7 +270,7 @@ void gui_buffer_exit(s_gui_buffer *bf)
 static void gui_buffer_set_file_entry( s_gui_buffer_list *it )
 {
     const char *tmp;
-    if((tmp = buffer_get_last_loaded_fname( it->buffer ) )){
+    if((tmp = buffer_get_last_loaded_fname( it->buffer, it->parent->store ) )){
 	gtk_entry_set_text(GTK_ENTRY(it->file_entry), tmp);
 	gtk_editable_set_position(GTK_EDITABLE(it->file_entry), -1);
     }

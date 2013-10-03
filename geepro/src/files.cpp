@@ -198,24 +198,20 @@ int file_test_extension(FILE *f, const char *fname, const char *ext)
     return 2;
 }
 
-const char *file_load(geepro *gep, const char *fname, long file_offset, long buffer_offset, long bytes_count )
+const char *file_load(s_buffer_list *bf, const char *fname, long file_offset, long buffer_offset, long bytes_count )
 {
-    const s_buffer *bf;
     FILE *f;
     int err = 0, x=0;
     unsigned int dev_size;
     char *data;
 
-    if(!gep->ifc) return NULL;    
-
-    bf = iface_get_chip_buffer(gep->ifc);
     if(!bf) return "No chip memory size specified.";    
 
-    dev_size = buffer_get_size( bf );
-    data = buffer_get_pointer( bf );
+    dev_size = bf->size;
+    data = bf->data;
     if( !data ) return NULL;
     
-    if( file_offset < 0 ) buffer_fill(bf, 0xff);
+    if( file_offset < 0 ) memset(data, 0xff, dev_size);
 
     if(!(f = fopen(fname , "r-"))) return "Open file error.";
 
@@ -347,20 +343,17 @@ int file_save_hex(FILE *f, int size, char *buffer)
     return 0;
 }
 
-const char *file_save(geepro *gep, const char *fname)
+const char *file_save(s_buffer_list *bf, const char *fname)
 {
-    const s_buffer *bf;
     char *data;
     FILE *f;
     int err = 0, x=0, size;
 
-    if(!gep->ifc)  return NULL;
     if(!fname)  return "No file name";
     if(fname[0] == 0)  return "No file name";
     
-    if(!(bf = iface_get_chip_buffer( gep->ifc ))) return NULL;
-    size = buffer_get_size( bf );
-    data = buffer_get_pointer( bf );    
+    size = bf->size;
+    data = bf->data;    
 
     if( !bf ) return NULL;
     if( !size ) return "Buffer size is 0 bytes.";
@@ -400,7 +393,7 @@ long file_length(const char *fname)
 
 //------------------------------------------------------------------------------------------
 
-const char *file_get_time(geepro *gep, long long *time, const char *fname)
+const char *file_get_time(long long *time, const char *fname)
 {
     struct stat st;
 
@@ -414,7 +407,7 @@ const char *file_get_time(geepro *gep, long long *time, const char *fname)
     return 0;
 }
 
-boolean file_regex_match(const char *str, regex_t *rgx, char *error)
+char file_regex_match(const char *str, regex_t *rgx, char *error)
 {
     char tmp[100];
     int  ret;
@@ -430,12 +423,12 @@ boolean file_regex_match(const char *str, regex_t *rgx, char *error)
     return false;
 }
 
-boolean file_ls(const char *path, const char *regex, char *error, file_ls_callback fcb, void *arg)
+char file_ls(const char *path, const char *regex, char *error, file_ls_callback fcb, void *arg)
 {
     regex_t rgx;
     DIR     *dp;
     struct dirent *ep;
-    boolean tmp;
+    char tmp;
 
     if( regcomp(&rgx, regex, REG_EXTENDED | REG_NOSUB) ){
 	sprintf( error, "regcomp() failed: Could not compile regex. { files.c -> file_regex_match() }\n");
