@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "error.h"
+#include "files.h"
 
 extern "C" {
 #include "buffer.h"
@@ -91,6 +92,10 @@ void buffer_delete_all( s_buffer *bf)
 	tmp = it->next;
 	if( it->name ) free( it->name );
 	if( it->data ) free( it->data );
+	if(it->last_loaded) free(it->last_loaded);
+	if(it->last_loaded_at) free(it->last_loaded_at);
+	if(it->last_saved) free(it->last_saved);
+	if(it->last_saved_at) free(it->last_saved_at);
 	it = tmp;
     }
     bf->list = NULL;
@@ -218,53 +223,157 @@ void buffer_get_list( s_buffer *bf, f_buffer cb, void *ptr)
     LOAD/SAVE to file
 */
 
-const char *buffer_get_last_loaded_fname( s_buffer_list *bf )
+static const char buffer_empty_string[] = "";
+
+const char *buffer_get_last_loaded_fname( s_buffer_list *bf, store_str *st )
 {
-    return "--aaa--";
+    char *tmp;
+    char fmt[256];
+    if(!bf->last_loaded){
+	sprintf(fmt, BUFFER_KEY_LOADED"[%s]", bf->name);
+	tmp = NULL;
+	if(!store_get(st, (const char *)fmt, &tmp)){
+	    bf->last_loaded = tmp;
+	}
+    }
+    return bf->last_loaded ? bf->last_loaded : buffer_empty_string;
 }
 
-const char *buffer_get_last_loaded_at_fname( s_buffer_list *bf )
+const char *buffer_get_last_loaded_at_fname( s_buffer_list *bf, store_str *st )
 {
-    return "--bbbb--";
+    char *tmp;
+    char fmt[256];
+    if(!bf->last_loaded_at){
+	sprintf(fmt, BUFFER_KEY_LOADED_AT"[%s]", bf->name);
+	tmp = NULL;
+	if(!store_get(st, (const char *)fmt, &tmp)){
+	    bf->last_loaded_at = tmp;
+	}
+    }
+    return bf->last_loaded_at ? bf->last_loaded_at : buffer_empty_string;
 }
 
-const char *buffer_get_last_saved_fname( s_buffer_list *bf )
+const char *buffer_get_last_saved_fname( s_buffer_list *bf, store_str *st )
 {
-    return "--cccc--";
+    char *tmp;
+    char fmt[256];
+    if(!bf->last_saved){
+	sprintf(fmt, BUFFER_KEY_SAVED"[%s]", bf->name);
+	tmp = NULL;
+	if(!store_get(st, (const char *)fmt, &tmp)){
+	    bf->last_saved = tmp;
+	}
+    }
+    return bf->last_saved ? bf->last_saved : buffer_empty_string;
 }
 
-const char *buffer_get_last_saved_at_fname( s_buffer_list *bf )
+const char *buffer_get_last_saved_at_fname( s_buffer_list *bf, store_str *st )
 {
-    return "--dddd--";
+    char *tmp;
+    char fmt[256];
+    if(!bf->last_saved_at){
+	sprintf(fmt, BUFFER_KEY_SAVED_AT"[%s]", bf->name);
+	tmp = NULL;
+	if(!store_get(st, fmt, &tmp)){
+	    bf->last_saved_at = tmp;
+	}
+    }
+    return bf->last_saved_at ? bf->last_saved_at : buffer_empty_string;
+}
+
+char buffer_file_check_valid(s_buffer_list *bf)
+{ 
+    long long time = 0;
+
+    if(!bf) return 0;
+    if(!bf->last_loaded) return 0;
+    if( file_get_time(&time, bf->last_loaded ) ) return -2;
+    if( time != bf->time_loaded) return 1;
+    return 0;
 }
 
 char buffer_load(s_buffer_list *bf, store_str *st, const char *name)
 { 
-    printf("---- Load ----\n");
+    char fmt[256];
+    char *err, *tmp;
+    
+    tmp = bf->last_loaded;
+    if( !name ){ // reload
+	name = buffer_get_last_loaded_fname( bf, st);
+	if( !name ) return 0; // nothing to reload
+    }
+
+    if( (err = (char *)file_load(bf, name, -1, -1, -1) )){
+	MSG("Loading file '%s' error.", name);	
+	return -2;
+    }
+    
+    if( name != tmp ){
+	sprintf(fmt, BUFFER_KEY_LOADED"[%s]", bf->name);
+	if(store_set(st, fmt, name)){
+	    WRN("Cannot set variable for last loaded file.");
+	}	    
+    }
     return 0;
 }
+
 char buffer_load_at(s_buffer_list *bf, store_str *st, const char *name, unsigned int buff_pos, unsigned int filpos, unsigned int count)
 { 
-    printf("---- Load AT ----\n");
+    char *err, *tmp;
+    char fmt[256];
+
+    tmp = bf->last_loaded_at;
+    if( !name ){ // reload
+	name = buffer_get_last_loaded_at_fname( bf, st);
+	if( !name ) return 0; // nothing to reload
+    }
+
+    if( (err = (char *)file_load(bf, name, filpos, buff_pos, count) )){
+	MSG("Loading file '%s' error.", name);	
+	return -2;
+    }
+
+    if( name != tmp ){
+	sprintf(fmt, BUFFER_KEY_LOADED_AT"[%s]", bf->name);
+	if(store_set(st, fmt, name)){
+	    WRN("Cannot set variable for last loaded file.");
+	}	    
+    }
     return 0;
 }
 
 char buffer_save(s_buffer_list *bf, store_str *st, const char *name, char flags)
 { 
-    printf("---- Save ----\n");
+    char *err, *tmp;
+    char fmt[256];
+
+    tmp = bf->last_saved;
+    if( !name ){ // reload
+	name = buffer_get_last_saved_fname( bf, st);
+	if( !name ) return 0; // nothing to reload
+    }
+
+    if( (err = (char *)file_save(bf, name) )){
+	MSG("Saving file '%s' error.", name);	
+	return -2;
+    }
+
+    if( name != tmp ){
+	sprintf(fmt, BUFFER_KEY_SAVED"[%s]", bf->name);
+	if(store_set(st, fmt, name)){
+	    WRN("Cannot set variable for last saved file.");
+	}	    
+    }
+
     return 0;
 }
 
+/*
 char buffer_save_at(s_buffer_list *bf, store_str *st, const char *name, char flags, unsigned int buff_pos, unsigned int count)
 { 
     printf("---- Save AT ----\n");
     return 0;
 }
-
-char buffer_file_check_valid(s_buffer_list *bf)
-{ 
-    printf("---- FILE VALID ? ----\n");
-    return 0;
-}
+*/
 
 

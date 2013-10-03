@@ -32,8 +32,20 @@ extern "C" {
 
 typedef struct s_buffer_list_ s_buffer_list;
 
+#define BUFFER_KEY_LOADED	"LAST_LOADED"
+#define BUFFER_KEY_LOADED_AT	"LAST_LOADED"
+#define BUFFER_KEY_SAVED	"LAST_SAVED"
+#define BUFFER_KEY_SAVED_AT	"LAST_SAVED_AT"
+
 struct s_buffer_list_
 {
+    // file
+    char *last_loaded;
+    long long time_loaded;
+    char *last_loaded_at;
+    char *last_saved;
+    char *last_saved_at;
+    // buffer
     char *name;		// buffer name
     char *data;		// buffer data
     unsigned int  size; // size of buffer in bytes
@@ -262,7 +274,7 @@ char buffer_save(s_buffer_list *buffer, store_str *str, const char *name, char f
 	0 - success
 	value less then zero - error                
 */
-char buffer_save_at(s_buffer_list *buffer, store_str *str, const char *name, char flags, unsigned int buff_pos, unsigned int count);
+//char buffer_save_at(s_buffer_list *buffer, store_str *str, const char *name, char flags, unsigned int buff_pos, unsigned int count);
 
 /*
     Check if the last loaded file for specified buffer is valid. 
@@ -270,15 +282,20 @@ char buffer_save_at(s_buffer_list *buffer, store_str *str, const char *name, cha
 	buffer - buffer structure
     Return:
 	0 - file is valid
-	1 - file is out of date
+	1 - 'load' file is out of date
 	-2 - error on stat on file
 */
 char buffer_file_check_valid(s_buffer_list *buffer);
 
-const char *buffer_get_last_loaded_fname(s_buffer_list *buffer);
-const char *buffer_get_last_loaded_at_fname(s_buffer_list *buffer);
-const char *buffer_get_last_saved_fname(s_buffer_list *buffer);
-const char *buffer_get_last_saved_at_fname(s_buffer_list *buffer);
+/*
+    Get last used file name. 
+    If file name is not set - using store_str, and sets file name 
+    If filename is not set in store_str than return empty string.
+*/
+const char *buffer_get_last_loaded_fname(s_buffer_list *buffer, store_str *);
+const char *buffer_get_last_loaded_at_fname(s_buffer_list *buffer, store_str *);
+const char *buffer_get_last_saved_fname(s_buffer_list *buffer, store_str *);
+const char *buffer_get_last_saved_at_fname(s_buffer_list *buffer, store_str *);
 
 /*
     return selected buffer size or 0
