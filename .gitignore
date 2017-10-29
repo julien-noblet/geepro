@@ -1,0 +1,6 @@
+#Ignore
+
+.waf*/**
+.lock-wafbuild
+build_directory/**
+geepro
